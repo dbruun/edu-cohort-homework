@@ -4,11 +4,337 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ page.title | default: site.title }}</title>
-    <link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}">
+    <meta name="description" content="{{ page.description | default: site.description }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --bg: #0b1120;
+        --bg-soft: #111a2e;
+        --surface: #16223c;
+        --surface-2: #1d2c4d;
+        --border: #26365c;
+        --text: #e8eefc;
+        --muted: #9fb0d0;
+        --brand: #6366f1;
+        --brand-2: #22d3ee;
+        --accent: #f472b6;
+        --radius: 16px;
+        --shadow: 0 20px 45px -20px rgba(0, 0, 0, 0.7);
+      }
+
+      * { box-sizing: border-box; }
+
+      html { scroll-behavior: smooth; }
+
+      body {
+        margin: 0;
+        font-family: 'Inter', system-ui, -apple-system, Segoe UI, sans-serif;
+        color: var(--text);
+        background: radial-gradient(1200px 600px at 80% -10%, rgba(99, 102, 241, 0.25), transparent 60%),
+                    radial-gradient(900px 500px at -10% 10%, rgba(34, 211, 238, 0.18), transparent 55%),
+                    var(--bg);
+        line-height: 1.65;
+      }
+
+      a { color: var(--brand-2); text-decoration: none; }
+      a:hover { text-decoration: underline; }
+
+      /* Nav */
+      .site-nav {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        backdrop-filter: blur(12px);
+        background: rgba(11, 17, 32, 0.72);
+        border-bottom: 1px solid var(--border);
+      }
+      .nav-inner {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 14px 24px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 700;
+        color: var(--text);
+        font-size: 15px;
+      }
+      .brand:hover { text-decoration: none; }
+      .brand .logo {
+        width: 30px; height: 30px;
+        border-radius: 9px;
+        background: linear-gradient(135deg, var(--brand), var(--brand-2));
+        display: grid; place-items: center;
+        font-size: 16px;
+      }
+      .nav-links {
+        margin-left: auto;
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .nav-links a {
+        color: var(--muted);
+        padding: 7px 12px;
+        border-radius: 9px;
+        font-size: 14px;
+        font-weight: 500;
+      }
+      .nav-links a:hover { color: var(--text); background: var(--surface); text-decoration: none; }
+      .nav-links a.gh {
+        color: var(--text);
+        border: 1px solid var(--border);
+      }
+
+      /* Hero */
+      .hero {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 72px 24px 40px;
+        text-align: center;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 14px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: var(--surface);
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 500;
+        margin-bottom: 22px;
+      }
+      .badge .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--brand-2); box-shadow: 0 0 12px var(--brand-2); }
+      .hero h1 {
+        font-size: clamp(34px, 6vw, 56px);
+        line-height: 1.05;
+        margin: 0 0 18px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        background: linear-gradient(120deg, #ffffff 20%, #a5b4fc 60%, #67e8f9);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .hero p.lead {
+        font-size: clamp(16px, 2.2vw, 20px);
+        color: var(--muted);
+        max-width: 720px;
+        margin: 0 auto 28px;
+      }
+      .cta-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 22px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 15px;
+        border: 1px solid transparent;
+        cursor: pointer;
+      }
+      .btn-primary {
+        background: linear-gradient(135deg, var(--brand), var(--brand-2));
+        color: #0b1120;
+      }
+      .btn-primary:hover { text-decoration: none; filter: brightness(1.08); }
+      .btn-ghost { border-color: var(--border); color: var(--text); background: var(--surface); }
+      .btn-ghost:hover { text-decoration: none; background: var(--surface-2); }
+
+      /* Content */
+      .content {
+        max-width: 860px;
+        margin: 0 auto;
+        padding: 20px 24px 40px;
+      }
+      .card {
+        background: linear-gradient(180deg, var(--surface), var(--bg-soft));
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 32px 36px;
+        box-shadow: var(--shadow);
+      }
+      .content h1 { font-size: 30px; font-weight: 800; letter-spacing: -0.01em; margin-top: 8px; }
+      .content h2 {
+        font-size: 22px;
+        font-weight: 700;
+        margin-top: 36px;
+        padding-top: 8px;
+        border-top: 1px solid var(--border);
+      }
+      .content h3 { font-size: 17px; font-weight: 600; margin-top: 26px; color: #c7d2fe; }
+      .content p, .content li { color: #d7e0f4; }
+      .content ul { padding-left: 20px; }
+      .content li { margin: 6px 0; }
+      .content li::marker { color: var(--brand-2); }
+
+      code {
+        font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.88em;
+        background: var(--surface-2);
+        padding: 2px 7px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        color: #a5f3fc;
+      }
+      pre {
+        background: #0a1122;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 18px 20px;
+        overflow-x: auto;
+      }
+      pre code { background: none; border: none; padding: 0; color: #d7e0f4; }
+
+      blockquote {
+        margin: 20px 0;
+        padding: 14px 18px;
+        border-left: 3px solid var(--brand);
+        background: var(--surface);
+        border-radius: 0 10px 10px 0;
+        color: var(--muted);
+      }
+
+      table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+      th, td { text-align: left; padding: 10px 14px; border: 1px solid var(--border); }
+      th { background: var(--surface-2); }
+
+      .mermaid { text-align: center; margin: 24px 0; }
+
+      /* Feature grid (home) */
+      .features {
+        max-width: 1080px;
+        margin: 8px auto 20px;
+        padding: 0 24px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 18px;
+      }
+      .feature {
+        background: linear-gradient(180deg, var(--surface), var(--bg-soft));
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 24px;
+        transition: transform 0.15s ease, border-color 0.15s ease;
+      }
+      .feature:hover { transform: translateY(-4px); border-color: var(--brand); }
+      .feature .ico {
+        width: 42px; height: 42px;
+        border-radius: 11px;
+        display: grid; place-items: center;
+        font-size: 20px;
+        margin-bottom: 14px;
+        background: rgba(99, 102, 241, 0.16);
+        border: 1px solid var(--border);
+      }
+      .feature h3 { margin: 0 0 6px; font-size: 16px; font-weight: 700; color: var(--text); }
+      .feature p { margin: 0; font-size: 14px; color: var(--muted); }
+
+      /* Footer */
+      footer {
+        border-top: 1px solid var(--border);
+        margin-top: 60px;
+        padding: 28px 24px;
+        text-align: center;
+        color: var(--muted);
+        font-size: 14px;
+      }
+    </style>
   </head>
   <body>
-    <main>
-      {{ content }}
+    <nav class="site-nav">
+      <div class="nav-inner">
+        <a class="brand" href="{{ '/' | relative_url }}">
+          <span class="logo">🎓</span>
+          <span>Homework Agent Accelerator</span>
+        </a>
+        <div class="nav-links">
+          <a href="{{ '/' | relative_url }}">Home</a>
+          <a href="{{ '/architecture' | relative_url }}">Architecture</a>
+          <a href="{{ '/how-to-use' | relative_url }}">Usage</a>
+          <a href="{{ '/configuration' | relative_url }}">Configuration</a>
+          <a href="{{ '/troubleshooting' | relative_url }}">Troubleshooting</a>
+          <a class="gh" href="https://github.com/dbruun/edu-cohort-homework">GitHub</a>
+        </div>
+      </div>
+    </nav>
+
+    {% if page.url == "/" or page.url == "/index.html" %}
+    <header class="hero">
+      <span class="badge"><span class="dot"></span> Built on Microsoft Foundry + Agent Framework</span>
+      <h1>AI homework support with guardrails professors control</h1>
+      <p class="lead">A hosted tutor accelerator that grounds answers in approved course knowledge, applies configurable pedagogy, and gives educators a portal to tune it — no redeploy required.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="{{ '/architecture' | relative_url }}">Explore the architecture →</a>
+        <a class="btn btn-ghost" href="https://github.com/dbruun/edu-cohort-homework">View on GitHub</a>
+      </div>
+    </header>
+
+    <section class="features">
+      <div class="feature">
+        <div class="ico">🧭</div>
+        <h3>Pedagogy you configure</h3>
+        <p>Set help level, step limits, and citation rules through policy — not code changes.</p>
+      </div>
+      <div class="feature">
+        <div class="ico">🔎</div>
+        <h3>Grounded knowledge</h3>
+        <p>A Foundry Toolbox connects the tutor to Azure AI Search over approved materials.</p>
+      </div>
+      <div class="feature">
+        <div class="ico">🧑‍🏫</div>
+        <h3>Professor portal</h3>
+        <p>Adjust tutoring behavior and knowledge sources from a friendly management UI.</p>
+      </div>
+      <div class="feature">
+        <div class="ico">🚀</div>
+        <h3>Azure-ready deploy</h3>
+        <p>Ship with Azure Developer CLI scripts and starter infrastructure as code.</p>
+      </div>
+    </section>
+    {% endif %}
+
+    <main class="content">
+      <article class="card">
+        {{ content }}
+      </article>
     </main>
+
+    <footer>
+      <p>EDU Homework Agent Accelerator · Built with Microsoft Foundry &amp; the Microsoft Agent Framework</p>
+    </footer>
+
+    <script type="module">
+      import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: 'dark',
+        themeVariables: {
+          primaryColor: '#1d2c4d',
+          primaryTextColor: '#e8eefc',
+          primaryBorderColor: '#6366f1',
+          lineColor: '#22d3ee',
+          fontFamily: 'Inter, sans-serif'
+        }
+      });
+      document.querySelectorAll('pre > code.language-mermaid, code.language-mermaid').forEach((el) => {
+        const pre = el.closest('pre') || el;
+        const wrapper = document.createElement('div');
+        wrapper.className = 'mermaid';
+        wrapper.textContent = el.textContent;
+        pre.replaceWith(wrapper);
+      });
+      await mermaid.run({ querySelector: '.mermaid' });
+    </script>
   </body>
 </html>

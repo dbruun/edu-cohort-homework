@@ -8,3 +8,8 @@ plugins:
 show_downloads: false
 github:
   is_project_page: true
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: default
