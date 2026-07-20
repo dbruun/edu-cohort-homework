@@ -14,18 +14,18 @@ This accelerator helps institutions provide a tutor experience that is:
 ## What the solution includes
 
 - a hosted homework tutor deployed on Microsoft Foundry using the Microsoft Agent Framework
-- a pedagogy policy that shapes how much help the tutor offers
-- a professor portal (scaffold) for editing that policy
+- a **professor portal** (React UI + policy API) for tuning the pedagogy that shapes the tutor
+- a pedagogy policy that is the shared contract between the portal and the tutor
 - a documentation site and an `azd`-based deployment path
 
-> **Status note:** The hosted tutor and its Foundry deployment are live. The Azure AI Search toolbox and the professor portal are included as scaffolding and are **not yet wired into the deployed agent**. See the [architecture overview](architecture.md) for exactly what is deployed today.
+> **Status note:** The hosted tutor is deployed and verified, and the professor portal is fully built and runs locally. The remaining integration step is connecting the portal's saved policy to the **deployed** agent for a live read — today those changes are applied by redeploying the agent. The Azure AI Search toolbox is defined but not yet connected. See the [architecture overview](architecture.md) for the full picture.
 
 ## How it works
 
-1. Students ask homework-related questions through the tutor experience.
-2. The tutor answers under the pedagogy policy baked into the agent at deploy time (preferring hints and guided steps over direct answers).
-3. A planned Foundry Toolbox will let the tutor ground responses in approved Azure AI Search content.
-4. Professors adjust tutoring behavior by editing the policy and redeploying the agent so the change takes effect.
+1. Professors set the pedagogy policy in the portal — help level, step limits, direct-answer and citation rules.
+2. Students ask homework-related questions through the tutor.
+3. The tutor answers under that pedagogy policy, preferring hints and guided steps over direct answers.
+4. A planned Foundry Toolbox will let the tutor ground responses in approved Azure AI Search content.
 
 ## Get started
 

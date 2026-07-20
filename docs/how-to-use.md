@@ -20,22 +20,28 @@ Students ask homework-related questions in natural language and receive help tha
 
 ## For professors
 
-Professors shape the tutor by editing the **pedagogy policy**. Today that policy is compiled into the agent, so applying a change means redeploying the agent.
+Professors shape the tutor through the **professor portal** ([../ui/app/src/App.jsx](../ui/app/src/App.jsx)), which edits the pedagogy policy that governs how much help the tutor offers.
 
-**Tuning pedagogy:**
+**In the portal you can set:**
 
-- Set the **help style** (hint only, guided, worked example, or full solution).
-- Set the **maximum steps** the tutor may reveal at once.
-- Toggle whether **direct answers** are ever allowed.
-- Toggle whether **citations** are required.
+- the **help style** (hint only, guided, worked example, or full solution),
+- the **maximum steps** the tutor may reveal at once,
+- whether **direct answers** are ever allowed, and
+- whether **citations** are required.
 
-**A typical adjustment (today):**
+The portal loads the current policy and saves your edits back through its API (`GET`/`POST /api/policy`). You can run it locally today:
 
-1. Edit the pedagogy guidance / policy.
-2. Redeploy the hosted agent with `azd deploy`.
+```bash
+npm --prefix ui/app run build
+```
+
+**Applying a change to the tutor (today):**
+
+1. Adjust the policy in the portal and save.
+2. Redeploy the hosted agent with `azd deploy` so the tutor picks up the new policy.
 3. The next student question is answered under the new policy.
 
-> The **professor portal** in [../ui](../ui) is a scaffold. It is not yet wired to the deployed agent, so portal saves do not currently change live behavior. Managing knowledge through an Azure AI Search **toolbox** is likewise planned, not yet connected.
+> **Integration status:** The portal and its API are fully built and round-trip the pedagogy policy. The one remaining step is connecting the portal's saved policy to the **deployed** agent for a live read, so saves would take effect without the `azd deploy` step. Grounding knowledge through an Azure AI Search **toolbox** is likewise planned, not yet connected.
 
 ## For developers
 
