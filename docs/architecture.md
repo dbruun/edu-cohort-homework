@@ -1,104 +1,90 @@
 # Architecture overview
 
-The accelerator is a hosted-agent solution that pairs a student-facing tutor with a professor-facing control plane. The tutor answers homework questions, but *how much* help it gives and *what knowledge* it draws on are both governed by configuration that professors own — no redeploys required.
+The accelerator is a **hosted agent on Microsoft Foundry**: a student-facing tutor whose pedagogy is owned by professors. The tutor answers homework questions under an explicit pedagogy policy that is compiled into the agent at deploy time.
 
-## System at a glance
+> **What is deployed today vs. planned.** The hosted tutor + its Foundry model deployment are **live**. The Azure AI Search **toolbox** and the **professor portal** are scaffolding in this repo and are **not yet wired into the deployed agent**. Sections below mark each piece accordingly.
+
+## System at a glance (deployed today)
 
 ```mermaid
 flowchart LR
-  Student[Student] --> Agent[Homework Agent]
-  Agent --> Policy[Pedagogy Policy]
+  Student[Student] --> Agent[Hosted Homework Tutor]
   Agent --> Model[Foundry Model Deployment]
-  Agent --> Toolbox[Foundry Toolbox]
-  Toolbox --> Search[Azure AI Search]
-  Professor[Professor] --> Portal[Professor Portal]
-  Portal --> API[Portal API]
-  API --> Policy
-  API --> Toolbox
+  Policy[Pedagogy Policy<br/>compiled into agent] --> Agent
 ```
 
-At runtime the agent reads the active pedagogy policy, composes a system prompt, invokes the model deployment, and grounds responses through the toolbox. Professors change tutoring behavior and knowledge access through the portal, and those changes take effect without redeploying the agent.
+The tutor runs as a hosted Foundry agent. Its instructions — including the pedagogy policy — are baked into the container image when it is deployed. To change tutoring behavior, a professor edits the policy and the agent is **redeployed**.
+
+## Planned extension
+
+```mermaid
+flowchart LR
+  Professor[Professor] --> Portal[Professor Portal<br/>scaffold]
+  Portal --> PolicyStore[(Policy store)]
+  PolicyStore --> Agent[Hosted Homework Tutor]
+  Agent --> Toolbox[Foundry Toolbox<br/>planned]
+  Toolbox --> Search[Azure AI Search<br/>planned]
+```
+
+The intended end state adds a professor portal that publishes policy changes and a Foundry Toolbox that grounds answers in Azure AI Search. Reaching a *live* per-request policy read requires either a Foundry connection or Standard Agent Setup (capability host); a plain blob read from the hosted container is blocked by the agent's managed-identity permissions in this environment.
 
 ## Core components
 
-| Component | Responsibility | Source |
-| --- | --- | --- |
-| Homework Agent | Hosts the tutor runtime, composes prompts, applies policy, calls the model and toolbox | [../src/HomeworkAgent/Program.cs](../src/HomeworkAgent/Program.cs) |
-| Prompt Composer | Merges the base tutor instructions with the current policy into a single system prompt | [../src/HomeworkAgent/PromptComposer.cs](../src/HomeworkAgent/PromptComposer.cs) |
-| Pedagogy Policy | Declarative rules for help level, step limits, direct answers, and citations | [../src/HomeworkAgent/Pedagogy/PedagogyPolicy.cs](../src/HomeworkAgent/Pedagogy/PedagogyPolicy.cs) |
-| Foundry Toolbox | Curated, versioned knowledge access over Azure AI Search indexes | [../toolbox/toolbox.yaml](../toolbox/toolbox.yaml) |
-| Professor Portal | UI for tuning pedagogy and reviewing knowledge sources | [../ui/app/src/App.jsx](../ui/app/src/App.jsx) |
-| Portal API | Reads and writes policy and knowledge-source configuration | [../ui/api/index.js](../ui/api/index.js) |
+| Component | Status | Responsibility | Source |
+| --- | --- | --- | --- |
+| Hosted tutor agent | **Deployed** | Runs on Foundry; answers under the compiled pedagogy policy | [../foundry-tutor/hello-world-dotnet-agent-framework/src/hello-world-dotnet-agent-framework/Program.cs](../foundry-tutor/hello-world-dotnet-agent-framework/src/hello-world-dotnet-agent-framework/Program.cs) |
+| Agent + model manifest | **Deployed** | Declares the agent, model deployment, and env vars | [../foundry-tutor/hello-world-dotnet-agent-framework/azure.yaml](../foundry-tutor/hello-world-dotnet-agent-framework/azure.yaml) |
+| Pedagogy policy | **Deployed (compiled in)** | The rules the tutor follows; also seeded as JSON | [../src/HomeworkAgent/Pedagogy/pedagogy-policy.json](../src/HomeworkAgent/Pedagogy/pedagogy-policy.json) |
+| Foundry Toolbox | Planned | Curated Azure AI Search knowledge access | [../toolbox/toolbox.yaml](../toolbox/toolbox.yaml) |
+| Professor Portal | Scaffold | UI for editing pedagogy | [../ui/app/src/App.jsx](../ui/app/src/App.jsx) |
+| Portal API | Scaffold | Reads/writes policy | [../ui/api/index.js](../ui/api/index.js) |
 
-## Request flow
-
-When a student asks a question, the agent executes a fixed sequence:
+## Request flow (deployed today)
 
 ```mermaid
 sequenceDiagram
   participant S as Student
-  participant A as Homework Agent
-  participant P as Pedagogy Policy
+  participant A as Hosted Tutor Agent
   participant M as Foundry Model
-  participant T as Foundry Toolbox
-  participant X as Azure AI Search
 
-  S->>A: Ask a homework question
-  A->>P: Load active policy
-  A->>A: Compose system prompt (instructions + policy)
-  A->>M: Send prompt with toolbox tool available
-  M->>T: Request grounded knowledge (as needed)
-  T->>X: Retrieve from approved indexes
-  X-->>T: Ranked passages
-  T-->>M: Grounded context
-  M-->>A: Tutor response shaped by policy
-  A-->>S: Guided answer with citations
+  S->>A: Ask a homework question (Responses protocol)
+  A->>A: Apply compiled pedagogy instructions
+  A->>M: Invoke the model deployment
+  M-->>A: Draft response
+  A-->>S: Guided answer shaped by the policy
 ```
 
-1. **Load policy.** The agent resolves the policy location and loads the current rules at request time, so the newest professor settings always apply.
-2. **Compose the prompt.** The prompt composer combines the base tutor instructions with a serialized copy of the active policy, giving the model explicit guardrails.
-3. **Invoke the model.** The agent calls the configured Foundry model deployment and exposes the toolbox as an available tool.
-4. **Ground the answer.** When the model needs course knowledge, the toolbox retrieves from the approved Azure AI Search indexes and returns ranked context.
-5. **Return a guided response.** The reply reflects the configured help level, step limits, and citation requirements rather than simply solving the problem.
-
-## The two planes
-
-The design separates the **runtime plane** (what students touch) from the **control plane** (what professors touch).
-
-- **Runtime plane** — the hosted agent, model deployment, and toolbox. It is stateless per request and reads its behavior from configuration.
-- **Control plane** — the professor portal and its API. It owns the pedagogy policy and knowledge-source configuration and publishes changes the runtime plane consumes.
-
-This separation is what lets professors adjust tutoring behavior in near real time: the agent does not hardcode pedagogy, it reads it.
+1. **Invoke.** A caller sends a message to the agent's Responses endpoint (for example via `azd ai agent invoke`).
+2. **Apply policy.** The agent's instructions — carrying the pedagogy guardrails compiled in at deploy time — shape the model call.
+3. **Answer.** The tutor returns a guided response: hints and steps rather than a direct solution to graded work.
 
 ## Pedagogy as configuration
 
-The policy is a small, declarative document rather than code. It controls:
+The policy is a small, declarative JSON document. It expresses:
 
 - **helpLevel** — `hint_only`, `guided`, `worked_example`, or `full_solution`
 - **maxStepsRevealed** — how much of a solution the tutor may expose at once
 - **allowDirectAnswers** — whether a direct solution is ever permitted
-- **citationsRequired** — whether responses must cite retrieved sources
-- **subjectOverrides** — per-subject adjustments layered on top of the defaults
+- **citationsRequired** — whether responses must cite sources
+- **subjectOverrides** — per-subject adjustments
 
-Because the agent reads this at runtime, the same deployed tutor can behave very differently across courses and assignments. See the [configuration guide](configuration.md) for the full schema.
+Today this policy is folded into the agent's instructions at deploy time, so changing it means editing the policy and **redeploying** the agent. The planned portal + connection design would let professors change it without a redeploy. See the [configuration guide](configuration.md) for the full schema.
 
-## Knowledge access through the toolbox
+## Knowledge access through the toolbox (planned)
 
-The Foundry Toolbox is the single, curated boundary between the tutor and course knowledge. It defines which Azure AI Search indexes are in scope and how they are queried (for example, vector semantic hybrid search over an approved index). Adding a new knowledge source is a toolbox change — a new index and connection — not an agent change, which keeps knowledge governance in the hands of the people who own the content.
+The Foundry Toolbox is the intended boundary between the tutor and course knowledge: it would define which Azure AI Search indexes are in scope and how they are queried. It is defined in [../toolbox/toolbox.yaml](../toolbox/toolbox.yaml) but is **not yet connected** to the deployed agent.
 
 ## Deployment topology
 
-The accelerator ships with an Azure-oriented deployment path:
+- The tutor is deployed as a **hosted Foundry agent** (not a self-managed container) via Azure Developer CLI.
+- A Foundry **model deployment** backs the agent.
+- The professor portal (static web app + API) is scaffolding and is not part of the current deploy.
 
-- The agent runs as a container-hosted service.
-- The professor portal is a static web app with a lightweight API backend.
-- Provisioning and deployment are driven by Azure Developer CLI with starter infrastructure as code.
-
-See [../scripts/deploy.ps1](../scripts/deploy.ps1) or [../scripts/deploy.sh](../scripts/deploy.sh) for the deployment entry points and [../infra/main.bicep](../infra/main.bicep) for the starter infrastructure.
+See [../scripts/deploy.ps1](../scripts/deploy.ps1) or [../scripts/deploy.sh](../scripts/deploy.sh) for the deployment entry points.
 
 ## Design principles
 
-- **Behavior is configuration, not code.** Pedagogy and knowledge access are data the runtime reads, so educators can change them safely.
-- **Knowledge is governed at one boundary.** All course knowledge flows through the toolbox, keeping sources approved and auditable.
-- **The two planes stay decoupled.** The student runtime and the professor control plane evolve independently.
-- **Guardrails travel with every request.** The active policy is injected into each prompt, so guidance limits are enforced consistently.
+- **Pedagogy is explicit.** The tutor's limits live in a policy, not scattered through prose.
+- **Foundry hosts the runtime.** Auth, scaling, and the model call are managed by Foundry, not hand-rolled.
+- **Extend through governed boundaries.** Knowledge access is intended to flow through a toolbox/connection, keeping sources approved and auditable.
+- **Be honest about state.** Deployed pieces and planned pieces are labeled so operators know what actually runs.

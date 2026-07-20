@@ -7,27 +7,29 @@ The EDU Homework Agent Accelerator is a practical foundation for bringing AI-ass
 This accelerator helps institutions provide a tutor experience that is:
 
 - supportive and student-friendly
-- grounded in approved course knowledge
-- configurable by professors without requiring a redeployment of the agent
-- easy to extend with additional Azure AI Search sources over time
+- guided by an explicit, professor-owned pedagogy policy
+- deployed as a managed agent on Microsoft Foundry
+- designed to extend toward Azure AI Search-backed knowledge over time
 
 ## What the solution includes
 
-- a hosted homework tutor experience powered by Microsoft Foundry and the Microsoft Agent Framework
-- a configurable toolbox layer for Azure AI Search-backed knowledge retrieval
-- a professor portal for tuning tutoring behavior and managing knowledge access
-- a documentation site and deployment path for Azure-hosted rollout
+- a hosted homework tutor deployed on Microsoft Foundry using the Microsoft Agent Framework
+- a pedagogy policy that shapes how much help the tutor offers
+- a professor portal (scaffold) for editing that policy
+- a documentation site and an `azd`-based deployment path
+
+> **Status note:** The hosted tutor and its Foundry deployment are live. The Azure AI Search toolbox and the professor portal are included as scaffolding and are **not yet wired into the deployed agent**. See the [architecture overview](architecture.md) for exactly what is deployed today.
 
 ## How it works
 
 1. Students ask homework-related questions through the tutor experience.
-2. The agent applies the active pedagogy policy to decide how much guidance to provide.
-3. The toolbox connects to Azure AI Search so the tutor can ground responses in approved course materials.
-4. Professors can adjust the tutoring behavior through the portal and publish new knowledge-source configurations without redeploying the agent.
+2. The tutor answers under the pedagogy policy baked into the agent at deploy time (preferring hints and guided steps over direct answers).
+3. A planned Foundry Toolbox will let the tutor ground responses in approved Azure AI Search content.
+4. Professors adjust tutoring behavior by editing the policy and redeploying the agent so the change takes effect.
 
 ## Get started
 
-- Review the [architecture overview](architecture.md) for the system flow.
+- Review the [architecture overview](architecture.md) for what is deployed today.
 - Learn how to configure the agent and policy in [configuration.md](configuration.md).
-- See the [usage guide](how-to-use.md) for student and professor workflows.
-- Deploy the solution with [scripts/deploy.ps1](../scripts/deploy.ps1) or [scripts/deploy.sh](../scripts/deploy.sh).
+- See the [usage guide](how-to-use.md) for student, professor, and developer workflows.
+- Deploy the hosted agent with [scripts/deploy.ps1](../scripts/deploy.ps1) or [scripts/deploy.sh](../scripts/deploy.sh).

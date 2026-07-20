@@ -20,43 +20,44 @@ Students ask homework-related questions in natural language and receive help tha
 
 ## For professors
 
-Professors control the tutor through the portal without touching code or redeploying the agent.
+Professors shape the tutor by editing the **pedagogy policy**. Today that policy is compiled into the agent, so applying a change means redeploying the agent.
 
 **Tuning pedagogy:**
 
 - Set the **help style** (hint only, guided, worked example, or full solution).
 - Set the **maximum steps** the tutor may reveal at once.
 - Toggle whether **direct answers** are ever allowed.
-- Toggle whether **citations** are required on grounded responses.
+- Toggle whether **citations** are required.
 
-**Managing knowledge:**
+**A typical adjustment (today):**
 
-- Review the active knowledge sources the toolbox exposes to the tutor.
-- Add a new Azure AI Search index when new course material becomes available.
-- Publish an updated toolbox version so the change takes effect without redeploying the agent.
+1. Edit the pedagogy guidance / policy.
+2. Redeploy the hosted agent with `azd deploy`.
+3. The next student question is answered under the new policy.
 
-**A typical adjustment:**
-
-1. Open the professor portal.
-2. Change the help style or step limit for the course.
-3. Save — the portal writes the updated policy through its API.
-4. The next student question is answered under the new policy.
+> The **professor portal** in [../ui](../ui) is a scaffold. It is not yet wired to the deployed agent, so portal saves do not currently change live behavior. Managing knowledge through an Azure AI Search **toolbox** is likewise planned, not yet connected.
 
 ## For developers
 
-Use this local loop when building or extending the accelerator.
+The deployed tutor is a **hosted Foundry agent** under [../foundry-tutor/hello-world-dotnet-agent-framework](../foundry-tutor/hello-world-dotnet-agent-framework). Use this loop:
 
-1. **Build and test the agent.**
+1. **Build the agent locally.**
    ```bash
-   dotnet build src/HomeworkAgent/HomeworkAgent.csproj
-   dotnet test src/HomeworkAgent.Tests/HomeworkAgent.Tests.csproj
+   dotnet build foundry-tutor/hello-world-dotnet-agent-framework/src/hello-world-dotnet-agent-framework/hello-world.csproj
    ```
-2. **Configure the environment.** Copy `.env.example`, set the Foundry and toolbox values, and point `PEDAGOGY_POLICY_URI` at your policy file. See the [configuration guide](configuration.md).
-3. **Build the portal.**
+2. **Set deploy config.** In the agent folder, set the subscription, location, and model deployment in the `azd` environment (the deploy scripts do this for you).
+3. **Deploy to Foundry.**
    ```bash
-   npm --prefix ui/app run build
+   azd deploy --no-prompt
    ```
-4. **Run locally.** Start the agent and exercise the `/health` and `/chat` endpoints to confirm the policy loads and the toolbox endpoint is wired.
-5. **Deploy to Azure.** Once the environment is ready, run [../scripts/deploy.ps1](../scripts/deploy.ps1) or [../scripts/deploy.sh](../scripts/deploy.sh).
+   or run [../scripts/deploy.ps1](../scripts/deploy.ps1) / [../scripts/deploy.sh](../scripts/deploy.sh) for the full turnkey flow.
+4. **Smoke test the deployed agent.**
+   ```bash
+   azd ai agent invoke "Can you help me get started on a homework problem?"
+   ```
+5. **Inspect logs.**
+   ```bash
+   azd ai agent monitor homework-tutor
+   ```
 
-For the end-to-end request path and component responsibilities, see the [architecture overview](architecture.md).
+The hosted agent speaks the Foundry **Responses** protocol — there is no custom `/chat` or `/health` endpoint. For the deployed vs. planned breakdown, see the [architecture overview](architecture.md).

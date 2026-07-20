@@ -1,31 +1,31 @@
 # Configuration guide
 
-The accelerator is configured through three surfaces: **environment variables** that wire the agent to Azure, the **pedagogy policy** that governs tutoring behavior, and the **toolbox definition** that governs knowledge access.
+The deployed hosted agent is configured through **environment variables** (declared in its Foundry manifest) and the **pedagogy policy** that shapes tutoring behavior. The **toolbox** is defined but not yet connected.
 
 ## Environment variables
 
-The agent reads these settings at startup. Each has a safe default so the app runs locally, but production deployments should set them explicitly.
+The hosted agent's manifest ([../foundry-tutor/hello-world-dotnet-agent-framework/azure.yaml](../foundry-tutor/hello-world-dotnet-agent-framework/azure.yaml)) declares these. Foundry injects the project endpoint automatically at runtime.
 
 | Variable | Purpose | Example |
 | --- | --- | --- |
-| `FOUNDRY_PROJECT_ENDPOINT` | Foundry project endpoint for the hosted agent runtime | `https://<resource>.services.ai.azure.com/api/projects/<project>` |
-| `TOOLBOX_ENDPOINT` | MCP endpoint for the Foundry Toolbox | `https://<resource>.services.ai.azure.com/.../toolboxes/homework-toolbox/mcp?api-version=v1` |
-| `AZURE_AI_MODEL_DEPLOYMENT_NAME` | Model deployment the agent invokes | `gpt-4o` |
-| `PEDAGOGY_POLICY_URI` | Location of the pedagogy JSON policy | `./Pedagogy/pedagogy-policy.json` |
+| `FOUNDRY_PROJECT_ENDPOINT` | Foundry project endpoint (auto-injected in the hosted container) | `https://<account>.services.ai.azure.com/api/projects/<project>` |
+| `AZURE_AI_MODEL_DEPLOYMENT_NAME` | Model deployment the agent invokes | `gpt-5.4-mini` |
 
-A starter template is available in [../src/HomeworkAgent/.env.example](../src/HomeworkAgent/.env.example). The deployment scripts also set these values into the Azure Developer CLI environment — see [../scripts/README.md](../scripts/README.md).
+The `scripts/deploy.*` scripts set `AZURE_AI_MODEL_DEPLOYMENT_NAME` and the subscription/location into the `azd` environment before deploy — see [../scripts/README.md](../scripts/README.md).
+
+> **Legacy note:** Older docs referenced `TOOLBOX_ENDPOINT` and `PEDAGOGY_POLICY_URI`. Those belonged to an earlier self-hosted prototype that has been replaced by the hosted Foundry agent and are no longer used.
 
 ## Pedagogy policy
 
-The policy is a small JSON document loaded at request time, so changes take effect without redeploying the agent. The schema is defined by [../src/HomeworkAgent/Pedagogy/PedagogyPolicy.cs](../src/HomeworkAgent/Pedagogy/PedagogyPolicy.cs).
+The policy is a small JSON document. Its schema matches [../src/HomeworkAgent/Pedagogy/PedagogyPolicy.cs](../src/HomeworkAgent/Pedagogy/PedagogyPolicy.cs), and the seed values live in [../src/HomeworkAgent/Pedagogy/pedagogy-policy.json](../src/HomeworkAgent/Pedagogy/pedagogy-policy.json).
 
 | Field | Type | Default | Meaning |
 | --- | --- | --- | --- |
 | `helpLevel` | string | `guided` | `hint_only`, `guided`, `worked_example`, or `full_solution` |
 | `maxStepsRevealed` | number | `3` | How much of a solution the tutor may expose at once |
 | `allowDirectAnswers` | boolean | `false` | Whether a direct solution is ever permitted |
-| `citationsRequired` | boolean | `true` | Whether responses must cite retrieved sources |
-| `subjectOverrides` | object | `{}` | Per-subject help-level overrides layered on the defaults |
+| `citationsRequired` | boolean | `true` | Whether responses must cite sources |
+| `subjectOverrides` | object | `{}` | Per-subject help-level overrides |
 | `refusalMessage` | string | provided | Shown when the tutor declines to solve graded work outright |
 | `escalationMessage` | string | provided | Nudges the student toward a more specific ask |
 
@@ -44,21 +44,10 @@ The policy is a small JSON document loaded at request time, so changes take effe
 }
 ```
 
-The default policy lives in [../src/HomeworkAgent/Pedagogy/pedagogy-policy.json](../src/HomeworkAgent/Pedagogy/pedagogy-policy.json). The professor portal reads and writes this same document through its API, so UI edits and file edits stay in sync.
-
 ### How the policy is applied
 
-At request time the agent loads the policy and the prompt composer injects it directly into the system prompt ([../src/HomeworkAgent/PromptComposer.cs](../src/HomeworkAgent/PromptComposer.cs)). The model therefore sees the guardrails on every turn, which keeps behavior consistent across requests.
+Today the pedagogy guidance is written into the hosted agent's instructions in [../foundry-tutor/hello-world-dotnet-agent-framework/src/hello-world-dotnet-agent-framework/Program.cs](../foundry-tutor/hello-world-dotnet-agent-framework/src/hello-world-dotnet-agent-framework/Program.cs). Because it is compiled into the agent, **changing the policy requires editing it and redeploying the agent** (`azd deploy`). A live per-request read from external storage is not enabled in this environment — see the architecture doc for why.
 
-## Knowledge sources
+## Knowledge sources (planned)
 
-Knowledge access is defined in [../toolbox/toolbox.yaml](../toolbox/toolbox.yaml). Each tool points at one or more Azure AI Search indexes and specifies how they are queried (for example, `vector_semantic_hybrid` with a `top_k` limit).
-
-To add a new source:
-
-1. Add the Azure AI Search connection details to the toolbox definition.
-2. Add the index to the tool's `indexes` list.
-3. Publish a new toolbox version through the professor portal workflow.
-4. Keep the consumer endpoint stable so the agent does not need to be redeployed.
-
-Because all knowledge flows through the toolbox, adding or removing a source is a governed, auditable change rather than an agent code change. See [../config/knowledge-sources.md](../config/knowledge-sources.md) for guidance on managing multiple sources and versions.
+The toolbox in [../toolbox/toolbox.yaml](../toolbox/toolbox.yaml) describes the intended Azure AI Search access (indexes and query type such as `vector_semantic_hybrid`). It is **not yet connected** to the deployed agent. When wired up, adding a source would be a toolbox/connection change. See [../config/knowledge-sources.md](../config/knowledge-sources.md) for the source-management guidance.
