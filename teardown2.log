@@ -1,0 +1,9 @@
+
+Deleting all resources and deployed code on Azure (azd down)
+Local application code is not deleted when running 'azd down'.
+
+
+ERROR: no service in azure.yaml has host in [azure.ai.project azure.ai.agent microsoft.foundry]
+
+Suggestion: add a service with `host: azure.ai.project` to azure.yaml
+

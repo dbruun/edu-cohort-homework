@@ -1,0 +1,27 @@
+
+Provisioning Azure resources (azd provision)
+Provisioning Azure resources can take some time.
+
+Initialize bicep provider
+Reading subscription and location from environment...
+Subscription: ME-MngEnvMCAP003733-derekbruun-1 (5aad3035-2739-48d7-834c-e6ab46477d14)
+Location: East US 2
+
+Creating a deployment plan
+Comparing deployment state
+Creating/Updating resources
+  You can view detailed progress in the Azure Portal:
+  https://portal.azure.com/#view/HubsExtension/DeploymentDetailsBlade/~/overview/id/%2Fsubscriptions%2F5aad3035-2739-48d7-834c-e6ab46477d14%2Fproviders%2FMicrosoft.Resources%2Fdeployments%2Feduhw-dev-1784559960
+
+  (Γ£ô) Done: Resource group: rg-eduhwdev (2.426s)
+  (Γ£ô) Done: Container Registry: acreduhwdevgzesga63jigwk (9.986s)
+  (Γ£ô) Done: Log Analytics workspace: log-eduhwdev (23.138s)
+  (Γ£ô) Done: Application Insights: appi-eduhwdev (2.04s)
+  (Γ£ô) Done: Container Apps Environment: cae-eduhwdev (57.028s)
+  (Γ£ô) Done: Container App: ca-homework-agent-eduhwdev (16.894s)
+
+SUCCESS: Your application was provisioned in Azure in 2 minutes 17 seconds.
+WARNING: your version of azd is out of date, you have 1.20.0 and the latest version is 1.28.0
+
+To update to the latest version, run:
+winget upgrade Microsoft.Azd

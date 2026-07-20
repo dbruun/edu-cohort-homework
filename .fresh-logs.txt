@@ -1,0 +1,115 @@
+Streaming session logs for homework-tutor (session: ab02833655cbf287d2e3aee3e45fe2267dce8220715f48f7d4480d40ebab689)...
+13:59:56  session Running (last accessed: 13:59:56)
+14:00:25  status   Connecting to the container...
+13:59:56  stderr   [WARNING] APPLICATIONINSIGHTS_CONNECTION_STRING not set ΓÇö traces will not be sent to Application Insights. Set it to enable local telemetry. (This variable is auto-injected in hosted Foundry containers ΓÇö do not declare it in agent.manifest.yaml.)
+13:59:57  stderr   [WARNING] Could not load pedagogy policy blob (This request is not authorized to perform this operation using this permission.
+13:59:57  stderr   RequestId:9b8c3c4b-101e-0036-4979-18c7e2000000
+13:59:57  stderr   Time:2026-07-20T18:59:57.5796558Z
+13:59:57  stderr   Status: 403 (This request is not authorized to p
+13:59:57  stderr   erform this operation using this permission.)
+13:59:57  stderr   ErrorCode: AuthorizationPermissionMismatch
+13:59:57  stderr   
+13:59:57  stderr   Content:
+13:59:57  stderr   ∩╗┐<?xml version="1.0" encoding="utf-8"?><Error><Code>AuthorizationPermissionMismatch</Code><Message>This request is not authorized to perform this operation u
+13:59:57  stderr   sing this permission.
+13:59:57  stderr   RequestId:9b8c3c4b-101e-0036-4979-18c7e2000000
+13:59:57  stderr   Time:2026-07-20T18:59:57.5796558Z</Message></Error>
+13:59:57  stderr   
+13:59:57  stderr   Headers:
+13:59:57  stderr   Server: Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
+13:59:57  stderr   x-ms-request-id: 9b8c3c4b-101e-0036-4979-18c7e2000000
+13:59:57  stderr   x-ms-client-reques
+13:59:57  stderr   t-id: 2311fd00-9c1c-4a0d-a3c0-058d4f86c6e7
+13:59:57  stderr   x-ms-version: 2024-11-04
+13:59:57  stderr   x-ms-error-code: AuthorizationPermissionMismatch
+13:59:57  stderr   Date: Mon, 20 Jul 2026 18:59:56 GMT
+13:59:57  stderr   Content-Length: 279
+13:59:57  stderr   Content-Type: application/xml
+13:59:57  stderr   ); using base persona.
+13:59:57  stdout   info: Azure.AI.AgentServer.Core.AgentHostBuilder[0]
+13:59:57  stdout         AgentServer platform environment: IsHosted=True AgentName=homework-tutor AgentVersion=4 Port=8088 SessionId=ab02833655cbf287d2e3aee3e45fe2267dce8220715f48f7d4480d40ebab689 SseKeepAliveInterval=00:00
+13:59:57  stdout   :15 WebSocketKeepAliveInterval=00:00:30
+13:59:57  stdout   info: Azure.AI.AgentServer.Core.AgentHostBuilder[0]
+13:59:57  stdout         AgentServer connectivity: ProjectEndpoint=https://cog-qhz3h45p4ndyy.services.ai.azure.com OtlpEndpoint=(not set) AppInsightsConfigured=False
+13:59:57  stdout   info: Azure.AI.AgentServer.Core.AgentHostBuilder[0]
+13:59:57  stdout         AgentServer host options: ShutdownTimeout=00:00:30 Protocols=responses
+13:59:57  stdout   info: Azure.AI.AgentServer.Responses.Internal.ResponsesStartupLogger[0]
+13:59:57  stdout         Responses protocol configuration: StorageProvider=FoundryStorageProvider DefaultModel=(not set) DefaultFetchHistoryCount=100 EventStreamTtl=00:10:00
+13:59:57  stdout   warn: Microsoft.AspNetCore.Server.Kestrel[0]
+13:59:57  stdout         Overriding address(es) 'http://+:80'. Binding to endpoints defined via IConfiguration and/or UseKestrel() instead.
+13:59:57  stdout   info: Microsoft.Hosting.Lifetime[14]
+13:59:57  stdout         Now listening on: http://0.0.0.0:8088
+13:59:57  stdout   info: Microsoft.Hosting.Lifetime[0]
+13:59:57  stdout         Application started. Press Ctrl+C to shut down.
+13:59:57  stdout   info: Microsoft.Hosting.Lifetime[0]
+13:59:57  stdout         Hosting environment: Production
+13:59:57  stdout   info: Microsoft.Hosting.Lifetime[0]
+13:59:57  stdout         Content root path: /app
+13:59:58  stdout   info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+13:59:58  stdout         Request starting HTTP/1.1 GET http://f84e780b-1989-4b35-92f1-d31d19083a10--8088.northcentralus.adcproxy.io/readiness - - -
+13:59:58  stdout   info: Azure.AI.AgentServer.Core.Internal.InboundRequestLoggingMiddleware[1689694937]
+13:59:58  stdout         Inbound GET /readiness starting (x-request-id: , x-ms-client-request-id: , trace-id: a8a546d3ed83a76ebeb92df0d875c24e)
+13:59:58  stdout   info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+13:59:58  stdout         Executing endpoint 'Health checks'
+13:59:58  stdout   info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+13:59:58  stdout         Executed endpoint 'Health checks'
+13:59:58  stdout   info: Azure.AI.AgentServer.Core.Internal.InboundRequestLoggingMiddleware[194824245]
+13:59:58  stdout         Inbound GET /readiness completed HTTP 200 in 8ms (x-request-id: , x-ms-client-request-id: , trace-id: a8a546d3ed83a76ebeb92df0d875c24e)
+13:59:58  stdout   info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+13:59:58  stdout         Request finished HTTP/1.1 GET http://f84e780b-1989-4b35-92f1-d31d19083a10--8088.northcentralus.adcproxy.io/readiness - 200 - text/plain 55.6847ms
+13:59:58  stdout   info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+13:59:58  stdout         Request starting HTTP/1.1 POST http://f84e780b-1989-4b35-92f1-d31d19083a10--8088.northcentralus.adcproxy.io/responses - application/json 191
+13:59:58  stdout   info: Azure.AI.AgentServer.Core.Internal.InboundRequestLoggingMiddleware[1689694937]
+13:59:58  stdout         Inbound POST /responses starting (x-request-id: a8a546d3ed83a76ebeb92df0d875c24e, x-ms-client-request-id: 11257881-7a6d-44ec-943e-e2ff4be4f16b, trace-id: a8a546d3ed83a76ebeb92df0d875c24e)
+13:59:58  stdout   info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+13:59:58  stdout         Executing endpoint 'HTTP: POST /responses'
+13:59:58  stdout   info: Azure.AI.AgentServer.Responses.Internal.ResponseEndpointHandler[0]
+13:59:58  stdout         Creating response caresp_962ec624eb299bab00tX8eFh3zmBcJfykYQVuYBx5aIlocQmPe: Streaming=True Background=False Store=True Model= ConversationId=conv_962ec624eb299bab00L5UBlJ26iPi1zmL11LfTLy1I2NiaY2gp PreviousResponseId=(null) HasUserId=True HasCallId=True
+13:59:58  stdout   info: Azure.Identity[24]
+13:59:58  stdout         False MSAL 4.84.2.0 MSAL.NetCore .NET 10.0.9 Linux [2026-07-20 18:59:58Z - 3c9b56d3-2350-4cea-ab8a-e62db864ef12] [Internal cache] Total number of cache partitions found while getting access tokens: 1
+13:59:58  stdout   info: Azure.Identity[24]
+13:59:58  stdout         False MSAL 4.84.2.0 MSAL.NetCore .NET 10.0.9 Linux [2026-07-20 18:59:58Z - 3c9b56d3-2350-4cea-ab8a-e62db864ef12] [FindAccessTokenAsync] Discovered 1 access tokens in cache using partition key: system_assigned_managed_identity_managed_identity_AppTokenCache
+13:59:58  stdout   info: Azure.Identity[24]
+13:59:58  stdout         False MSAL 4.84.2.0 MSAL.NetCore .NET 10.0.9 Linux [2026-07-20 18:59:58Z - 3c9b56d3-2350-4cea-ab8a-e62db864ef12] [Internal cache] Total number of cache partitions found while getting access tokens: 1
+13:59:58  stdout   info: Azure.Identity[24]
+13:59:58  stdout         False MSAL 4.84.2.0 MSAL.NetCore .NET 10.0.9 Linux [2026-07-20 18:59:58Z - 3c9b56d3-2350-4cea-ab8a-e62db864ef12] [FindAccessTokenAsync] Discovered 1 access tokens in cache using partition key: system_assigned_managed_identity_managed_identity_AppTokenCache
+13:59:58  stdout   info: Azure.Identity[24]
+13:59:58  stdout         False MSAL 4.84.2.0 MSAL.NetCore .NET 10.0.9 Linux [2026-07-20 18:59:58Z] [Internal cache] Total number of cache partitions found while getting access tokens: 1
+13:59:58  stdout   info: Azure.Identity[24]
+13:59:58  stdout         False MSAL 4.84.2.0 MSAL.NetCore .NET 10.0.9 Linux [2026-07-20 18:59:58Z - 3c9b56d3-2350-4cea-ab8a-e62db864ef12] 
+13:59:58  stdout         [LogMetricsFromAuthResult] Cache Refresh Reason: NoCachedAccessToken
+13:59:58  stdout         [LogMetricsFromAuthResult] DurationInCacheInMs: 0
+13:59:58  stdout         [LogMetricsFromAuthResult] DurationTotalInMs: 408
+13:59:58  stdout         [LogMetricsFromAuthResult] DurationInHttpInMs: 0
+13:59:58  stdout   info: Azure.Identity[24]
+13:59:58  stdout         False MSAL 4.84.2.0 MSAL.NetCore .NET 10.0.9 Linux [2026-07-20 18:59:58Z - 3c9b56d3-2350-4cea-ab8a-e62db864ef12] TokenEndpoint: ****
+13:59:58  stdout   info: Azure.AI.AgentServer.Responses.Internal.FoundryStorageLoggingPolicy[194824245]
+13:59:58  stdout         Foundry storage GET ***/storage/history/item_ids?api-version=v1 completed HTTP 200 in 113ms (x-ms-client-request-id: 2bef43de-f310-4522-abfc-0dc05e7bd8fd, traceparent: , x-request-id: a8a546d3ed83a76ebeb92df0d875c24e, apim-request-id: 9ea49671-1d7e-4eb4-9409-c1587363c848, HasCallId: True)
+13:59:58  stdout   info: Azure.AI.AgentServer.Responses.Internal.ResponseEndpointHandler[0]
+13:59:58  stdout         SSE stream started for response caresp_962ec624eb299bab00tX8eFh3zmBcJfykYQVuYBx5aIlocQmPe
+13:59:58  stdout   info: Azure.AI.AgentServer.Responses.Internal.ResponseOrchestrator[0]
+13:59:58  stdout         Invoking handler AgentFrameworkResponseHandler for response caresp_962ec624eb299bab00tX8eFh3zmBcJfykYQVuYBx5aIlocQmPe
+13:59:59  stdout   info: Azure.Identity[24]
+13:59:59  stdout         False MSAL 4.84.2.0 MSAL.NetCore .NET 10.0.9 Linux [2026-07-20 18:59:59Z - 9401c222-7184-45cf-985c-82f9c6d32650] [Internal cache] Total number of cache partitions found while getting access tokens: 1
+13:59:59  stdout   info: Azure.Identity[24]
+13:59:59  stdout         False MSAL 4.84.2.0 MSAL.NetCore .NET 10.0.9 Linux [2026-07-20 18:59:59Z - 9401c222-7184-45cf-985c-82f9c6d32650] [FindAccessTokenAsync] Discovered 2 access tokens in cache using partition key: system_assigned_managed_identity_managed_identity_AppTokenCache
+13:59:59  stdout   info: Azure.Identity[24]
+13:59:59  stdout         False MSAL 4.84.2.0 MSAL.NetCore .NET 10.0.9 Linux [2026-07-20 18:59:59Z - 9401c222-7184-45cf-985c-82f9c6d32650] 
+13:59:59  stdout         [LogMetricsFromAuthResult] Cache Refresh Reason: NotApplicable
+13:59:59  stdout         [LogMetricsFromAuthResult] DurationInCacheInMs: 0
+13:59:59  stdout         [LogMetricsFromAuthResult] DurationTotalInMs: 1
+13:59:59  stdout         [LogMetricsFromAuthResult] DurationInHttpInMs: 0
+13:59:59  stdout   info: Azure.Identity[24]
+13:59:59  stdout         False MSAL 4.84.2.0 MSAL.NetCore .NET 10.0.9 Linux [2026-07-20 18:59:59Z - 9401c222-7184-45cf-985c-82f9c6d32650] TokenEndpoint: ****
+14:00:00  stdout   info: Azure.AI.AgentServer.Responses.Internal.FoundryStorageLoggingPolicy[194824245]
+14:00:00  stdout         Foundry storage POST ***/storage/responses?api-version=v1 completed HTTP 201 in 132ms (x-ms-client-request-id: 80d3ec51-426a-444c-bf2c-74b2c567b69e, traceparent: , x-request-id: a8a546d3ed83a76ebeb92df0d875c24e, apim-request-id: de6754da-cc19-4510-a2b3-cf095a4b8c9e, HasCallId: True)
+14:00:00  stdout   info: Azure.AI.AgentServer.Responses.Internal.ResponseEndpointHandler[0]
+14:00:00  stdout         SSE stream completed for response caresp_962ec624eb299bab00tX8eFh3zmBcJfykYQVuYBx5aIlocQmPe
+14:00:00  stdout   info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+14:00:00  stdout         Executed endpoint 'HTTP: POST /responses'
+14:00:00  stdout   info: Azure.AI.AgentServer.Core.Internal.InboundRequestLoggingMiddleware[194824245]
+14:00:00  stdout         Inbound POST /responses completed HTTP 200 in 2112ms (x-request-id: a8a546d3ed83a76ebeb92df0d875c24e, x-ms-client-request-id: 11257881-7a6d-44ec-943e-e2ff4be4f16b, trace-id: a8a546d3ed83a76ebeb92df0d875c24e)
+14:00:00  stdout   info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+14:00:00  stdout         Request finished HTTP/1.1 POST http://f84e780b-1989-4b35-92f1-d31d19083a10--8088.northcentralus.adcproxy.io/responses - 200 - text/event-stream;+charset=utf-8 2115.2438ms
+                   
+14:00:25  status   Successfully connected to container

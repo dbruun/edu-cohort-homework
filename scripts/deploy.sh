@@ -1,23 +1,39 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ENVIRONMENT_NAME="${1:-dev}"
-LOCATION="${2:-eastus2}"
-FOUNDRY_PROJECT_ENDPOINT="${3:-${FOUNDRY_PROJECT_ENDPOINT:-https://example.services.ai.azure.com/api/projects/demo}}"
-TOOLBOX_ENDPOINT="${4:-${TOOLBOX_ENDPOINT:-https://example.services.ai.azure.com/api/projects/demo/toolboxes/homework-toolbox/mcp?api-version=v1}}"
-MODEL_DEPLOYMENT_NAME="${5:-${AZURE_AI_MODEL_DEPLOYMENT_NAME:-gpt-4o}}"
+ENVIRONMENT_NAME="${1:-homework-tutor}"
+LOCATION="${2:-northcentralus}"
+MODEL_DEPLOYMENT_NAME="${3:-gpt-5.4-mini}"
 
-echo "Provisioning Azure resources for $ENVIRONMENT_NAME in $LOCATION..."
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+AGENT_PROJECT="$(cd "$SCRIPT_DIR/../foundry-tutor/hello-world-dotnet-agent-framework" && pwd)"
 
-if ! azd env select "$ENVIRONMENT_NAME" >/dev/null 2>&1; then
-  azd env new "$ENVIRONMENT_NAME" --no-prompt >/dev/null
+echo "==> Installing required azd Foundry extensions..."
+azd extension install azure.ai.projects  >/dev/null
+azd extension install azure.ai.inspector >/dev/null
+azd extension install azure.ai.agents    >/dev/null
+
+cd "$AGENT_PROJECT"
+
+echo "==> Selecting/creating azd environment '$ENVIRONMENT_NAME' (resource group will be rg-$ENVIRONMENT_NAME)..."
+if ! azd env select "$ENVIRONMENT_NAME" 2>/dev/null; then
+  azd env new "$ENVIRONMENT_NAME" --no-prompt
 fi
 
+SUBSCRIPTION_ID="$(az account show --query id -o tsv)"
+echo "==> Using subscription $SUBSCRIPTION_ID in $LOCATION"
+azd env set AZURE_SUBSCRIPTION_ID "$SUBSCRIPTION_ID" >/dev/null
 azd env set AZURE_LOCATION "$LOCATION" >/dev/null
-azd env set FOUNDRY_PROJECT_ENDPOINT "$FOUNDRY_PROJECT_ENDPOINT" >/dev/null
-azd env set TOOLBOX_ENDPOINT "$TOOLBOX_ENDPOINT" >/dev/null
+# Must be set before deploy so the agent container starts with a valid model deployment.
 azd env set AZURE_AI_MODEL_DEPLOYMENT_NAME "$MODEL_DEPLOYMENT_NAME" >/dev/null
-azd env set PEDAGOGY_POLICY_URI "./Pedagogy/pedagogy-policy.json" >/dev/null
 
-azd provision --environment "$ENVIRONMENT_NAME"
-azd deploy --environment "$ENVIRONMENT_NAME"
+echo "==> Provisioning Foundry project + model..."
+azd provision --no-prompt
+
+echo "==> Deploying hosted agent..."
+azd deploy --no-prompt
+
+echo "==> Smoke testing the deployed agent..."
+azd ai agent invoke "Can you help me get started on a homework problem?"
+
+echo "==> Done. View the agent with: azd ai agent show --output json"

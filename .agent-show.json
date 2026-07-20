@@ -1,0 +1,2 @@
+
+ERROR: failed to get agent version: HTTP request failed: AzureDeveloperCLICredential: {"error":"AADSTS700082: The refresh token has expired due to inactivity.┬áThe token was issued on 2026-01-14T17:27:29.1563478Z and was inactive for 90.00:00:00. Trace ID: 2a658af4-0b04-46cc-97ab-4bda26421400 Correlation ID: b9d595b9-fa8f-4eb8-b5cc-6388b97d70d0 Timestamp: 2026-07-20 16:22:42Z","message":"Login expired.","suggestion":"login expired, run `azd auth login` to acquire a new token."}. To troubleshoot, visit https://aka.ms/azsdk/go/identity/troubleshoot#azd

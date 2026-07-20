@@ -1,0 +1,19 @@
+
+Deploying services (azd deploy)
+
+Deploying service homework-agent
+Publishing service homework-agent (Packing remote build context)
+Publishing service homework-agent (Uploading remote build context)
+Deploying service homework-agent (Updating container app revision)
+Deploying service homework-agent (Fetching endpoints for container app service)
+  (Γ£ô) Done: Deploying service homework-agent
+  - Endpoint: https://ca-homework-agent-eduhwdev.redocean-a9fb17a9.eastus2.azurecontainerapps.io/
+
+
+SUCCESS: Your application was deployed to Azure in 1 minute 9 seconds.
+You can view the resources created under the resource group rg-eduhwdev in Azure Portal:
+https://portal.azure.com/#@/resource/subscriptions/5aad3035-2739-48d7-834c-e6ab46477d14/resourceGroups/rg-eduhwdev/overview
+WARNING: your version of azd is out of date, you have 1.20.0 and the latest version is 1.28.0
+
+To update to the latest version, run:
+winget upgrade Microsoft.Azd

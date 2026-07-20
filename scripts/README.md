@@ -1,31 +1,47 @@
 # Deployment scripts
 
-Use these scripts to provision and deploy the accelerator to Azure with Azure Developer CLI.
+These scripts deploy the **EDU Homework Tutor** as a hosted agent on Microsoft Foundry
+using the Azure Developer CLI (`azd`). They are turnkey: a new user who has never
+touched this project can run one command and get a working, deployed agent.
+
+## What they do
+
+1. Install the required `azd` Foundry extensions (`azure.ai.agents` and dependencies).
+2. Create/select an `azd` environment (this also names the resource group `rg-<env>`).
+3. Set the subscription, region, and model deployment name.
+4. Provision the Foundry project + model (`azd provision`).
+5. Deploy the hosted agent (`azd deploy`).
+6. Run a smoke-test invocation.
+
+## Prerequisites
+
+- [Azure Developer CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd) **1.28+**
+- [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli)
+- .NET 10 SDK
+- Log in first: `azd auth login` and `az login`.
 
 ## PowerShell
 
 ```powershell
-./scripts/deploy.ps1 -EnvironmentName dev -Location eastus2
-```
-
-You can also pass explicit Foundry settings if you want to override the defaults:
-
-```powershell
-./scripts/deploy.ps1 -EnvironmentName dev -Location eastus2 -FoundryProjectEndpoint https://example.services.ai.azure.com/api/projects/demo -ToolboxEndpoint https://example.services.ai.azure.com/api/projects/demo/toolboxes/homework-toolbox/mcp?api-version=v1 -ModelDeploymentName gpt-4o
+./scripts/deploy.ps1 -EnvironmentName homework-tutor -Location northcentralus
 ```
 
 ## Bash
 
 ```bash
-bash ./scripts/deploy.sh dev eastus2
+bash ./scripts/deploy.sh homework-tutor northcentralus
 ```
 
-The scripts now also configure the runtime values consumed by the agent for:
-- Foundry project endpoint
-- toolbox endpoint
-- model deployment name
-- pedagogy policy path
+## Parameters
 
-Prerequisites:
-- Azure Developer CLI installed and authenticated
-- An Azure subscription selected
+| Parameter | Default | Notes |
+|-----------|---------|-------|
+| Environment name | `homework-tutor` | Also becomes the resource-group suffix (`rg-<env>`). |
+| Location | `northcentralus` | Needs Foundry + model quota. |
+| Model deployment name | `gpt-5.4-mini` | Must match a `deployments[].name` in the agent `azure.yaml`. |
+
+## Tearing down
+
+```bash
+azd down --environment homework-tutor --force --purge
+```

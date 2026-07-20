@@ -1,0 +1,10 @@
+
+Let's get your development environment ready.
+
+Discover and install Azure development tools such as Azure CLI, GitHub Copilot CLI, and Azure AI extensions.
+To skip this check, set AZD_SKIP_FIRST_RUN=true or run azd config set tool.firstRunCompleted true.
+
+
+[0C[2K
+? Would you like to check your Azure development tools?: [Y/n] Yes
+[1A

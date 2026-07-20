@@ -1,38 +1,47 @@
 param(
-  [string]$EnvironmentName = "dev",
-  [string]$Location = "eastus2",
-  [string]$FoundryProjectEndpoint = $env:FOUNDRY_PROJECT_ENDPOINT,
-  [string]$ToolboxEndpoint = $env:TOOLBOX_ENDPOINT,
-  [string]$ModelDeploymentName = $env:AZURE_AI_MODEL_DEPLOYMENT_NAME
+  [string]$EnvironmentName = "homework-tutor",
+  [string]$Location = "northcentralus",
+  [string]$ModelDeploymentName = "gpt-5.4-mini"
 )
 
 $ErrorActionPreference = "Stop"
 
-if ([string]::IsNullOrWhiteSpace($FoundryProjectEndpoint)) {
-  $FoundryProjectEndpoint = "https://example.services.ai.azure.com/api/projects/demo"
-}
+# Path to the hosted Foundry agent project (contains azure.yaml with host: azure.ai.agent).
+$AgentProject = Join-Path $PSScriptRoot ".." "foundry-tutor" "hello-world-dotnet-agent-framework"
+$AgentProject = (Resolve-Path $AgentProject).Path
 
-if ([string]::IsNullOrWhiteSpace($ToolboxEndpoint)) {
-  $ToolboxEndpoint = "https://example.services.ai.azure.com/api/projects/demo/toolboxes/homework-toolbox/mcp?api-version=v1"
-}
+Write-Host "==> Installing required azd Foundry extensions..."
+azd extension install azure.ai.projects  | Out-Null
+azd extension install azure.ai.inspector | Out-Null
+azd extension install azure.ai.agents    | Out-Null
 
-if ([string]::IsNullOrWhiteSpace($ModelDeploymentName)) {
-  $ModelDeploymentName = "gpt-4o"
-}
-
-Write-Host "Provisioning Azure resources for $EnvironmentName in $Location..."
-
+Push-Location $AgentProject
 try {
-  azd env select $EnvironmentName | Out-Null
-} catch {
-  azd env new $EnvironmentName --no-prompt | Out-Null
+  Write-Host "==> Selecting/creating azd environment '$EnvironmentName' (resource group will be rg-$EnvironmentName)..."
+  azd env select $EnvironmentName 2>$null
+  if ($LASTEXITCODE -ne 0) {
+    azd env new $EnvironmentName --no-prompt
+    if ($LASTEXITCODE -ne 0) { throw "Failed to create azd environment '$EnvironmentName'." }
+  }
+
+  $SubscriptionId = az account show --query id -o tsv
+  Write-Host "==> Using subscription $SubscriptionId in $Location"
+  azd env set AZURE_SUBSCRIPTION_ID $SubscriptionId | Out-Null
+  azd env set AZURE_LOCATION $Location | Out-Null
+  # Must be set before deploy so the agent container starts with a valid model deployment.
+  azd env set AZURE_AI_MODEL_DEPLOYMENT_NAME $ModelDeploymentName | Out-Null
+
+  Write-Host "==> Provisioning Foundry project + model..."
+  azd provision --no-prompt
+
+  Write-Host "==> Deploying hosted agent..."
+  azd deploy --no-prompt
+
+  Write-Host "==> Smoke testing the deployed agent..."
+  azd ai agent invoke "Can you help me get started on a homework problem?"
+
+  Write-Host "==> Done. View the agent with: azd ai agent show --output json"
 }
-
-azd env set AZURE_LOCATION $Location | Out-Null
-azd env set FOUNDRY_PROJECT_ENDPOINT $FoundryProjectEndpoint | Out-Null
-azd env set TOOLBOX_ENDPOINT $ToolboxEndpoint | Out-Null
-azd env set AZURE_AI_MODEL_DEPLOYMENT_NAME $ModelDeploymentName | Out-Null
-azd env set PEDAGOGY_POLICY_URI "./Pedagogy/pedagogy-policy.json" | Out-Null
-
-azd provision --environment $EnvironmentName
-azd deploy --environment $EnvironmentName
+finally {
+  Pop-Location
+}

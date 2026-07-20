@@ -1,0 +1,27 @@
+
+Provisioning Azure resources (azd provision)
+Provisioning Azure resources can take some time.
+
+Reading subscription and location from environment...
+Subscription: ME-MngEnvMCAP003733-derekbruun-1 (5aad3035-2739-48d7-834c-e6ab46477d14)
+Location: North Central US
+
+Preparing Foundry provisioning template...
+Starting ARM deployment "azd-foundry-hello-world-dotnet-agent-framework-dev-ba805e01"...
+Foundry deployment in progress
+Foundry deployment in progress
+Foundry deployment in progress
+Foundry deployment in progress
+Foundry deployment in progress
+Foundry deployment in progress
+Foundry deployment in progress
+Foundry deployment in progress
+Foundry deployment in progress
+Foundry deployment in progress
+Foundry deployment in progress
+Foundry deployment in progress
+Foundry deployment complete
+
+SUCCESS: Your application was provisioned in Azure in 1 minute 10 seconds.
+You can view the resources created under the resource group rg-hello-world-dotnet-agent-framework-dev in Azure Portal:
+https://portal.azure.com/#@/resource/subscriptions/5aad3035-2739-48d7-834c-e6ab46477d14/resourceGroups/rg-hello-world-dotnet-agent-framework-dev/overview
