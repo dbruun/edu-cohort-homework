@@ -1,0 +1,14 @@
+name: homework-toolbox
+description: Curated knowledge access for the EDU homework tutor.
+tools:
+  - type: azure_ai_search
+    name: course-search
+    description: Search course-specific knowledge and assignment guidance.
+    azure_ai_search:
+      indexes:
+        - index_name: course-materials
+          project_connection_id: course-knowledge-connection
+      top_k: 5
+      query_type: vector_semantic_hybrid
+  - type: toolbox_search_preview
+    description: Dynamically route requests to the most relevant tools.

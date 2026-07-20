@@ -1,0 +1,8 @@
+{
+  "name": "professor-api",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "node -e \"console.log('Function API build complete')\""
+  }
+}

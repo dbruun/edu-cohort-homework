@@ -1,0 +1,14 @@
+name: edu-homework-accelerator
+metadata:
+  template: edu-homework-accelerator@0.1.0
+services:
+  homework-agent:
+    project: ./src/HomeworkAgent
+    host: containerapp
+    language: dotnet
+  professor-ui:
+    project: ./ui/app
+    host: staticwebapp
+  professor-api:
+    project: ./ui/api
+    host: function
