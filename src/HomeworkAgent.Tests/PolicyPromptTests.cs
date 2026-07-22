@@ -69,4 +69,51 @@ public class PolicyPromptTests
             File.Delete(tempPath);
         }
     }
+
+    [Fact]
+    public void CourseGroupOverridesApplyToMemberCourses()
+    {
+        var policy = new PedagogyPolicy
+        {
+            HelpLevel = "guided",
+            MaxStepsRevealed = 3,
+            AllowDirectAnswers = false,
+            CitationsRequired = true,
+            CourseGroups = new List<CourseGroup>
+            {
+                new()
+                {
+                    Name = "Group 1",
+                    Courses = new List<string> { "CS101", "CS102" },
+                    HelpLevel = "hint_only",
+                    AllowDirectAnswers = false,
+                    MaxStepsRevealed = 1
+                }
+            }
+        };
+
+        var resolved = policy.ResolveForCourse("CS101");
+
+        Assert.Equal("hint_only", resolved.HelpLevel);
+        Assert.Equal(1, resolved.MaxStepsRevealed);
+        // Fields the group leaves unset inherit the top-level default.
+        Assert.True(resolved.CitationsRequired);
+    }
+
+    [Fact]
+    public void CourseNotInAnyGroupUsesDefaults()
+    {
+        var policy = new PedagogyPolicy
+        {
+            HelpLevel = "guided",
+            CourseGroups = new List<CourseGroup>
+            {
+                new() { Name = "Group 1", Courses = new List<string> { "CS101" }, HelpLevel = "hint_only" }
+            }
+        };
+
+        var resolved = policy.ResolveForCourse("HIST200");
+
+        Assert.Equal("guided", resolved.HelpLevel);
+    }
 }

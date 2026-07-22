@@ -7,6 +7,16 @@
     "math": "guided",
     "science": "hint_only"
   },
+  "courseGroups": [
+    {
+      "name": "Group 1 - Intro CS",
+      "courses": ["CS101", "CS102"],
+      "helpLevel": "hint_only",
+      "maxStepsRevealed": 1,
+      "allowDirectAnswers": false,
+      "citationsRequired": true
+    }
+  ],
   "refusalMessage": "I can help guide you, but I will not provide a complete solution for graded work.",
   "escalationMessage": "Please ask for a hint or a step-by-step explanation instead of a full answer."
 }
