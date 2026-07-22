@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 
 const defaultPolicy = {
+  professorId: 'prof-adams',
+  professorName: 'Dr. Adams',
   helpLevel: 'guided',
   maxStepsRevealed: 3,
   allowDirectAnswers: false,
@@ -12,7 +14,10 @@ const defaultPolicy = {
   courseGroups: [
     {
       name: 'Group 1 - Intro CS',
-      courses: ['CS101', 'CS102'],
+      courses: [
+        { id: 'CS101', description: 'Introduction to Programming' },
+        { id: 'CS102', description: 'Data Structures and Algorithms' }
+      ],
       helpLevel: 'hint_only',
       maxStepsRevealed: 1,
       allowDirectAnswers: false,
@@ -74,12 +79,14 @@ export default function App() {
     updateGroups(courseGroups.map((group, i) => (i === index ? { ...group, [field]: value } : group)));
   };
 
-  const addCourseToGroup = (index, courseId) => {
+  const addCourseToGroup = (index, courseId, courseDescription) => {
     const id = courseId.trim();
     if (!id) return;
     updateGroups(
       courseGroups.map((group, i) =>
-        i === index && !group.courses.includes(id) ? { ...group, courses: [...group.courses, id] } : group
+        i === index && !group.courses.some((c) => c.id === id)
+          ? { ...group, courses: [...group.courses, { id, description: (courseDescription || '').trim() }] }
+          : group
       )
     );
   };
@@ -87,7 +94,7 @@ export default function App() {
   const removeCourseFromGroup = (index, courseId) => {
     updateGroups(
       courseGroups.map((group, i) =>
-        i === index ? { ...group, courses: group.courses.filter((c) => c !== courseId) } : group
+        i === index ? { ...group, courses: group.courses.filter((c) => c.id !== courseId) } : group
       )
     );
   };
@@ -116,6 +123,21 @@ export default function App() {
     <main style={{ fontFamily: 'Segoe UI, sans-serif', maxWidth: 900, margin: '0 auto', padding: 24 }}>
       <h1>Professor Portal</h1>
       <p>Adjust how much support the tutor offers to students without redeploying the agent.</p>
+
+      <section style={{ background: '#f6f8fb', borderRadius: 12, padding: 20, marginBottom: 20 }}>
+        <h2>Professor</h2>
+        <p style={{ color: '#5b6b85', marginTop: 0 }}>This pedagogy belongs to you. Students taking courses from other professors get each professor's own settings.</p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <label>
+            Name
+            <input value={policy.professorName || ''} onChange={(event) => updateField('professorName', event.target.value)} style={{ display: 'block', marginTop: 6, width: '100%', padding: 8 }} />
+          </label>
+          <label>
+            Professor ID
+            <input value={policy.professorId || ''} onChange={(event) => updateField('professorId', event.target.value)} style={{ display: 'block', marginTop: 6, width: '100%', padding: 8 }} />
+          </label>
+        </div>
+      </section>
 
       <section style={{ background: '#f6f8fb', borderRadius: 12, padding: 20, marginBottom: 20 }}>
         <h2>Pedagogy controls</h2>
@@ -175,23 +197,35 @@ export default function App() {
             </div>
 
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
-              {group.courses.map((courseId) => (
-                <span key={courseId} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#eef2ff', color: '#3730a3', borderRadius: 999, padding: '4px 10px', fontSize: 14 }}>
-                  {courseId}
-                  <button onClick={() => removeCourseFromGroup(index, courseId)} style={{ border: 'none', background: 'transparent', color: '#3730a3', cursor: 'pointer', fontSize: 14, lineHeight: 1 }}>
+              {group.courses.map((course) => (
+                <span key={course.id} title={course.description} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#eef2ff', color: '#3730a3', borderRadius: 999, padding: '4px 10px', fontSize: 14 }}>
+                  <strong>{course.id}</strong>
+                  {course.description ? <span style={{ color: '#4f46e5' }}>&mdash; {course.description}</span> : null}
+                  <button onClick={() => removeCourseFromGroup(index, course.id)} style={{ border: 'none', background: 'transparent', color: '#3730a3', cursor: 'pointer', fontSize: 14, lineHeight: 1 }}>
                     ×
                   </button>
                 </span>
               ))}
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
               <input
-                placeholder="Add course ID + Enter"
+                placeholder="Course ID"
+                data-role="course-id"
+                style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 14, width: 120 }}
+              />
+              <input
+                placeholder="Description"
+                data-role="course-desc"
                 onKeyDown={(event) => {
                   if (event.key === 'Enter') {
-                    addCourseToGroup(index, event.target.value);
+                    const row = event.target.parentElement;
+                    const idInput = row.querySelector('[data-role="course-id"]');
+                    addCourseToGroup(index, idInput.value, event.target.value);
+                    idInput.value = '';
                     event.target.value = '';
                   }
                 }}
-                style={{ padding: '4px 10px', borderRadius: 999, border: '1px dashed #cbd5e1', fontSize: 14 }}
+                style={{ flex: 1, padding: '6px 10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 14 }}
               />
             </div>
 

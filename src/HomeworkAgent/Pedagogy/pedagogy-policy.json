@@ -1,4 +1,6 @@
 {
+  "professorId": "prof-adams",
+  "professorName": "Dr. Adams",
   "helpLevel": "guided",
   "maxStepsRevealed": 3,
   "allowDirectAnswers": false,
@@ -10,7 +12,10 @@
   "courseGroups": [
     {
       "name": "Group 1 - Intro CS",
-      "courses": ["CS101", "CS102"],
+      "courses": [
+        { "id": "CS101", "description": "Introduction to Programming" },
+        { "id": "CS102", "description": "Data Structures and Algorithms" }
+      ],
       "helpLevel": "hint_only",
       "maxStepsRevealed": 1,
       "allowDirectAnswers": false,

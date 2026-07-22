@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Professor Portal preview</title>
+    <style>body { margin: 0; background: #eef1f6; }</style>
+  </head>
+  <body>
+    <main style="font-family: 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 24px;">
+      <h1>Professor Portal</h1>
+      <p>Adjust how much support the tutor offers to students without redeploying the agent.</p>
+
+      <section style="background: #f6f8fb; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+        <h2>Professor</h2>
+        <p style="color: #5b6b85; margin-top: 0;">This pedagogy belongs to you. Students taking courses from other professors get each professor's own settings.</p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <label>Name<input value="Dr. Adams" style="display: block; margin-top: 6px; width: 100%; padding: 8px;" /></label>
+          <label>Professor ID<input value="prof-adams" style="display: block; margin-top: 6px; width: 100%; padding: 8px;" /></label>
+        </div>
+      </section>
+
+      <section style="background: #f6f8fb; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+        <h2>Pedagogy controls</h2>
+        <label>Help style
+          <select style="display: block; margin-top: 8px; width: 100%; padding: 8px;">
+            <option>Hint only</option><option selected>Guided</option><option>Worked example</option><option>Full solution</option>
+          </select>
+        </label>
+        <label style="display: block; margin-top: 16px;">Maximum steps revealed
+          <input type="range" min="1" max="8" value="3" style="display: block; width: 100%; margin-top: 8px;" /><span>3</span>
+        </label>
+        <label style="display: block; margin-top: 16px;"><input type="checkbox" /> Allow direct answers</label>
+        <label style="display: block; margin-top: 16px;"><input type="checkbox" checked /> Require citations</label>
+        <button style="margin-top: 20px; padding: 10px 16px; border-radius: 8px; border: none; background: #2563eb; color: white; cursor: pointer;">Save policy</button>
+      </section>
+
+      <section style="background: #f6f8fb; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <h2 style="margin: 0;">Course groups</h2>
+          <button style="padding: 8px 14px; border-radius: 8px; border: 1px solid #2563eb; background: white; color: #2563eb; cursor: pointer;">+ Add group</button>
+        </div>
+        <p style="color: #5b6b85; margin-top: 6px;">Group courses that should share the same tutor limits. A course in a group uses the group's limits; anything left unset falls back to the defaults above.</p>
+
+        <div style="background: white; border: 1px solid #dbe2ea; border-radius: 10px; padding: 16px; margin-top: 14px;">
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <input value="Group 1 - Intro CS" style="flex: 1; padding: 8px; border-radius: 8px; border: 1px solid #cbd5e1; font-weight: 600;" />
+            <button style="padding: 8px 12px; border-radius: 8px; border: 1px solid #ef4444; background: white; color: #ef4444; cursor: pointer;">Remove</button>
+          </div>
+
+          <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px;">
+            <span style="display: inline-flex; align-items: center; gap: 6px; background: #eef2ff; color: #3730a3; border-radius: 999px; padding: 4px 10px; font-size: 14px;">
+              <strong>CS101</strong><span style="color: #4f46e5;">&mdash; Introduction to Programming</span>
+              <button style="border: none; background: transparent; color: #3730a3; cursor: pointer; font-size: 14px;">&times;</button>
+            </span>
+            <span style="display: inline-flex; align-items: center; gap: 6px; background: #eef2ff; color: #3730a3; border-radius: 999px; padding: 4px 10px; font-size: 14px;">
+              <strong>CS102</strong><span style="color: #4f46e5;">&mdash; Data Structures and Algorithms</span>
+              <button style="border: none; background: transparent; color: #3730a3; cursor: pointer; font-size: 14px;">&times;</button>
+            </span>
+          </div>
+          <div style="display: flex; gap: 8px; margin-top: 10px;">
+            <input placeholder="Course ID" style="padding: 6px 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 14px; width: 120px;" />
+            <input placeholder="Description" style="flex: 1; padding: 6px 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 14px;" />
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px;">
+            <label style="font-size: 14px;">Help style
+              <select style="display: block; margin-top: 6px; width: 100%; padding: 8px;">
+                <option selected>Hint only</option><option>Guided</option><option>Worked example</option><option>Full solution</option>
+              </select>
+            </label>
+            <label style="font-size: 14px;">Maximum steps revealed
+              <input type="range" min="1" max="8" value="1" style="display: block; width: 100%; margin-top: 10px;" /><span>1</span>
+            </label>
+          </div>
+          <div style="display: flex; gap: 20px; margin-top: 12px;">
+            <label style="font-size: 14px;"><input type="checkbox" /> Allow direct answers</label>
+            <label style="font-size: 14px;"><input type="checkbox" checked /> Require citations</label>
+          </div>
+        </div>
+      </section>
+
+      <section style="background: #fff; border: 1px solid #dbe2ea; border-radius: 12px; padding: 20px;">
+        <h2>Knowledge sources</h2>
+        <ul><li>course-materials</li><li>assignment-guidance</li></ul>
+        <p>Help level: guided; steps: 3; direct answers: blocked</p>
+        <p>Policy loaded from the API.</p>
+      </section>
+    </main>
+  </body>
+</html>
