@@ -68,20 +68,28 @@ Keeping these separate is what lets professors change tutoring behavior and know
 
 The portal is where the "professor-owned pedagogy" promise lives:
 
-- a **React UI** ([../ui/app/src/App.jsx](../ui/app/src/App.jsx)) with controls for help style, maximum steps revealed, direct-answer toggle, and citation requirement, and
+- a **React UI** ([../ui/app/src/App.jsx](../ui/app/src/App.jsx)) with controls for professor identity, help style, maximum steps revealed, direct-answer toggle, citation requirement, and **course groups**, and
 - a **policy API** ([../ui/api/index.js](../ui/api/index.js)) that reads the current policy on load and writes edits back via `GET`/`POST /api/policy`.
 
-The UI and API round-trip the same pedagogy policy document the tutor consumes, so a professor's edits flow into the tutor's behavior.
+The UI and API round-trip the same pedagogy policy document the tutor consumes, so a professor's edits flow into the tutor's behavior. Here is the portal, showing the professor identity and a course group:
+
+![Professor portal](assets/portal-preview.svg)
+
+*(The image above is a rendered mockup of the portal UI. A live, interactive version is at [portal-preview.html](portal-preview.html).)*
 
 ## Pedagogy as configuration
 
 The policy is a small, declarative JSON document:
 
+- **professorId / professorName** — the professor who owns this pedagogy
 - **helpLevel** — `hint_only`, `guided`, `worked_example`, or `full_solution`
 - **maxStepsRevealed** — how much of a solution the tutor may expose at once
 - **allowDirectAnswers** — whether a direct solution is ever permitted
 - **citationsRequired** — whether responses must cite sources
 - **subjectOverrides** — per-subject adjustments layered on the defaults
+- **courseGroups** — named groups of courses (each with an ID and description) that share one set of limits
+
+Because a student can take courses from multiple professors, the tutor resolves the pedagogy from whichever professor **owns** the course being asked about, then applies that professor's course-group limits. See the [configuration guide](configuration.md) for the full schema.
 
 Because the tutor reads this policy rather than hardcoding it, the same deployed agent behaves differently across courses and assignments. See the [configuration guide](configuration.md) for the full schema.
 

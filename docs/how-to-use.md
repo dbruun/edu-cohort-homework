@@ -29,6 +29,10 @@ Professors shape the tutor through the **professor portal** ([../ui/app/src/App.
 - whether **direct answers** are ever allowed, and
 - whether **citations** are required.
 
+**Course groups.** Rather than configuring each course individually, group courses that should share the same limits. Each course in a group carries an ID and a description (for example `CS101 — Introduction to Programming`), and every course in the group inherits the group's limits; anything left unset falls back to your defaults.
+
+**Professor ownership.** Your pedagogy is tied to you (`professorId` / `professorName`). A student taking courses from several professors is held to each professor's own settings — the tutor picks the right pedagogy based on which professor owns the course.
+
 The portal loads the current policy and saves your edits back through its API (`GET`/`POST /api/policy`). You can run it locally today:
 
 ```bash

@@ -28,11 +28,15 @@ The policy is a small JSON document. Its schema matches [../src/HomeworkAgent/Pe
 | `subjectOverrides` | object | `{}` | Per-subject help-level overrides |
 | `refusalMessage` | string | provided | Shown when the tutor declines to solve graded work outright |
 | `escalationMessage` | string | provided | Nudges the student toward a more specific ask |
+| `professorId` / `professorName` | string | provided | Identify the professor who owns this pedagogy |
+| `courseGroups` | array | `[]` | Named groups of courses that share the same limits |
 
 **Example policy:**
 
 ```json
 {
+  "professorId": "prof-adams",
+  "professorName": "Dr. Adams",
   "helpLevel": "guided",
   "maxStepsRevealed": 3,
   "allowDirectAnswers": false,
@@ -40,9 +44,26 @@ The policy is a small JSON document. Its schema matches [../src/HomeworkAgent/Pe
   "subjectOverrides": {
     "math": "guided",
     "science": "hint_only"
-  }
+  },
+  "courseGroups": [
+    {
+      "name": "Group 1 - Intro CS",
+      "courses": [
+        { "id": "CS101", "description": "Introduction to Programming" },
+        { "id": "CS102", "description": "Data Structures and Algorithms" }
+      ],
+      "helpLevel": "hint_only",
+      "maxStepsRevealed": 1
+    }
+  ]
 }
 ```
+
+### Professor ownership and course groups
+
+Each pedagogy is **owned by a professor** (`professorId` / `professorName`). Because a student can take courses from multiple professors, the tutor resolves the pedagogy from whichever professor owns the course being asked about — so two students in the same session can be held to different rules set by different instructors.
+
+Within a professor's pedagogy, **course groups** let one set of limits apply to many courses at once. Each course carries an `id` and a human-readable `description`. A course in a group uses that group's limits; any field the group leaves unset falls back to the professor's top-level defaults. Resolution is implemented in [../src/HomeworkAgent/Pedagogy/PedagogyPolicy.cs](../src/HomeworkAgent/Pedagogy/PedagogyPolicy.cs) (`PedagogyCatalog.ResolveForCourse` → `PedagogyPolicy.ResolveForCourse`).
 
 ### How the policy is applied
 

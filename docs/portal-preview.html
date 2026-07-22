@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Professor Portal — preview</title>
+<style>
+  :root { --bg:#eef1f6; --card:#f6f8fb; --border:#e2e8f0; --line:#cbd5e1; --ink:#0f172a; --muted:#5b6b85; --blue:#2563eb; --chip:#eef2ff; --chipink:#3730a3; --red:#ef4444; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:"Segoe UI",Arial,sans-serif; }
+  .wrap { max-width:820px; margin:0 auto; padding:32px 24px 64px; }
+  h1 { font-size:26px; margin:0 0 4px; }
+  .sub { color:var(--muted); font-size:13px; margin:0 0 20px; }
+  .banner { background:#fff7ed; border:1px solid #fed7aa; color:#9a3412; font-size:12px; border-radius:8px; padding:8px 12px; margin-bottom:20px; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:16px; }
+  .card h2 { font-size:18px; margin:0 0 6px; }
+  .hint { color:var(--muted); font-size:12px; margin:0 0 14px; }
+  label { display:block; font-size:12px; color:#334155; margin:10px 0 4px; }
+  input[type=text], select { width:100%; padding:7px 10px; border:1px solid var(--line); border-radius:6px; font-size:13px; background:#fff; }
+  .row { display:flex; gap:12px; }
+  .row > div { flex:1; }
+  .checks { display:flex; gap:24px; align-items:center; margin-top:14px; flex-wrap:wrap; }
+  .checks label { display:flex; align-items:center; gap:6px; margin:0; font-size:13px; }
+  .btn { border:none; background:var(--blue); color:#fff; border-radius:8px; padding:8px 16px; font-size:13px; cursor:pointer; }
+  .btn.ghost { background:#fff; color:var(--blue); border:1px solid var(--blue); }
+  .btn.danger { background:#fff; color:var(--red); border:1px solid var(--red); }
+  .head { display:flex; justify-content:space-between; align-items:center; }
+  .group { background:#fff; border:1px solid #dbe2ea; border-radius:10px; padding:14px; margin-top:12px; }
+  .chips { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0; }
+  .chip { background:var(--chip); color:var(--chipink); border-radius:14px; padding:4px 10px; font-size:12px; display:flex; align-items:center; gap:8px; }
+  .chip b { font-weight:700; }
+  .chip .x { cursor:pointer; font-weight:700; }
+  .addrow { display:flex; gap:8px; }
+  .addrow input:first-child { flex:0 0 130px; }
+  .save { margin-top:8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Professor Portal</h1>
+  <p class="sub">Adjust how much support the tutor offers to students without redeploying the agent.</p>
+  <div class="banner">Rendered preview — a static mockup of the React portal for documentation. The live app runs from <code>ui/app</code>.</div>
+
+  <div class="card">
+    <h2>Professor</h2>
+    <p class="hint">This pedagogy belongs to you. Students taking courses from other professors get each professor's own settings.</p>
+    <div class="row">
+      <div><label>Name</label><input type="text" value="Dr. Adams" /></div>
+      <div><label>Professor ID</label><input type="text" value="prof-adams" /></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Pedagogy controls</h2>
+    <label>Help style</label>
+    <select><option>Hint only</option><option selected>Guided</option><option>Worked example</option><option>Full solution</option></select>
+    <label>Maximum steps revealed: <span id="defSteps">3</span></label>
+    <input type="range" min="0" max="6" value="3" style="width:100%" oninput="document.getElementById('defSteps').textContent=this.value" />
+    <div class="checks">
+      <label><input type="checkbox" /> Allow direct answers</label>
+      <label><input type="checkbox" checked /> Require citations</label>
+      <button class="btn save" style="margin-left:auto">Save policy</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="head">
+      <h2>Course groups</h2>
+      <button class="btn ghost" onclick="addGroup()">+ Add group</button>
+    </div>
+    <p class="hint">Group courses that should share the same tutor limits. Unset fields fall back to the defaults above.</p>
+    <div id="groups"></div>
+  </div>
+</div>
+
+<script>
+const state = [{
+  name: "Group 1 - Intro CS",
+  courses: [
+    { id: "CS101", description: "Introduction to Programming" },
+    { id: "CS102", description: "Data Structures and Algorithms" }
+  ],
+  helpLevel: "Hint only",
+  maxStepsRevealed: 1,
+  allowDirectAnswers: false,
+  citationsRequired: true
+}];
+
+function render() {
+  const host = document.getElementById("groups");
+  host.innerHTML = "";
+  state.forEach((g, gi) => {
+    const el = document.createElement("div");
+    el.className = "group";
+    el.innerHTML = `
+      <div class="head">
+        <input type="text" value="${g.name}" onchange="state[${gi}].name=this.value" style="max-width:70%;font-weight:600" />
+        <button class="btn danger" onclick="removeGroup(${gi})">Remove</button>
+      </div>
+      <div class="chips">${g.courses.map((c,ci)=>`<span class="chip"><b>${c.id}</b> — ${c.description}<span class="x" onclick="removeCourse(${gi},${ci})">×</span></span>`).join("")}</div>
+      <div class="addrow">
+        <input type="text" placeholder="Course ID" id="cid${gi}" />
+        <input type="text" placeholder="Description" id="cdesc${gi}" onkeydown="if(event.key==='Enter')addCourse(${gi})" />
+      </div>
+      <div class="row" style="margin-top:12px">
+        <div>
+          <label>Help style</label>
+          <select onchange="state[${gi}].helpLevel=this.value">
+            ${["Hint only","Guided","Worked example","Full solution"].map(o=>`<option ${o===g.helpLevel?"selected":""}>${o}</option>`).join("")}
+          </select>
+        </div>
+        <div>
+          <label>Maximum steps revealed: <span>${g.maxStepsRevealed}</span></label>
+          <input type="range" min="0" max="6" value="${g.maxStepsRevealed}" style="width:100%"
+            oninput="state[${gi}].maxStepsRevealed=+this.value; this.previousElementSibling.querySelector('span').textContent=this.value" />
+        </div>
+      </div>
+      <div class="checks">
+        <label><input type="checkbox" ${g.allowDirectAnswers?"checked":""} onchange="state[${gi}].allowDirectAnswers=this.checked" /> Allow direct answers</label>
+        <label><input type="checkbox" ${g.citationsRequired?"checked":""} onchange="state[${gi}].citationsRequired=this.checked" /> Require citations</label>
+      </div>`;
+    host.appendChild(el);
+  });
+}
+function addGroup(){ state.push({name:"New group",courses:[],helpLevel:"Guided",maxStepsRevealed:2,allowDirectAnswers:false,citationsRequired:true}); render(); }
+function removeGroup(i){ state.splice(i,1); render(); }
+function addCourse(gi){
+  const id=document.getElementById("cid"+gi).value.trim();
+  const desc=document.getElementById("cdesc"+gi).value.trim();
+  if(!id) return;
+  state[gi].courses.push({id,description:desc}); render();
+}
+function removeCourse(gi,ci){ state[gi].courses.splice(ci,1); render(); }
+render();
+</script>
+</body>
+</html>
