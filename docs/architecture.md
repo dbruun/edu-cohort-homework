@@ -91,6 +91,8 @@ The policy is a small, declarative JSON document:
 
 Because a student can take courses from multiple professors, the tutor resolves the pedagogy from whichever professor **owns** the course being asked about, then applies that professor's course-group limits. See the [configuration guide](configuration.md) for the full schema.
 
+> **Planned:** To resolve the right professor's pedagogy automatically, we will need to add a connection to the student's source of schedule/enrollment (for example the LMS/SIS or Canvas enrollments API). Grounding on the student's actual course roster lets the tutor map the current question to the correct professor's courses instead of relying on a manually supplied course ID.
+
 Because the tutor reads this policy rather than hardcoding it, the same deployed agent behaves differently across courses and assignments. See the [configuration guide](configuration.md) for the full schema.
 
 ## Knowledge access
