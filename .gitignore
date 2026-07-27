@@ -6,3 +6,13 @@ node_modules/
 .DS_Store
 _site/
 .tmp/
+
+# lti-ri platform private key (test-only, do not commit)
+.lti-ri-key.pem
+
+# LTI launch config for test scripts (contains platform identity)
+scripts/.lti.env
+
+# self-owned LTI platform keypair (test-only, do not commit)
+.platform-key.pem
+.platform-key.pub.pem

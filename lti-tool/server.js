@@ -12,6 +12,11 @@
  */
 
 const { Provider: lti } = require('ltijs');
+const fs = require('fs');
+const path = require('path');
+
+// Tutor chat page served to Learners. AG-UI endpoint is injected at launch time.
+const tutorTemplate = fs.readFileSync(path.join(__dirname, 'tutor.html'), 'utf8');
 
 const PORT = Number(process.env.PORT) || 3000;
 
@@ -32,6 +37,14 @@ const PLATFORM_CLIENT_ID = process.env.PLATFORM_CLIENT_ID;
 const PLATFORM_AUTH_ENDPOINT = process.env.PLATFORM_AUTH_ENDPOINT;
 const PLATFORM_TOKEN_ENDPOINT = process.env.PLATFORM_TOKEN_ENDPOINT;
 const PLATFORM_KEYSET_ENDPOINT = process.env.PLATFORM_KEYSET_ENDPOINT;
+// Static RSA public key for a self-hosted platform. When set, the tool verifies
+// launches against this key directly -- no hosted JWKS required. Takes
+// precedence over PLATFORM_KEYSET_ENDPOINT. Accepts a raw PEM or, to survive
+// single-line env transport, a base64-encoded PEM.
+const PLATFORM_PUBLIC_KEY_RAW = process.env.PLATFORM_PUBLIC_KEY;
+const PLATFORM_PUBLIC_KEY = PLATFORM_PUBLIC_KEY_RAW && !PLATFORM_PUBLIC_KEY_RAW.includes('BEGIN')
+  ? Buffer.from(PLATFORM_PUBLIC_KEY_RAW, 'base64').toString('utf8')
+  : PLATFORM_PUBLIC_KEY_RAW;
 
 const FRAME_ANCESTORS = process.env.FRAME_ANCESTORS || "'self'";
 const HOMEWORK_AGENT_URL = process.env.HOMEWORK_AGENT_URL || '';
@@ -158,17 +171,17 @@ lti.onConnect(async (token, req, res) => {
     );
   }
 
-  // TODO(phase 3): render the tutor chat and proxy to the Foundry agent with
-  // managed identity (HOMEWORK_AGENT_URL) instead of exposing agent creds.
-  return res.send(
-    page(
-      'Homework tutor',
-      `<h1>Homework tutor</h1>
-       <p>Launched as a <strong>student</strong>. This is where the tutor chat loads.</p>
-       ${shared}
-       ${HOMEWORK_AGENT_URL ? '' : '<p><em>HOMEWORK_AGENT_URL not configured — chat proxy disabled.</em></p>'}`
-    )
-  );
+  // Learner -> tutor chat. The page streams from the Foundry-backed MAF agent
+  // over AG-UI (HOMEWORK_AGENT_URL). CSP already allows framing by the LMS.
+  if (!HOMEWORK_AGENT_URL) {
+    return res.send(page('Homework tutor', '<h1>Homework tutor</h1><p><em>HOMEWORK_AGENT_URL not configured — tutor unavailable.</em></p>'));
+  }
+  const agentUrl = HOMEWORK_AGENT_URL.endsWith('/') ? HOMEWORK_AGENT_URL : `${HOMEWORK_AGENT_URL}/`;
+  const firstName = (claims.name || '').split(' ')[0];
+  const html = tutorTemplate
+    .split('__AGENT_URL__').join(agentUrl)
+    .split('__STUDENT_NAME__').join(escapeHtml(firstName));
+  return res.send(html);
 });
 
 async function main() {
@@ -189,16 +202,19 @@ async function main() {
 
   await lti.deploy({ port: PORT });
 
-  if (PLATFORM_URL && PLATFORM_CLIENT_ID && PLATFORM_AUTH_ENDPOINT && PLATFORM_TOKEN_ENDPOINT && PLATFORM_KEYSET_ENDPOINT) {
+  if (PLATFORM_URL && PLATFORM_CLIENT_ID && PLATFORM_AUTH_ENDPOINT && PLATFORM_TOKEN_ENDPOINT && (PLATFORM_PUBLIC_KEY || PLATFORM_KEYSET_ENDPOINT)) {
+    const authConfig = PLATFORM_PUBLIC_KEY
+      ? { method: 'RSA_KEY', key: PLATFORM_PUBLIC_KEY }
+      : { method: 'JWK_SET', key: PLATFORM_KEYSET_ENDPOINT };
     await lti.registerPlatform({
       url: PLATFORM_URL,
       name: PLATFORM_NAME,
       clientId: PLATFORM_CLIENT_ID,
       authenticationEndpoint: PLATFORM_AUTH_ENDPOINT,
       accesstokenEndpoint: PLATFORM_TOKEN_ENDPOINT,
-      authConfig: { method: 'JWK_SET', key: PLATFORM_KEYSET_ENDPOINT }
+      authConfig
     });
-    console.log(`Registered platform ${PLATFORM_NAME} (${PLATFORM_URL}).`);
+    console.log(`Registered platform ${PLATFORM_NAME} (${PLATFORM_URL}) via ${authConfig.method}.`);
   } else {
     console.log('No platform pre-registered via PLATFORM_* env vars.');
   }

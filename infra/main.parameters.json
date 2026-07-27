@@ -8,14 +8,11 @@
     "location": {
       "value": "${AZURE_LOCATION}"
     },
-    "foundryProjectEndpoint": {
-      "value": "${FOUNDRY_PROJECT_ENDPOINT}"
-    },
     "toolboxEndpoint": {
       "value": "${TOOLBOX_ENDPOINT}"
     },
     "modelDeploymentName": {
-      "value": "${AZURE_AI_MODEL_DEPLOYMENT_NAME=gpt-4o}"
+      "value": "${AZURE_AI_MODEL_DEPLOYMENT_NAME=gpt-5.4}"
     },
     "ltiEncryptionKey": {
       "value": "${LTI_ENCRYPTION_KEY}"

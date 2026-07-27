@@ -1,61 +1,78 @@
-using System.Net.Http.Headers;
-using System.Text;
-using System.Text.Json;
+using Azure.AI.Projects;
+using Azure.Identity;
+using Microsoft.Agents.AI;
+using Microsoft.Agents.AI.Foundry.Hosting;
+using Microsoft.Agents.AI.Hosting.AGUI.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
-var app = builder.Build();
 
-var projectEndpoint = Environment.GetEnvironmentVariable("FOUNDRY_PROJECT_ENDPOINT") ?? "https://example.services.ai.azure.com/api/projects/demo";
-var toolboxEndpoint = Environment.GetEnvironmentVariable("TOOLBOX_ENDPOINT") ?? "https://example.services.ai.azure.com/api/projects/demo/toolboxes/homework-toolbox/mcp?api-version=v1";
+// --- Configuration -------------------------------------------------------
+var projectEndpoint = Environment.GetEnvironmentVariable("FOUNDRY_PROJECT_ENDPOINT");
 var modelDeployment = Environment.GetEnvironmentVariable("AZURE_AI_MODEL_DEPLOYMENT_NAME") ?? "gpt-4o";
-var pedagogyPolicyUri = Environment.GetEnvironmentVariable("PEDAGOGY_POLICY_URI") ?? "./Pedagogy/pedagogy-policy.json";
+var pedagogyPolicyUri = Environment.GetEnvironmentVariable("PEDAGOGY_POLICY_URI");
+// Comma-separated list of origins allowed to call the AG-UI endpoint from a browser
+// (e.g. the CopilotKit frontend / LTI tool). Defaults to any origin for local dev.
+var allowedOrigins = (Environment.GetEnvironmentVariable("ALLOWED_ORIGINS") ?? "*")
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+// Tutor persona = base system prompt + the professor-managed pedagogy policy.
 var policyPath = PolicyStore.ResolvePath(pedagogyPolicyUri);
+var policy = await PedagogyPolicy.LoadAsync(policyPath);
+var systemPromptPath = Path.Combine(AppContext.BaseDirectory, "instructions", "tutor-system-prompt.md");
+var systemPrompt = File.Exists(systemPromptPath)
+    ? await File.ReadAllTextAsync(systemPromptPath)
+    : "You are a homework tutor. Prefer hints and guiding questions over direct answers.";
+var instructions = PromptComposer.Compose(systemPrompt, policy);
 
-app.MapGet("/health", () => Results.Ok(new { status = "ok", projectEndpoint, toolboxEndpoint, modelDeployment, policyPath }));
-
-app.MapPost("/chat", async (ChatRequest request) =>
+// CORS so a browser-hosted CopilotKit UI can reach the AG-UI SSE endpoint.
+builder.Services.AddCors(options =>
 {
-    var policy = await PedagogyPolicy.LoadAsync(policyPath);
-    var systemPrompt = await File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory, "instructions", "tutor-system-prompt.md"));
-    var prompt = PromptComposer.Compose(systemPrompt, policy);
-
-    var payload = new
+    options.AddDefaultPolicy(p =>
     {
-        model = modelDeployment,
-        input = new[]
+        if (allowedOrigins.Length == 1 && allowedOrigins[0] == "*")
         {
-            new { role = "system", content = prompt },
-            new { role = "user", content = request.Message }
-        },
-        tools = new[]
-        {
-            new { type = "mcp", server_url = toolboxEndpoint }
+            p.AllowAnyOrigin();
         }
-    };
-
-    using var httpClient = new HttpClient();
-    httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", await GetTokenAsync());
-    httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-    var response = await httpClient.PostAsync(projectEndpoint + "/openai/responses?api-version=preview", new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json"));
-    var body = await response.Content.ReadAsStringAsync();
-
-    if (!response.IsSuccessStatusCode)
-    {
-        return Results.Problem(body, statusCode: (int)response.StatusCode);
-    }
-
-    return Results.Ok(new { response = body, policy, toolboxEndpoint });
+        else
+        {
+            p.WithOrigins(allowedOrigins).AllowCredentials();
+        }
+        p.AllowAnyHeader().AllowAnyMethod();
+    });
 });
 
+builder.Services.AddAGUIServer();
+
+var app = builder.Build();
+app.UseCors();
+
+app.MapGet("/health", () => Results.Ok(new
+{
+    status = "ok",
+    model = modelDeployment,
+    hasProjectEndpoint = !string.IsNullOrWhiteSpace(projectEndpoint)
+}));
+
+if (string.IsNullOrWhiteSpace(projectEndpoint))
+{
+    // Keep /health up for probes, but make the missing-config failure explicit.
+    app.MapPost("/", () => Results.Problem(
+        "FOUNDRY_PROJECT_ENDPOINT is not configured; the tutor agent is offline.",
+        statusCode: StatusCodes.Status503ServiceUnavailable));
+}
+else
+{
+    // Real Microsoft Agent Framework agent backed by a Foundry model. The framework
+    // manages the LLM call, conversation history, and response lifecycle.
+    AIAgent agent = new AIProjectClient(new Uri(projectEndpoint), new DefaultAzureCredential())
+        .AsAIAgent(
+            model: modelDeployment,
+            instructions: instructions,
+            name: "homework-tutor",
+            description: "An EDU homework tutor that gives guided, pedagogy-aware support grounded in approved course knowledge.");
+
+    // Expose the agent over the AG-UI protocol (SSE) for CopilotKit / AG-UI clients.
+    app.MapAGUIServer("/", agent);
+}
+
 app.Run();
-
-static async Task<string> GetTokenAsync()
-{
-    return await Task.FromResult("demo-token");
-}
-
-public sealed class ChatRequest
-{
-    public string Message { get; init; } = string.Empty;
-}

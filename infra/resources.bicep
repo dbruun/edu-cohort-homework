@@ -7,14 +7,11 @@ param resourceToken string
 @description('Tags applied to all resources')
 param tags object
 
-@description('Foundry project endpoint for the hosted agent runtime')
-param foundryProjectEndpoint string = ''
-
 @description('MCP endpoint for the Foundry Toolbox')
 param toolboxEndpoint string = ''
 
 @description('Model deployment the agent invokes')
-param modelDeploymentName string = 'gpt-4o'
+param modelDeploymentName string = 'gpt-5.4'
 
 @secure()
 @description('Encryption key used by the ltijs LTI tool for cookies/state')
@@ -97,6 +94,73 @@ resource managedEnv 'Microsoft.App/managedEnvironments@2024-03-01' = {
   }
 }
 
+// --- Foundry (Azure AI Services) account + project + gpt-4o model ----------
+// Basic Foundry setup: an AIServices account hosts a project and a model
+// deployment the MAF agent calls via AIProjectClient. No capability host /
+// Cosmos / Search needed — the agent only performs model inference.
+resource foundry 'Microsoft.CognitiveServices/accounts@2026-05-15-preview' = {
+  name: 'aif-${resourceToken}'
+  location: location
+  tags: tags
+  kind: 'AIServices'
+  sku: {
+    name: 'S0'
+  }
+  identity: {
+    type: 'SystemAssigned'
+  }
+  properties: {
+    customSubDomainName: 'aif-${resourceToken}'
+    publicNetworkAccess: 'Enabled'
+    disableLocalAuth: false
+  }
+}
+
+resource foundryProject 'Microsoft.CognitiveServices/accounts/projects@2026-05-15-preview' = {
+  parent: foundry
+  name: 'homework'
+  location: location
+  tags: tags
+  identity: {
+    type: 'SystemAssigned'
+  }
+  properties: {
+    displayName: 'Homework Tutor'
+    description: 'EDU homework tutor project.'
+  }
+}
+
+resource chatModelDeployment 'Microsoft.CognitiveServices/accounts/deployments@2024-10-01' = {
+  parent: foundry
+  name: 'gpt-5.4'
+  sku: {
+    name: 'GlobalStandard'
+    capacity: 50
+  }
+  properties: {
+    model: {
+      format: 'OpenAI'
+      name: 'gpt-5.4'
+      version: '2026-03-05'
+    }
+  }
+}
+
+// The agent's managed identity needs to call models on the Foundry account.
+var cognitiveServicesUserRoleId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'a97b65f3-24c7-4388-baec-2e87135dc908')
+resource foundryAgentRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(foundry.id, identity.id, cognitiveServicesUserRoleId)
+  scope: foundry
+  properties: {
+    principalId: identity.properties.principalId
+    roleDefinitionId: cognitiveServicesUserRoleId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// Foundry project data-plane endpoint consumed by AIProjectClient in the agent.
+var foundryProjectEndpointUrl = 'https://${foundry.name}.services.ai.azure.com/api/projects/${foundryProject.name}'
+
 resource agentApp 'Microsoft.App/containerApps@2024-03-01' = {
   name: 'ca-${agentServiceName}-${resourceToken}'
   location: location
@@ -142,7 +206,7 @@ resource agentApp 'Microsoft.App/containerApps@2024-03-01' = {
             }
             {
               name: 'FOUNDRY_PROJECT_ENDPOINT'
-              value: foundryProjectEndpoint
+              value: foundryProjectEndpointUrl
             }
             {
               name: 'TOOLBOX_ENDPOINT'
@@ -300,4 +364,6 @@ output homeworkAgentUrl string = 'https://${agentApp.properties.configuration.in
 output homeworkAgentName string = agentApp.name
 output ltiToolUrl string = 'https://${ltiApp.properties.configuration.ingress.fqdn}'
 output ltiToolName string = ltiApp.name
+output foundryAccountName string = foundry.name
+output foundryProjectEndpoint string = foundryProjectEndpointUrl
 output containerRegistryLoginServer string = registry.properties.loginServer

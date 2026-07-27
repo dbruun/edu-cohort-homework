@@ -6,14 +6,11 @@ param location string = deployment().location
 @description('Environment name for resource naming')
 param environmentName string
 
-@description('Foundry project endpoint for the hosted agent runtime')
-param foundryProjectEndpoint string = ''
-
 @description('MCP endpoint for the Foundry Toolbox')
 param toolboxEndpoint string = ''
 
 @description('Model deployment the agent invokes')
-param modelDeploymentName string = 'gpt-4o'
+param modelDeploymentName string = 'gpt-5.4'
 
 @secure()
 @description('Encryption key used by the ltijs LTI tool for cookies/state. Defaults to a new GUID.')
@@ -40,7 +37,6 @@ module resources 'resources.bicep' = {
     location: location
     resourceToken: resourceToken
     tags: tags
-    foundryProjectEndpoint: foundryProjectEndpoint
     toolboxEndpoint: toolboxEndpoint
     modelDeploymentName: modelDeploymentName
     ltiEncryptionKey: ltiEncryptionKey
@@ -52,5 +48,6 @@ output AZURE_LOCATION string = location
 output RESOURCE_GROUP_NAME string = rg.name
 output HOMEWORK_AGENT_URL string = resources.outputs.homeworkAgentUrl
 output LTI_TOOL_URL string = resources.outputs.ltiToolUrl
+output FOUNDRY_PROJECT_ENDPOINT string = resources.outputs.foundryProjectEndpoint
 output AZURE_CONTAINER_REGISTRY_ENDPOINT string = resources.outputs.containerRegistryLoginServer
 
