@@ -10,5 +10,11 @@ services:
         language: dotnet
         docker:
             remoteBuild: true
+    lti-tool:
+        project: ./lti-tool
+        host: containerapp
+        language: js
+        docker:
+            remoteBuild: false
 infra:
-    provider: microsoft.foundry
+    provider: bicep

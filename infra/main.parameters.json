@@ -16,6 +16,12 @@
     },
     "modelDeploymentName": {
       "value": "${AZURE_AI_MODEL_DEPLOYMENT_NAME=gpt-4o}"
+    },
+    "ltiEncryptionKey": {
+      "value": "${LTI_ENCRYPTION_KEY}"
+    },
+    "mongoAdminPassword": {
+      "value": "${MONGO_ADMIN_PASSWORD}"
     }
   }
 }

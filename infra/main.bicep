@@ -15,6 +15,12 @@ param toolboxEndpoint string = ''
 @description('Model deployment the agent invokes')
 param modelDeploymentName string = 'gpt-4o'
 
+@secure()
+@description('Encryption key used by the ltijs LTI tool for cookies/state. Defaults to a new GUID.')
+param ltiEncryptionKey string = newGuid()
+@secure()
+@description('Admin password for the self-hosted MongoDB used by the LTI tool. Defaults to a new GUID.')
+param mongoAdminPassword string = newGuid()
 var resourceToken = toLower(replace(environmentName, '-', ''))
 var tags = {
   environment: environmentName
@@ -37,11 +43,14 @@ module resources 'resources.bicep' = {
     foundryProjectEndpoint: foundryProjectEndpoint
     toolboxEndpoint: toolboxEndpoint
     modelDeploymentName: modelDeploymentName
+    ltiEncryptionKey: ltiEncryptionKey
+    mongoAdminPassword: mongoAdminPassword
   }
 }
 
 output AZURE_LOCATION string = location
 output RESOURCE_GROUP_NAME string = rg.name
 output HOMEWORK_AGENT_URL string = resources.outputs.homeworkAgentUrl
+output LTI_TOOL_URL string = resources.outputs.ltiToolUrl
 output AZURE_CONTAINER_REGISTRY_ENDPOINT string = resources.outputs.containerRegistryLoginServer
 
