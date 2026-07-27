@@ -49,8 +49,8 @@ A professor sets the pedagogy policy in the portal. A student asks a question; t
 
 | Component | Responsibility | Source |
 | --- | --- | --- |
-| Hosted tutor agent | Runs on Foundry; answers questions under the pedagogy policy and grounds them through the toolbox | [../foundry-tutor/hello-world-dotnet-agent-framework/src/hello-world-dotnet-agent-framework/Program.cs](../foundry-tutor/hello-world-dotnet-agent-framework/src/hello-world-dotnet-agent-framework/Program.cs) |
-| Agent + model manifest | Declares the agent, model deployment, and environment | [../foundry-tutor/hello-world-dotnet-agent-framework/azure.yaml](../foundry-tutor/hello-world-dotnet-agent-framework/azure.yaml) |
+| Hosted tutor agent | Runs on Foundry; answers questions under the pedagogy policy and grounds them through the toolbox | [../src/HomeworkAgent/Program.cs](../src/HomeworkAgent/Program.cs) |
+| Agent + model + toolbox manifest | Declares the agent, model deployment, Azure AI Search toolbox, and environment | [../azure.yaml](../azure.yaml) |
 | Professor Portal UI | Lets professors tune help level, steps, direct answers, and citations | [../ui/app/src/App.jsx](../ui/app/src/App.jsx) |
 | Portal Policy API | Reads and writes the pedagogy policy | [../ui/api/index.js](../ui/api/index.js) |
 | Pedagogy policy | The rules the tutor follows; the shared contract between portal and agent | [../src/HomeworkAgent/Pedagogy/pedagogy-policy.json](../src/HomeworkAgent/Pedagogy/pedagogy-policy.json) |

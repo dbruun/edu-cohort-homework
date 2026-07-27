@@ -1,19 +1,21 @@
 # Configuration guide
 
-The deployed hosted agent is configured through **environment variables** (declared in its Foundry manifest) and the **pedagogy policy** that shapes tutoring behavior. The **toolbox** is defined but not yet connected.
+The deployed hosted agent is configured through **environment variables** (declared in its Foundry manifest) and the **pedagogy policy** that shapes tutoring behavior. Course knowledge is grounded through an Azure AI Search **toolbox**.
 
 ## Environment variables
 
-The hosted agent's manifest ([../foundry-tutor/hello-world-dotnet-agent-framework/azure.yaml](../foundry-tutor/hello-world-dotnet-agent-framework/azure.yaml)) declares these. Foundry injects the project endpoint automatically at runtime.
+The hosted agent's manifest ([../azure.yaml](../azure.yaml)) declares these. Foundry injects the project endpoint automatically at runtime.
 
 | Variable | Purpose | Example |
 | --- | --- | --- |
 | `FOUNDRY_PROJECT_ENDPOINT` | Foundry project endpoint (auto-injected in the hosted container) | `https://<account>.services.ai.azure.com/api/projects/<project>` |
 | `AZURE_AI_MODEL_DEPLOYMENT_NAME` | Model deployment the agent invokes | `gpt-5.4-mini` |
+| `TOOLBOX_NAME` | Name of the Foundry Toolbox the agent loads for course knowledge | `course-knowledge` |
+| `PEDAGOGY_POLICY_URI` | Path to the pedagogy policy JSON (baked into the image) | `./Pedagogy/pedagogy-policy.json` |
 
-The `scripts/deploy.*` scripts set `AZURE_AI_MODEL_DEPLOYMENT_NAME` and the subscription/location into the `azd` environment before deploy — see [../scripts/README.md](../scripts/README.md).
+The `scripts/deploy.*` scripts set `AZURE_AI_MODEL_DEPLOYMENT_NAME`, `PEDAGOGY_POLICY_URI`, and the subscription/location into the `azd` environment before deploy — see [../scripts/README.md](../scripts/README.md).
 
-> **Legacy note:** Older docs referenced `TOOLBOX_ENDPOINT` and `PEDAGOGY_POLICY_URI`. Those belonged to an earlier self-hosted prototype that has been replaced by the hosted Foundry agent and are no longer used.
+> **Legacy note:** Older docs referenced a `TOOLBOX_ENDPOINT` URL variable. That belonged to an earlier self-hosted prototype; the hosted Foundry agent now loads its toolbox by name (`TOOLBOX_NAME`), so `TOOLBOX_ENDPOINT` is no longer used.
 
 ## Pedagogy policy
 
@@ -67,8 +69,8 @@ Within a professor's pedagogy, **course groups** let one set of limits apply to 
 
 ### How the policy is applied
 
-Today the pedagogy guidance is written into the hosted agent's instructions in [../foundry-tutor/hello-world-dotnet-agent-framework/src/hello-world-dotnet-agent-framework/Program.cs](../foundry-tutor/hello-world-dotnet-agent-framework/src/hello-world-dotnet-agent-framework/Program.cs). Because it is compiled into the agent, **changing the policy requires editing it and redeploying the agent** (`azd deploy`). A live per-request read from external storage is not enabled in this environment — see the architecture doc for why.
+The pedagogy policy is composed into the hosted agent's instructions at startup in [../src/HomeworkAgent/Program.cs](../src/HomeworkAgent/Program.cs) (`PromptComposer.Compose` over the policy loaded by `PedagogyPolicy.LoadAsync`). Because it is read when the container starts, **changing the policy takes effect on the next deploy/restart** (`azd deploy`). A live per-request read from external storage is not enabled in this environment — see the architecture doc for why.
 
-## Knowledge sources (planned)
+## Knowledge sources
 
-The toolbox in [../toolbox/toolbox.yaml](../toolbox/toolbox.yaml) describes the intended Azure AI Search access (indexes and query type such as `vector_semantic_hybrid`). It is **not yet connected** to the deployed agent. When wired up, adding a source would be a toolbox/connection change. See [../config/knowledge-sources.md](../config/knowledge-sources.md) for the source-management guidance.
+Course knowledge is grounded through an Azure AI Search **toolbox** declared as the `course-knowledge` `host: azure.ai.toolbox` service in [../azure.yaml](../azure.yaml) (a reference copy lives in [../toolbox/toolbox.yaml](../toolbox/toolbox.yaml)). It exposes a `course-search` tool over the `course-materials` index using `vector_semantic_hybrid` retrieval. The agent loads it by name (`TOOLBOX_NAME=course-knowledge`) via `AddFoundryToolboxes`. The tool references an existing `course-knowledge-connection` (`CognitiveSearch`) that must be created once before the first deploy — the [deploy scripts](../scripts/README.md) create it when given a Search endpoint + admin key. Adding or swapping a source is a toolbox/connection change, not an agent change. See [../config/knowledge-sources.md](../config/knowledge-sources.md) for the source-management guidance.
