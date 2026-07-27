@@ -10,16 +10,24 @@
  * The agent framework manages the LLM call, conversation history, and response lifecycle.
  * The base tutor persona (instructions/tutor-system-prompt.md) is layered with the
  * professor-configurable pedagogy policy (Pedagogy/pedagogy-policy.json) via PromptComposer
- * to produce the agent's instructions at startup. The curated knowledge toolbox is attached
- * to the hosted agent at the Foundry platform level (see toolbox/toolbox.yaml).
+ * to produce the agent's instructions at startup.
+ *
+ * Course knowledge is grounded through a Foundry Toolbox (an Azure AI Search index behind a
+ * managed MCP proxy). AddFoundryToolboxes connects to that toolbox at startup, discovers its
+ * tools, and injects them into every request — the Foundry platform brokers the tool calls,
+ * so the agent never hard-codes or locally executes them. The toolbox is declared as a
+ * host: azure.ai.toolbox service in azure.yaml.
  *
  * Required environment variables:
  *   FOUNDRY_PROJECT_ENDPOINT         — Foundry project endpoint (auto-injected in hosted containers)
  *   AZURE_AI_MODEL_DEPLOYMENT_NAME   — Model deployment name
+ *   TOOLBOX_NAME                     — Name of the Foundry Toolbox to load (course knowledge)
  *
  * Optional environment variables:
  *   PEDAGOGY_POLICY_URI              — Path to the pedagogy policy JSON (defaults to Pedagogy/pedagogy-policy.json)
  */
+
+#pragma warning disable OPENAI001 // Foundry Toolbox hosting APIs are experimental
 
 using Azure.AI.Projects;
 using Azure.Identity;
@@ -31,6 +39,9 @@ var projectEndpoint = new Uri(Environment.GetEnvironmentVariable("FOUNDRY_PROJEC
 
 var deployment = Environment.GetEnvironmentVariable("AZURE_AI_MODEL_DEPLOYMENT_NAME")
     ?? throw new InvalidOperationException("AZURE_AI_MODEL_DEPLOYMENT_NAME environment variable is not set.");
+
+var toolboxName = Environment.GetEnvironmentVariable("TOOLBOX_NAME")
+    ?? throw new InvalidOperationException("TOOLBOX_NAME environment variable is not set.");
 
 var pedagogyPolicyUri = Environment.GetEnvironmentVariable("PEDAGOGY_POLICY_URI");
 
@@ -58,6 +69,13 @@ AIAgent agent = new AIProjectClient(projectEndpoint, new DefaultAzureCredential(
 // GET /readiness health probe, OpenTelemetry traces/metrics, and the responses protocol.
 var builder = AgentHost.CreateBuilder(args);
 builder.Services.AddFoundryResponses(agent);
+
+// Register the course-knowledge Foundry Toolbox. At startup the hosting layer connects to the
+// toolbox's managed MCP proxy (derived from FOUNDRY_PROJECT_ENDPOINT), discovers its tools
+// (the Azure AI Search course-search tool), and injects them into every request. Tool calls
+// are brokered by the Foundry platform. Omitting a version resolves the toolbox's default.
+builder.Services.AddFoundryToolboxes(toolboxName);
+
 builder.RegisterProtocol("responses", endpoints => endpoints.MapFoundryResponses());
 
 var app = builder.Build();
