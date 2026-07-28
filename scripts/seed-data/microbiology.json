@@ -1,0 +1,58 @@
+[
+  {
+    "id": "micro-001",
+    "title": "Prokaryotic vs. Eukaryotic Cells",
+    "subject": "microbiology",
+    "url": "https://example.edu/micro/bio201/prokaryotic-vs-eukaryotic",
+    "content": "Prokaryotic cells (bacteria and archaea) lack a membrane-bound nucleus; their genetic material sits in a nucleoid region. Eukaryotic cells (fungi, protists, plants, animals) enclose DNA within a nuclear membrane and contain membrane-bound organelles such as mitochondria and the endoplasmic reticulum. Prokaryotes are typically 1-10 micrometers, reproduce by binary fission, and have ribosomes of the 70S type, while eukaryotes use 80S ribosomes. Understanding this distinction is foundational for antibiotic mechanisms, which often target the 70S ribosome or the peptidoglycan cell wall unique to bacteria."
+  },
+  {
+    "id": "micro-002",
+    "title": "Gram-Positive vs. Gram-Negative Bacteria",
+    "subject": "microbiology",
+    "url": "https://example.edu/micro/bio201/gram-staining",
+    "content": "The Gram stain differentiates bacteria by cell wall structure. Gram-positive bacteria have a thick peptidoglycan layer that retains crystal violet, appearing purple. Gram-negative bacteria have a thin peptidoglycan layer plus an outer membrane containing lipopolysaccharide (LPS); they lose the crystal violet during decolorization and take up the safranin counterstain, appearing pink. The outer membrane of Gram-negative organisms acts as a permeability barrier that makes them more resistant to many antibiotics and detergents. LPS (endotoxin) can trigger strong immune responses and septic shock."
+  },
+  {
+    "id": "micro-003",
+    "title": "Bacterial Growth Curve",
+    "subject": "microbiology",
+    "url": "https://example.edu/micro/bio201/growth-curve",
+    "content": "A batch bacterial culture progresses through four phases. The lag phase is a period of adaptation with little cell division as cells synthesize enzymes. The log (exponential) phase shows a constant, maximal division rate and is when cells are most metabolically active and most susceptible to antibiotics targeting cell-wall synthesis. The stationary phase begins as nutrients deplete and waste accumulates, so the growth rate equals the death rate. Finally, the death (decline) phase sees viable cell numbers fall exponentially. Generation time is the interval required for a population to double."
+  },
+  {
+    "id": "micro-004",
+    "title": "Mechanisms of Antibiotic Action",
+    "subject": "microbiology",
+    "url": "https://example.edu/micro/bio201/antibiotic-mechanisms",
+    "content": "Antibiotics act through several targets. Beta-lactams (penicillins, cephalosporins) inhibit peptidoglycan cross-linking, weakening the cell wall. Aminoglycosides and tetracyclines bind the 30S ribosomal subunit; macrolides bind the 50S subunit, both disrupting protein synthesis. Fluoroquinolones inhibit DNA gyrase and topoisomerase IV, blocking DNA replication. Rifampin inhibits RNA polymerase. Because these targets are specific to bacteria or differ from human equivalents, antibiotics exhibit selective toxicity. Overuse drives resistance through mutation and horizontal gene transfer."
+  },
+  {
+    "id": "micro-005",
+    "title": "Antibiotic Resistance Mechanisms",
+    "subject": "microbiology",
+    "url": "https://example.edu/micro/bio201/resistance",
+    "content": "Bacteria resist antibiotics by four main strategies: enzymatic inactivation (for example beta-lactamases that hydrolyze penicillins), target modification (altered penicillin-binding proteins in MRSA, or ribosomal methylation), reduced permeability via porin loss, and active efflux pumps that expel the drug. Resistance genes spread horizontally through plasmids, transposons, and integrons via conjugation, transformation, and transduction. Selective pressure from antibiotic overuse in medicine and agriculture accelerates the emergence of multidrug-resistant strains, a major public-health concern."
+  },
+  {
+    "id": "micro-006",
+    "title": "Viral Replication Cycle",
+    "subject": "microbiology",
+    "url": "https://example.edu/micro/bio201/viral-replication",
+    "content": "Viruses are obligate intracellular parasites. A typical replication cycle has five steps: attachment to specific host-cell receptors, penetration and entry, uncoating to release the genome, biosynthesis of viral nucleic acids and proteins using host machinery, and assembly followed by release (by lysis or budding). Lytic cycles destroy the host cell, while lysogenic cycles integrate the viral genome (as a prophage in bacteriophages) that can later be induced. Antiviral drugs target specific steps such as attachment, reverse transcription, or protease activity."
+  },
+  {
+    "id": "micro-007",
+    "title": "Innate vs. Adaptive Immunity",
+    "subject": "microbiology",
+    "url": "https://example.edu/micro/bio201/immunity",
+    "content": "The innate immune system provides rapid, non-specific defense: physical barriers, phagocytes (neutrophils, macrophages), inflammation, fever, and the complement system. The adaptive immune system is slower but specific and confers memory. It has two arms: humoral immunity, in which B cells produce antibodies against extracellular pathogens, and cell-mediated immunity, in which T cells target intracellular pathogens. Antigen-presenting cells display peptides on MHC molecules to activate T cells. Vaccines exploit adaptive memory to provide long-lasting protection."
+  },
+  {
+    "id": "micro-008",
+    "title": "Microbial Metabolism: Aerobic and Anaerobic Respiration",
+    "subject": "microbiology",
+    "url": "https://example.edu/micro/bio201/metabolism",
+    "content": "Microbes generate ATP through fermentation and respiration. In aerobic respiration, oxygen is the terminal electron acceptor, yielding the most ATP. Anaerobic respiration uses alternative acceptors such as nitrate or sulfate. Fermentation regenerates NAD+ without an electron transport chain, producing far less ATP. Organisms are classified by oxygen requirement: obligate aerobes, obligate anaerobes, facultative anaerobes, aerotolerant anaerobes, and microaerophiles. These metabolic differences guide culturing conditions and explain why some pathogens thrive in specific body sites."
+  }
+]

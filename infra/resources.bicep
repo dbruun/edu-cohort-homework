@@ -13,6 +13,15 @@ param toolboxEndpoint string = ''
 @description('Model deployment the agent invokes')
 param modelDeploymentName string = 'gpt-5.4'
 
+@description('SKU for Azure AI Search. \'basic\' is fine for a pilot/cohort; upgrade to \'standard\' (S1) or higher for production go-live to get more storage, replicas (SLA/high-availability), and higher semantic-ranker throughput.')
+@allowed([
+  'basic'
+  'standard'
+  'standard2'
+  'standard3'
+])
+param searchSku string = 'basic'
+
 @secure()
 @description('Encryption key used by the ltijs LTI tool for cookies/state')
 param ltiEncryptionKey string
@@ -146,6 +155,30 @@ resource chatModelDeployment 'Microsoft.CognitiveServices/accounts/deployments@2
   }
 }
 
+// Small, cheap model used by the Azure AI Search knowledge base for query
+// planning / answer synthesis (agentic retrieval). The knowledge base model
+// name must be one of the AzureOpenAIModelName enum values (gpt-5.4-mini is
+// allowed; the full gpt-5.4 is not). Serialized after the chat deployment —
+// the account rejects concurrent deployment creates.
+resource kbReasoningDeployment 'Microsoft.CognitiveServices/accounts/deployments@2024-10-01' = {
+  parent: foundry
+  name: 'gpt-5.4-mini'
+  dependsOn: [
+    chatModelDeployment
+  ]
+  sku: {
+    name: 'GlobalStandard'
+    capacity: 50
+  }
+  properties: {
+    model: {
+      format: 'OpenAI'
+      name: 'gpt-5.4-mini'
+      version: '2026-03-17'
+    }
+  }
+}
+
 // The agent's managed identity needs to call models on the Foundry account.
 var cognitiveServicesUserRoleId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'a97b65f3-24c7-4388-baec-2e87135dc908')
 resource foundryAgentRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
@@ -155,6 +188,100 @@ resource foundryAgentRole 'Microsoft.Authorization/roleAssignments@2022-04-01' =
     principalId: identity.properties.principalId
     roleDefinitionId: cognitiveServicesUserRoleId
     principalType: 'ServicePrincipal'
+  }
+}
+
+// --- Azure AI Search: course-material knowledge base ---------------------
+// Backs the Foundry Toolbox `course-search` tool (toolbox/toolbox.yaml). The
+// knowledge base + knowledge source + index are populated out-of-band by
+// scripts/setup-knowledge-base.ps1 (they are data-plane objects, not ARM
+// resources). Basic SKU is sufficient for the cohort; see `searchSku` for the
+// go-live recommendation. System-assigned identity lets the search service
+// call the Foundry model for query planning without keys.
+resource search 'Microsoft.Search/searchServices@2024-06-01-preview' = {
+  name: 'srch-${resourceToken}'
+  location: location
+  tags: tags
+  identity: {
+    type: 'SystemAssigned'
+  }
+  sku: {
+    name: searchSku
+  }
+  properties: {
+    replicaCount: 1
+    partitionCount: 1
+    hostingMode: 'default'
+    // 'free' semantic ranker is included and enough for a pilot; the semantic
+    // configuration the loader script creates depends on this being enabled.
+    semanticSearch: 'free'
+    publicNetworkAccess: 'enabled'
+    // Keep key auth on so the loader script can seed data with the admin key,
+    // while still allowing AAD/RBAC for the agent + Foundry connection.
+    disableLocalAuth: false
+    authOptions: {
+      aadOrApiKey: {
+        aadAuthFailureMode: 'http401WithBearerChallenge'
+      }
+    }
+  }
+}
+
+var searchEndpoint = 'https://${search.name}.search.windows.net'
+
+// The search service calls the Foundry model (gpt-5.4-mini) for knowledge-base
+// query planning. Its system-assigned identity needs OpenAI access on Foundry.
+var openAIUserRoleId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '5e0bd9bd-7b93-4f28-af87-19fc36ad61bd')
+resource searchOpenAIRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(foundry.id, search.id, openAIUserRoleId)
+  scope: foundry
+  properties: {
+    principalId: search.identity.principalId
+    roleDefinitionId: openAIUserRoleId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// The agent queries the knowledge base; its user-assigned identity needs
+// data-plane read on the search service.
+var searchIndexDataReaderRoleId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '1407120a-92aa-4202-b7e9-c0e197c71c8f')
+resource agentSearchRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(search.id, identity.id, searchIndexDataReaderRoleId)
+  scope: search
+  properties: {
+    principalId: identity.properties.principalId
+    roleDefinitionId: searchIndexDataReaderRoleId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// The Foundry project connection resolves through the project's identity, so it
+// needs the same data-plane read on the search service.
+resource projectSearchRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(search.id, foundryProject.id, searchIndexDataReaderRoleId)
+  scope: search
+  properties: {
+    principalId: foundryProject.identity.principalId
+    roleDefinitionId: searchIndexDataReaderRoleId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// Foundry project connection consumed by the Toolbox as `course-knowledge-connection`
+// (see toolbox/toolbox.yaml). AAD auth = no keys stored in the connection.
+resource searchConnection 'Microsoft.CognitiveServices/accounts/projects/connections@2026-05-15-preview' = {
+  parent: foundryProject
+  name: 'course-knowledge-connection'
+  properties: {
+    category: 'CognitiveSearch'
+    target: searchEndpoint
+    authType: 'AAD'
+    isSharedToAll: true
+    metadata: {
+      ApiType: 'Azure'
+      ResourceId: search.id
+      Location: location
+    }
   }
 }
 
@@ -367,3 +494,6 @@ output ltiToolName string = ltiApp.name
 output foundryAccountName string = foundry.name
 output foundryProjectEndpoint string = foundryProjectEndpointUrl
 output containerRegistryLoginServer string = registry.properties.loginServer
+output searchServiceName string = search.name
+output searchEndpoint string = searchEndpoint
+output kbReasoningDeploymentName string = kbReasoningDeployment.name

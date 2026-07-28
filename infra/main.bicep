@@ -12,6 +12,9 @@ param toolboxEndpoint string = ''
 @description('Model deployment the agent invokes')
 param modelDeploymentName string = 'gpt-5.4'
 
+@description('SKU for Azure AI Search. \'basic\' for pilot/cohort; upgrade to \'standard\' (S1)+ for go-live.')
+param searchSku string = 'basic'
+
 @secure()
 @description('Encryption key used by the ltijs LTI tool for cookies/state. Defaults to a new GUID.')
 param ltiEncryptionKey string = newGuid()
@@ -41,6 +44,7 @@ module resources 'resources.bicep' = {
     modelDeploymentName: modelDeploymentName
     ltiEncryptionKey: ltiEncryptionKey
     mongoAdminPassword: mongoAdminPassword
+    searchSku: searchSku
   }
 }
 
@@ -50,4 +54,7 @@ output HOMEWORK_AGENT_URL string = resources.outputs.homeworkAgentUrl
 output LTI_TOOL_URL string = resources.outputs.ltiToolUrl
 output FOUNDRY_PROJECT_ENDPOINT string = resources.outputs.foundryProjectEndpoint
 output AZURE_CONTAINER_REGISTRY_ENDPOINT string = resources.outputs.containerRegistryLoginServer
+output SEARCH_SERVICE_NAME string = resources.outputs.searchServiceName
+output SEARCH_ENDPOINT string = resources.outputs.searchEndpoint
+output KB_REASONING_DEPLOYMENT_NAME string = resources.outputs.kbReasoningDeploymentName
 

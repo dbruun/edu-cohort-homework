@@ -48,6 +48,26 @@ azd down --environment homework-tutor --force --purge
 
 ---
 
+# Knowledge base setup
+
+`setup-knowledge-base.ps1` seeds the **Azure AI Search** knowledge base that
+grounds the tutor in course material. The search service, Foundry connection,
+and reasoning-model deployment are provisioned by Bicep (`azd provision`); this
+script creates the data-plane objects (index, knowledge source, knowledge base)
+and loads dummy microbiology data. It is idempotent.
+
+```powershell
+./scripts/setup-knowledge-base.ps1 -EnvironmentName <your-azd-env>
+```
+
+It auto-discovers the search service and Foundry account from `rg-<env>`, or you
+can pass `-SearchService`, `-ResourceGroup`, and `-FoundryAccount` explicitly.
+Edit or replace the seed corpus via `scripts/seed-data/microbiology.json` (or
+`-SeedDataPath`). See [../config/knowledge-sources.md](../config/knowledge-sources.md)
+for the go-live checklist (Standard SKU, integrated vectorization).
+
+---
+
 # LTI launch test scripts
 
 Two Node scripts drive a **real LTI 1.3 launch** against the deployed LTI tool

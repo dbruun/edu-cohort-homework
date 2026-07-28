@@ -14,6 +14,9 @@
     "modelDeploymentName": {
       "value": "${AZURE_AI_MODEL_DEPLOYMENT_NAME=gpt-5.4}"
     },
+    "searchSku": {
+      "value": "${SEARCH_SKU=basic}"
+    },
     "ltiEncryptionKey": {
       "value": "${LTI_ENCRYPTION_KEY}"
     },
