@@ -29,6 +29,10 @@ Professors shape the tutor through the **professor portal** ([../ui/app/src/App.
 - whether **direct answers** are ever allowed, and
 - whether **citations** are required.
 
+**Course groups.** Rather than configuring each course individually, group courses that should share the same limits. Each course in a group carries an ID and a description (for example `CS101 — Introduction to Programming`), and every course in the group inherits the group's limits; anything left unset falls back to your defaults.
+
+**Professor ownership.** Your pedagogy is tied to you (`professorId` / `professorName`). A student taking courses from several professors is held to each professor's own settings — the tutor picks the right pedagogy based on which professor owns the course.
+
 The portal loads the current policy and saves your edits back through its API (`GET`/`POST /api/policy`). You can run it locally today:
 
 ```bash
@@ -41,17 +45,17 @@ npm --prefix ui/app run build
 2. Redeploy the hosted agent with `azd deploy` so the tutor picks up the new policy.
 3. The next student question is answered under the new policy.
 
-> **Integration status:** The portal and its API are fully built and round-trip the pedagogy policy. The one remaining step is connecting the portal's saved policy to the **deployed** agent for a live read, so saves would take effect without the `azd deploy` step. Grounding knowledge through an Azure AI Search **toolbox** is likewise planned, not yet connected.
+> **Integration status:** The portal and its API are fully built and round-trip the pedagogy policy, which the agent composes into its instructions at startup. The one remaining step is connecting the portal's saved policy to the **deployed** agent for a live read, so saves would take effect without the `azd deploy` step. Grounding knowledge through an Azure AI Search **toolbox** is now wired (the `course-knowledge` toolbox in [../azure.yaml](../azure.yaml)); it needs a populated `course-materials` index and the `course-knowledge-connection` created at deploy time.
 
 ## For developers
 
-The deployed tutor is a **hosted Foundry agent** under [../foundry-tutor/hello-world-dotnet-agent-framework](../foundry-tutor/hello-world-dotnet-agent-framework). Use this loop:
+The deployed tutor is a **hosted Foundry agent** under [../src/HomeworkAgent](../src/HomeworkAgent), declared in the repo-root [../azure.yaml](../azure.yaml) alongside its model and the `course-knowledge` toolbox. Use this loop:
 
 1. **Build the agent locally.**
    ```bash
-   dotnet build foundry-tutor/hello-world-dotnet-agent-framework/src/hello-world-dotnet-agent-framework/hello-world.csproj
+   dotnet build src/HomeworkAgent/HomeworkAgent.csproj
    ```
-2. **Set deploy config.** In the agent folder, set the subscription, location, and model deployment in the `azd` environment (the deploy scripts do this for you).
+2. **Set deploy config.** Set the subscription, location, and model deployment in the `azd` environment (the deploy scripts do this for you). To wire the Azure AI Search toolbox, also supply a Search endpoint + admin key so the scripts create `course-knowledge-connection`.
 3. **Deploy to Foundry.**
    ```bash
    azd deploy --no-prompt
@@ -63,7 +67,7 @@ The deployed tutor is a **hosted Foundry agent** under [../foundry-tutor/hello-w
    ```
 5. **Inspect logs.**
    ```bash
-   azd ai agent monitor homework-tutor
+   azd ai agent monitor homework-agent
    ```
 
 The hosted agent speaks the Foundry **Responses** protocol — there is no custom `/chat` or `/health` endpoint. For the deployed vs. planned breakdown, see the [architecture overview](architecture.md).

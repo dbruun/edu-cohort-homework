@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="720" viewBox="0 0 760 720" font-family="Segoe UI, Arial, sans-serif">
+  <rect width="760" height="720" fill="#eef1f6"/>
+
+  <!-- Header -->
+  <text x="32" y="48" font-size="26" font-weight="700" fill="#0f172a">Professor Portal</text>
+  <text x="32" y="74" font-size="13" fill="#5b6b85">Adjust how much support the tutor offers to students without redeploying the agent.</text>
+
+  <!-- Professor card -->
+  <rect x="32" y="92" width="696" height="118" rx="12" fill="#f6f8fb" stroke="#e2e8f0"/>
+  <text x="52" y="122" font-size="18" font-weight="600" fill="#0f172a">Professor</text>
+  <text x="52" y="144" font-size="12" fill="#5b6b85">This pedagogy belongs to you. Students taking courses from other professors get each professor's own settings.</text>
+  <text x="52" y="172" font-size="12" fill="#334155">Name</text>
+  <rect x="52" y="180" width="320" height="30" rx="6" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="64" y="200" font-size="13" fill="#0f172a">Dr. Adams</text>
+  <text x="392" y="172" font-size="12" fill="#334155">Professor ID</text>
+  <rect x="392" y="180" width="316" height="30" rx="6" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="404" y="200" font-size="13" fill="#0f172a">prof-adams</text>
+
+  <!-- Pedagogy controls card -->
+  <rect x="32" y="226" width="696" height="150" rx="12" fill="#f6f8fb" stroke="#e2e8f0"/>
+  <text x="52" y="256" font-size="18" font-weight="600" fill="#0f172a">Pedagogy controls</text>
+  <text x="52" y="284" font-size="12" fill="#334155">Help style</text>
+  <rect x="52" y="292" width="656" height="30" rx="6" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="64" y="312" font-size="13" fill="#0f172a">Guided</text>
+  <polygon points="690,303 700,303 695,310" fill="#64748b"/>
+  <rect x="52" y="336" width="16" height="16" rx="3" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="78" y="349" font-size="13" fill="#334155">Allow direct answers</text>
+  <rect x="240" y="336" width="16" height="16" rx="3" fill="#2563eb"/>
+  <text x="252" y="348" font-size="12" fill="#ffffff" font-weight="700">✓</text>
+  <text x="266" y="349" font-size="13" fill="#334155">Require citations</text>
+  <rect x="600" y="336" width="108" height="30" rx="8" fill="#2563eb"/>
+  <text x="654" y="356" font-size="13" fill="#ffffff" text-anchor="middle">Save policy</text>
+
+  <!-- Course groups card -->
+  <rect x="32" y="392" width="696" height="296" rx="12" fill="#f6f8fb" stroke="#e2e8f0"/>
+  <text x="52" y="422" font-size="18" font-weight="600" fill="#0f172a">Course groups</text>
+  <rect x="590" y="406" width="118" height="30" rx="8" fill="#ffffff" stroke="#2563eb"/>
+  <text x="649" y="426" font-size="13" fill="#2563eb" text-anchor="middle">+ Add group</text>
+  <text x="52" y="446" font-size="12" fill="#5b6b85">Group courses that should share the same tutor limits. Unset fields fall back to the defaults above.</text>
+
+  <!-- group box -->
+  <rect x="52" y="458" width="656" height="212" rx="10" fill="#ffffff" stroke="#dbe2ea"/>
+  <rect x="68" y="474" width="520" height="30" rx="6" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="80" y="494" font-size="13" font-weight="600" fill="#0f172a">Group 1 - Intro CS</text>
+  <rect x="604" y="474" width="88" height="30" rx="8" fill="#ffffff" stroke="#ef4444"/>
+  <text x="648" y="494" font-size="13" fill="#ef4444" text-anchor="middle">Remove</text>
+
+  <!-- course chips -->
+  <rect x="68" y="516" width="278" height="26" rx="13" fill="#eef2ff"/>
+  <text x="82" y="533" font-size="12" fill="#3730a3"><tspan font-weight="700">CS101</tspan> — Introduction to Programming</text>
+  <text x="330" y="533" font-size="13" fill="#3730a3">×</text>
+  <rect x="356" y="516" width="300" height="26" rx="13" fill="#eef2ff"/>
+  <text x="370" y="533" font-size="12" fill="#3730a3"><tspan font-weight="700">CS102</tspan> — Data Structures and Algorithms</text>
+  <text x="640" y="533" font-size="13" fill="#3730a3">×</text>
+
+  <!-- add course row -->
+  <rect x="68" y="552" width="120" height="28" rx="8" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="80" y="570" font-size="12" fill="#94a3b8">Course ID</text>
+  <rect x="196" y="552" width="496" height="28" rx="8" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="208" y="570" font-size="12" fill="#94a3b8">Description</text>
+
+  <!-- group limits -->
+  <text x="68" y="606" font-size="12" fill="#334155">Help style</text>
+  <rect x="68" y="614" width="300" height="28" rx="6" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="80" y="632" font-size="12" fill="#0f172a">Hint only</text>
+  <text x="388" y="606" font-size="12" fill="#334155">Maximum steps revealed: 1</text>
+  <rect x="388" y="620" width="304" height="4" rx="2" fill="#cbd5e1"/>
+  <circle cx="392" cy="622" r="7" fill="#2563eb"/>
+  <rect x="68" y="652" width="15" height="15" rx="3" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="92" y="664" font-size="12" fill="#334155">Allow direct answers</text>
+  <rect x="240" y="652" width="15" height="15" rx="3" fill="#2563eb"/>
+  <text x="264" y="664" font-size="12" fill="#334155">Require citations</text>
+</svg>

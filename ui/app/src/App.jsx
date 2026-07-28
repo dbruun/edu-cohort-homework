@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 
 const defaultPolicy = {
+  professorId: 'prof-adams',
+  professorName: 'Dr. Adams',
   helpLevel: 'guided',
   maxStepsRevealed: 3,
   allowDirectAnswers: false,
@@ -8,7 +10,20 @@ const defaultPolicy = {
   subjectOverrides: {
     math: 'guided',
     science: 'hint_only'
-  }
+  },
+  courseGroups: [
+    {
+      name: 'Group 1 - Intro CS',
+      courses: [
+        { id: 'CS101', description: 'Introduction to Programming' },
+        { id: 'CS102', description: 'Data Structures and Algorithms' }
+      ],
+      helpLevel: 'hint_only',
+      maxStepsRevealed: 1,
+      allowDirectAnswers: false,
+      citationsRequired: true
+    }
+  ]
 };
 
 export default function App() {
@@ -43,6 +58,47 @@ export default function App() {
     setPolicy((current) => ({ ...current, [field]: value }));
   };
 
+  const courseGroups = policy.courseGroups || [];
+
+  const updateGroups = (groups) => {
+    setPolicy((current) => ({ ...current, courseGroups: groups }));
+  };
+
+  const addGroup = () => {
+    updateGroups([
+      ...courseGroups,
+      { name: `Group ${courseGroups.length + 1}`, courses: [], helpLevel: 'guided', maxStepsRevealed: 3, allowDirectAnswers: false, citationsRequired: true }
+    ]);
+  };
+
+  const removeGroup = (index) => {
+    updateGroups(courseGroups.filter((_, i) => i !== index));
+  };
+
+  const updateGroupField = (index, field, value) => {
+    updateGroups(courseGroups.map((group, i) => (i === index ? { ...group, [field]: value } : group)));
+  };
+
+  const addCourseToGroup = (index, courseId, courseDescription) => {
+    const id = courseId.trim();
+    if (!id) return;
+    updateGroups(
+      courseGroups.map((group, i) =>
+        i === index && !group.courses.some((c) => c.id === id)
+          ? { ...group, courses: [...group.courses, { id, description: (courseDescription || '').trim() }] }
+          : group
+      )
+    );
+  };
+
+  const removeCourseFromGroup = (index, courseId) => {
+    updateGroups(
+      courseGroups.map((group, i) =>
+        i === index ? { ...group, courses: group.courses.filter((c) => c.id !== courseId) } : group
+      )
+    );
+  };
+
   const savePolicy = async () => {
     try {
       const response = await fetch('/api/policy', {
@@ -67,6 +123,21 @@ export default function App() {
     <main style={{ fontFamily: 'Segoe UI, sans-serif', maxWidth: 900, margin: '0 auto', padding: 24 }}>
       <h1>Professor Portal</h1>
       <p>Adjust how much support the tutor offers to students without redeploying the agent.</p>
+
+      <section style={{ background: '#f6f8fb', borderRadius: 12, padding: 20, marginBottom: 20 }}>
+        <h2>Professor</h2>
+        <p style={{ color: '#5b6b85', marginTop: 0 }}>This pedagogy belongs to you. Students taking courses from other professors get each professor's own settings.</p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <label>
+            Name
+            <input value={policy.professorName || ''} onChange={(event) => updateField('professorName', event.target.value)} style={{ display: 'block', marginTop: 6, width: '100%', padding: 8 }} />
+          </label>
+          <label>
+            Professor ID
+            <input value={policy.professorId || ''} onChange={(event) => updateField('professorId', event.target.value)} style={{ display: 'block', marginTop: 6, width: '100%', padding: 8 }} />
+          </label>
+        </div>
+      </section>
 
       <section style={{ background: '#f6f8fb', borderRadius: 12, padding: 20, marginBottom: 20 }}>
         <h2>Pedagogy controls</h2>
@@ -99,6 +170,94 @@ export default function App() {
         <button onClick={savePolicy} style={{ marginTop: 20, padding: '10px 16px', borderRadius: 8, border: 'none', background: '#2563eb', color: 'white', cursor: 'pointer' }}>
           Save policy
         </button>
+      </section>
+
+      <section style={{ background: '#f6f8fb', borderRadius: 12, padding: 20, marginBottom: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h2 style={{ margin: 0 }}>Course groups</h2>
+          <button onClick={addGroup} style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid #2563eb', background: 'white', color: '#2563eb', cursor: 'pointer' }}>
+            + Add group
+          </button>
+        </div>
+        <p style={{ color: '#5b6b85', marginTop: 6 }}>Group courses that should share the same tutor limits. A course in a group uses the group's limits; anything left unset falls back to the defaults above.</p>
+
+        {courseGroups.length === 0 && <p style={{ color: '#5b6b85' }}>No groups yet. Add one to apply shared limits across several courses.</p>}
+
+        {courseGroups.map((group, index) => (
+          <div key={index} style={{ background: 'white', border: '1px solid #dbe2ea', borderRadius: 10, padding: 16, marginTop: 14 }}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input
+                value={group.name}
+                onChange={(event) => updateGroupField(index, 'name', event.target.value)}
+                style={{ flex: 1, padding: 8, borderRadius: 8, border: '1px solid #cbd5e1', fontWeight: 600 }}
+              />
+              <button onClick={() => removeGroup(index)} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #ef4444', background: 'white', color: '#ef4444', cursor: 'pointer' }}>
+                Remove
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+              {group.courses.map((course) => (
+                <span key={course.id} title={course.description} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#eef2ff', color: '#3730a3', borderRadius: 999, padding: '4px 10px', fontSize: 14 }}>
+                  <strong>{course.id}</strong>
+                  {course.description ? <span style={{ color: '#4f46e5' }}>&mdash; {course.description}</span> : null}
+                  <button onClick={() => removeCourseFromGroup(index, course.id)} style={{ border: 'none', background: 'transparent', color: '#3730a3', cursor: 'pointer', fontSize: 14, lineHeight: 1 }}>
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+              <input
+                placeholder="Course ID"
+                data-role="course-id"
+                style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 14, width: 120 }}
+              />
+              <input
+                placeholder="Description"
+                data-role="course-desc"
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    const row = event.target.parentElement;
+                    const idInput = row.querySelector('[data-role="course-id"]');
+                    addCourseToGroup(index, idInput.value, event.target.value);
+                    idInput.value = '';
+                    event.target.value = '';
+                  }
+                }}
+                style={{ flex: 1, padding: '6px 10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 14 }}
+              />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 14 }}>
+              <label style={{ fontSize: 14 }}>
+                Help style
+                <select value={group.helpLevel} onChange={(event) => updateGroupField(index, 'helpLevel', event.target.value)} style={{ display: 'block', marginTop: 6, width: '100%', padding: 8 }}>
+                  <option value="hint_only">Hint only</option>
+                  <option value="guided">Guided</option>
+                  <option value="worked_example">Worked example</option>
+                  <option value="full_solution">Full solution</option>
+                </select>
+              </label>
+              <label style={{ fontSize: 14 }}>
+                Maximum steps revealed
+                <input type="range" min="1" max="8" value={group.maxStepsRevealed} onChange={(event) => updateGroupField(index, 'maxStepsRevealed', Number(event.target.value))} style={{ display: 'block', width: '100%', marginTop: 10 }} />
+                <span>{group.maxStepsRevealed}</span>
+              </label>
+            </div>
+
+            <div style={{ display: 'flex', gap: 20, marginTop: 12 }}>
+              <label style={{ fontSize: 14 }}>
+                <input type="checkbox" checked={group.allowDirectAnswers} onChange={(event) => updateGroupField(index, 'allowDirectAnswers', event.target.checked)} />{' '}
+                Allow direct answers
+              </label>
+              <label style={{ fontSize: 14 }}>
+                <input type="checkbox" checked={group.citationsRequired} onChange={(event) => updateGroupField(index, 'citationsRequired', event.target.checked)} />{' '}
+                Require citations
+              </label>
+            </div>
+          </div>
+        ))}
       </section>
 
       <section style={{ background: '#fff', border: '1px solid #dbe2ea', borderRadius: 12, padding: 20 }}>
