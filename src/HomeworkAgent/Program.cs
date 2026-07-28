@@ -3,6 +3,7 @@ using Azure.Identity;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Foundry.Hosting;
 using Microsoft.Agents.AI.Hosting.AGUI.AspNetCore;
+using Microsoft.Extensions.AI;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +11,12 @@ var builder = WebApplication.CreateBuilder(args);
 var projectEndpoint = Environment.GetEnvironmentVariable("FOUNDRY_PROJECT_ENDPOINT");
 var modelDeployment = Environment.GetEnvironmentVariable("AZURE_AI_MODEL_DEPLOYMENT_NAME") ?? "gpt-4o";
 var pedagogyPolicyUri = Environment.GetEnvironmentVariable("PEDAGOGY_POLICY_URI");
+// Azure AI Search knowledge base that grounds the tutor in approved course
+// material. When SEARCH_ENDPOINT is set (wired by infra after the KB is seeded),
+// the agent gets a retrieval tool; otherwise it runs ungrounded (local dev).
+var searchEndpoint = Environment.GetEnvironmentVariable("SEARCH_ENDPOINT");
+var knowledgeBaseName = Environment.GetEnvironmentVariable("KNOWLEDGE_BASE_NAME") ?? "course-knowledge-base";
+var knowledgeSourceName = Environment.GetEnvironmentVariable("KNOWLEDGE_SOURCE_NAME") ?? "course-materials-source";
 // Comma-separated list of origins allowed to call the AG-UI endpoint from a browser
 // (e.g. the CopilotKit frontend / LTI tool). Defaults to any origin for local dev.
 var allowedOrigins = (Environment.GetEnvironmentVariable("ALLOWED_ORIGINS") ?? "*")
@@ -50,7 +57,8 @@ app.MapGet("/health", () => Results.Ok(new
 {
     status = "ok",
     model = modelDeployment,
-    hasProjectEndpoint = !string.IsNullOrWhiteSpace(projectEndpoint)
+    hasProjectEndpoint = !string.IsNullOrWhiteSpace(projectEndpoint),
+    grounded = !string.IsNullOrWhiteSpace(searchEndpoint)
 }));
 
 if (string.IsNullOrWhiteSpace(projectEndpoint))
@@ -62,14 +70,27 @@ if (string.IsNullOrWhiteSpace(projectEndpoint))
 }
 else
 {
+    var credential = new DefaultAzureCredential();
+
+    // Ground the tutor in approved course material: expose the Azure AI Search
+    // knowledge base as a function tool so the model retrieves and cites the
+    // professor-approved corpus instead of its own training knowledge.
+    var tools = new List<AITool>();
+    if (!string.IsNullOrWhiteSpace(searchEndpoint))
+    {
+        var knowledgeBase = new KnowledgeBase(searchEndpoint, knowledgeBaseName, knowledgeSourceName, credential);
+        tools.Add(AIFunctionFactory.Create(knowledgeBase.SearchCourseMaterials));
+    }
+
     // Real Microsoft Agent Framework agent backed by a Foundry model. The framework
-    // manages the LLM call, conversation history, and response lifecycle.
-    AIAgent agent = new AIProjectClient(new Uri(projectEndpoint), new DefaultAzureCredential())
+    // manages the LLM call, conversation history, tool invocation, and lifecycle.
+    AIAgent agent = new AIProjectClient(new Uri(projectEndpoint), credential)
         .AsAIAgent(
             model: modelDeployment,
             instructions: instructions,
             name: "homework-tutor",
-            description: "An EDU homework tutor that gives guided, pedagogy-aware support grounded in approved course knowledge.");
+            description: "An EDU homework tutor that gives guided, pedagogy-aware support grounded in approved course knowledge.",
+            tools: tools);
 
     // Expose the agent over the AG-UI protocol (SSE) for CopilotKit / AG-UI clients.
     app.MapAGUIServer("/", agent);

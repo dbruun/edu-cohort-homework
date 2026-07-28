@@ -348,6 +348,18 @@ resource agentApp 'Microsoft.App/containerApps@2024-03-01' = {
               value: './Pedagogy/pedagogy-policy.json'
             }
             {
+              name: 'SEARCH_ENDPOINT'
+              value: searchEndpoint
+            }
+            {
+              name: 'KNOWLEDGE_BASE_NAME'
+              value: 'course-knowledge-base'
+            }
+            {
+              name: 'KNOWLEDGE_SOURCE_NAME'
+              value: 'course-materials-source'
+            }
+            {
               name: 'AZURE_CLIENT_ID'
               value: identity.properties.clientId
             }
