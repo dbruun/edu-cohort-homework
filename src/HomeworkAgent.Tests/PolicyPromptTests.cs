@@ -69,4 +69,111 @@ public class PolicyPromptTests
             File.Delete(tempPath);
         }
     }
+
+    [Fact]
+    public void CourseGroupOverridesApplyToMemberCourses()
+    {
+        var policy = new PedagogyPolicy
+        {
+            HelpLevel = "guided",
+            MaxStepsRevealed = 3,
+            AllowDirectAnswers = false,
+            CitationsRequired = true,
+            CourseGroups = new List<CourseGroup>
+            {
+                new()
+                {
+                    Name = "Group 1",
+                    Courses = new List<Course>
+                    {
+                        new() { Id = "CS101", Description = "Intro to Programming" },
+                        new() { Id = "CS102", Description = "Data Structures" }
+                    },
+                    HelpLevel = "hint_only",
+                    AllowDirectAnswers = false,
+                    MaxStepsRevealed = 1
+                }
+            }
+        };
+
+        var resolved = policy.ResolveForCourse("CS101");
+
+        Assert.Equal("hint_only", resolved.HelpLevel);
+        Assert.Equal(1, resolved.MaxStepsRevealed);
+        // Fields the group leaves unset inherit the top-level default.
+        Assert.True(resolved.CitationsRequired);
+    }
+
+    [Fact]
+    public void CourseNotInAnyGroupUsesDefaults()
+    {
+        var policy = new PedagogyPolicy
+        {
+            HelpLevel = "guided",
+            CourseGroups = new List<CourseGroup>
+            {
+                new()
+                {
+                    Name = "Group 1",
+                    Courses = new List<Course> { new() { Id = "CS101", Description = "Intro" } },
+                    HelpLevel = "hint_only"
+                }
+            }
+        };
+
+        var resolved = policy.ResolveForCourse("HIST200");
+
+        Assert.Equal("guided", resolved.HelpLevel);
+    }
+
+    [Fact]
+    public void CatalogResolvesEachCourseToItsOwningProfessor()
+    {
+        var catalog = new PedagogyCatalog
+        {
+            Professors = new List<PedagogyPolicy>
+            {
+                new()
+                {
+                    ProfessorId = "prof-adams",
+                    ProfessorName = "Dr. Adams",
+                    HelpLevel = "guided",
+                    CourseGroups = new List<CourseGroup>
+                    {
+                        new()
+                        {
+                            Name = "Intro CS",
+                            Courses = new List<Course> { new() { Id = "CS101", Description = "Intro to Programming" } },
+                            HelpLevel = "hint_only"
+                        }
+                    }
+                },
+                new()
+                {
+                    ProfessorId = "prof-baker",
+                    ProfessorName = "Dr. Baker",
+                    HelpLevel = "worked_example",
+                    CourseGroups = new List<CourseGroup>
+                    {
+                        new()
+                        {
+                            Name = "History",
+                            Courses = new List<Course> { new() { Id = "HIST200", Description = "Modern History" } },
+                            AllowDirectAnswers = true
+                        }
+                    }
+                }
+            }
+        };
+
+        // A student taking both courses gets each professor's own pedagogy.
+        var cs = catalog.ResolveForCourse("CS101");
+        Assert.Equal("Dr. Adams", cs.ProfessorName);
+        Assert.Equal("hint_only", cs.HelpLevel);
+
+        var hist = catalog.ResolveForCourse("HIST200");
+        Assert.Equal("Dr. Baker", hist.ProfessorName);
+        Assert.Equal("worked_example", hist.HelpLevel);
+        Assert.True(hist.AllowDirectAnswers);
+    }
 }
