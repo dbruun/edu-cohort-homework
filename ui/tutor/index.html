@@ -48,8 +48,8 @@
   </footer>
 
   <script>
-    // --- Config: agent AG-UI endpoint (override with ?agent=<url>) -----------
-    const DEFAULT_AGENT = 'https://ca-homework-agent-cohortltia2.delightfulplant-bfdae994.northcentralus.azurecontainerapps.io/';
+    // --- Config: agent AG-UI endpoint (set via ?agent=<url> or the field below) ---
+    const DEFAULT_AGENT = '';
     const params = new URLSearchParams(location.search);
     let agentUrl = params.get('agent') || DEFAULT_AGENT;
     const agentUrlInput = document.getElementById('agentUrl');

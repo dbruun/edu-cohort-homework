@@ -177,7 +177,7 @@ async function main() {
   if (launchRes.status === 200) {
     if (role === 'learner') {
       checks.push(['renders tutor chat page', has('<title>Homework Tutor</title>')]);
-      checks.push(['wires the agent URL', has('ca-homework-agent-cohortltia2') || has('/agent') || has('agentUrl')]);
+      checks.push(['wires the agent URL', has('/agent') || has('agentUrl')]);
       checks.push(['greets the student by name', has(persona.given_name)]);
     } else {
       checks.push(['renders professor portal', has('Professor portal')]);

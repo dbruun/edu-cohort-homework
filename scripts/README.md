@@ -146,7 +146,7 @@ the public PEM. Keep the printed public key for Step 4.
 ### Step 3 — `TOOL_URL` (deployed tool host)
 
 ```powershell
-$env = 'cohortltia2'   # your azd environment token
+$env = 'eduhw01'       # your azd environment token
 $fqdn = az containerapp show -n "ca-lti-tool-$env" -g "rg-$env" `
   --query "properties.configuration.ingress.fqdn" -o tsv
 "TOOL_URL=https://$fqdn"

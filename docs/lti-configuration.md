@@ -14,7 +14,7 @@ A thin [ltijs](https://cvmcosta.me/ltijs/) service (`lti-tool/`) running on **Az
 
 ### Live endpoints
 
-Base host (this deployment): `ca-lti-tool-cohortltia2.delightfulplant-bfdae994.northcentralus.azurecontainerapps.io`
+Base host: `ca-lti-tool-<env>.<region>.azurecontainerapps.io` (your deployed tool's FQDN — get it with `az containerapp show -n ca-lti-tool-<env> -g rg-<env> --query properties.configuration.ingress.fqdn -o tsv`).
 
 | Purpose | Path | Notes |
 | --- | --- | --- |

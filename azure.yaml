@@ -3,18 +3,23 @@
 name: edu-homework-accelerator
 metadata:
     template: edu-homework-accelerator@0.1.0
-services:
-    homework-agent:
-        project: ./src/HomeworkAgent
-        host: containerapp
-        language: dotnet
-        docker:
-            remoteBuild: true
-    lti-tool:
-        project: ./lti-tool
-        host: containerapp
-        language: js
-        docker:
-            remoteBuild: false
+# Both azd services are commented out for now — the current getting-started path
+# (docs/getting-started.md) uses a declarative agent created in the Foundry portal
+# plus the local AG-UI bridge (bridge/), neither of which deploys through azd.
+# Re-enable these when scaling out to hosted / multi-agent deployments (hosted-agent
+# reference: scaling-to-multi-agents/maf-hosted-agent) and/or LMS launch via LTI.
+# services:
+#     homework-agent:
+#         project: ./src/HomeworkAgent
+#         host: containerapp
+#         language: dotnet
+#         docker:
+#             remoteBuild: true
+#     lti-tool:
+#         project: ./lti-tool
+#         host: containerapp
+#         language: js
+#         docker:
+#             remoteBuild: false
 infra:
     provider: bicep

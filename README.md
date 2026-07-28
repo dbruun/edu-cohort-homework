@@ -9,6 +9,12 @@ knowledge base with course docs, mint your own LTI identities, launch into a
 course context, and land in a chat UI where the tutor answers — grounded on the
 documents you provided and shaped by the pedagogy policy.
 
+> **Running the customer lab?** Follow the guided
+> [getting started guide](docs/getting-started.md): deploy a slim Foundry + Azure AI Search
+> stack, seed a knowledge base, create the agent in the Foundry portal, and ground
+> it in course material (~2–3 hours). It's the fastest path from zero to a working,
+> grounded tutor.
+
 ## The story, end to end
 
 ```mermaid

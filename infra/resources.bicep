@@ -122,6 +122,8 @@ resource foundry 'Microsoft.CognitiveServices/accounts@2026-05-15-preview' = {
     customSubDomainName: 'aif-${resourceToken}'
     publicNetworkAccess: 'Enabled'
     disableLocalAuth: false
+    // Required so a Foundry project can be created under this AIServices account.
+    allowProjectManagement: true
   }
 }
 
@@ -262,6 +264,19 @@ resource projectSearchRole 'Microsoft.Authorization/roleAssignments@2022-04-01' 
   scope: search
   properties: {
     principalId: foundryProject.identity.principalId
+    roleDefinitionId: searchIndexDataReaderRoleId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// A declarative Foundry agent's azure_ai_search tool authenticates to the search
+// service through the AI Services ACCOUNT managed identity (via the AAD
+// connection below), so the account identity also needs data-plane read.
+resource accountSearchRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(search.id, foundry.id, searchIndexDataReaderRoleId)
+  scope: search
+  properties: {
+    principalId: foundry.identity.principalId
     roleDefinitionId: searchIndexDataReaderRoleId
     principalType: 'ServicePrincipal'
   }

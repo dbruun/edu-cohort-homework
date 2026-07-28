@@ -23,7 +23,7 @@
   auto-discover the search service and Foundry account when not supplied.
 
 .EXAMPLE
-  ./scripts/setup-knowledge-base.ps1 -EnvironmentName cohort-lti-a2
+  ./scripts/setup-knowledge-base.ps1 -EnvironmentName eduhw01
 
 .NOTES
   Requires: Azure CLI (az login), Owner/Contributor + Search Service Contributor
