@@ -18,32 +18,12 @@ services:
               sku:
                 capacity: 10
                 name: GlobalStandard
-    course-knowledge:
-        host: azure.ai.toolbox
-        uses:
-            - ai-project
-        tools:
-            # Curated course-knowledge grounding for the tutor. References an existing
-            # CognitiveSearch project connection (course-knowledge-connection) over the
-            # course-materials index. Create the connection once before first deploy:
-            #   azd ai connection create course-knowledge-connection \
-            #     --kind cognitive-search --target "https://<search>.search.windows.net/" \
-            #     --auth-type api-key --key "<admin-key>"
-            - type: azure_ai_search
-              name: course-search
-              azure_ai_search:
-                indexes:
-                    - project_connection_id: course-knowledge-connection
-                      index_name: course-materials
-                      query_type: vector_semantic_hybrid
-                      top_k: 5
     homework-agent:
         project: ./src/HomeworkAgent
         host: azure.ai.agent
         language: csharp
         uses:
             - ai-project
-            - course-knowledge
         codeConfiguration:
             entryPoint: HomeworkAgent.dll
             runtime: dotnet_10
@@ -59,7 +39,7 @@ services:
             - name: PEDAGOGY_POLICY_URI
               value: ${PEDAGOGY_POLICY_URI}
             - name: TOOLBOX_NAME
-              value: course-knowledge
+              value: ${TOOLBOX_NAME}
         kind: hosted
         metadata:
             tags:

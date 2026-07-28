@@ -40,8 +40,9 @@ var projectEndpoint = new Uri(Environment.GetEnvironmentVariable("FOUNDRY_PROJEC
 var deployment = Environment.GetEnvironmentVariable("AZURE_AI_MODEL_DEPLOYMENT_NAME")
     ?? throw new InvalidOperationException("AZURE_AI_MODEL_DEPLOYMENT_NAME environment variable is not set.");
 
-var toolboxName = Environment.GetEnvironmentVariable("TOOLBOX_NAME")
-    ?? throw new InvalidOperationException("TOOLBOX_NAME environment variable is not set.");
+// Optional: name of the Foundry Toolbox that grounds answers in course knowledge (Azure AI
+// Search). When unset/empty the tutor still runs, just without knowledge grounding.
+var toolboxName = Environment.GetEnvironmentVariable("TOOLBOX_NAME");
 
 var pedagogyPolicyUri = Environment.GetEnvironmentVariable("PEDAGOGY_POLICY_URI");
 
@@ -70,11 +71,20 @@ AIAgent agent = new AIProjectClient(projectEndpoint, new DefaultAzureCredential(
 var builder = AgentHost.CreateBuilder(args);
 builder.Services.AddFoundryResponses(agent);
 
-// Register the course-knowledge Foundry Toolbox. At startup the hosting layer connects to the
-// toolbox's managed MCP proxy (derived from FOUNDRY_PROJECT_ENDPOINT), discovers its tools
-// (the Azure AI Search course-search tool), and injects them into every request. Tool calls
-// are brokered by the Foundry platform. Omitting a version resolves the toolbox's default.
-builder.Services.AddFoundryToolboxes(toolboxName);
+// Register the course-knowledge Foundry Toolbox when configured. At startup the hosting layer
+// connects to the toolbox's managed MCP proxy (derived from FOUNDRY_PROJECT_ENDPOINT), discovers
+// its tools (the Azure AI Search course-search tool), and injects them into every request. Tool
+// calls are brokered by the Foundry platform. Omitting a version resolves the toolbox's default.
+// When TOOLBOX_NAME is unset the tutor runs without knowledge grounding.
+if (!string.IsNullOrWhiteSpace(toolboxName))
+{
+    builder.Services.AddFoundryToolboxes(toolboxName);
+    Console.WriteLine($"[INFO] Attached Foundry Toolbox '{toolboxName}' for course knowledge.");
+}
+else
+{
+    Console.WriteLine("[INFO] TOOLBOX_NAME not set — running without a knowledge toolbox.");
+}
 
 builder.RegisterProtocol("responses", endpoints => endpoints.MapFoundryResponses());
 
