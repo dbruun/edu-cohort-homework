@@ -260,8 +260,8 @@
         </a>
         <div class="nav-links">
           <a href="{{ '/' | relative_url }}">Home</a>
+          <a href="{{ '/getting-started' | relative_url }}">Lab</a>
           <a href="{{ '/architecture' | relative_url }}">Architecture</a>
-          <a href="{{ '/how-to-use' | relative_url }}">Usage</a>
           <a href="{{ '/configuration' | relative_url }}">Configuration</a>
           <a href="{{ '/troubleshooting' | relative_url }}">Troubleshooting</a>
           <a class="gh" href="https://github.com/dbruun/edu-cohort-homework">GitHub</a>
@@ -271,11 +271,11 @@
 
     {% if page.url == "/" or page.url == "/index.html" %}
     <header class="hero">
-      <span class="badge"><span class="dot"></span> Built on Microsoft Foundry + Agent Framework</span>
-      <h1>AI homework support with guardrails professors control</h1>
-      <p class="lead">A hosted tutor accelerator that grounds answers in approved course knowledge, applies configurable pedagogy, and gives educators a portal to tune it — no redeploy required.</p>
+      <span class="badge"><span class="dot"></span> Hands-on Microsoft Foundry lab</span>
+      <h1>Build a homework tutor grounded in course knowledge</h1>
+      <p class="lead">Deploy Foundry and Azure AI Search, create the tutor in the portal, and verify grounded answers with citations in one guided lab.</p>
       <div class="cta-row">
-        <a class="btn btn-primary" href="{{ '/architecture' | relative_url }}">Explore the architecture →</a>
+        <a class="btn btn-primary" href="{{ '/getting-started' | relative_url }}">Start the lab →</a>
         <a class="btn btn-ghost" href="https://github.com/dbruun/edu-cohort-homework">View on GitHub</a>
       </div>
     </header>
@@ -283,23 +283,23 @@
     <section class="features">
       <div class="feature">
         <div class="ico">🧭</div>
-        <h3>Pedagogy you configure</h3>
-        <p>Set help level, step limits, and citation rules through policy — not code changes.</p>
+        <h3>Portal-guided build</h3>
+        <p>Create the agent and attach its knowledge base in the Foundry portal.</p>
       </div>
       <div class="feature">
         <div class="ico">🔎</div>
         <h3>Grounded knowledge</h3>
-        <p>A Foundry Toolbox connects the tutor to Azure AI Search over approved materials.</p>
+        <p>Use Azure AI Search over approved course material and verify citations.</p>
       </div>
       <div class="feature">
         <div class="ico">🧑‍🏫</div>
-        <h3>Professor portal</h3>
-        <p>Adjust tutoring behavior and knowledge sources from a friendly management UI.</p>
+        <h3>Pedagogy by design</h3>
+        <p>Start with tutoring guardrails, then evolve toward professor-owned policy.</p>
       </div>
       <div class="feature">
         <div class="ico">🚀</div>
-        <h3>Azure-ready deploy</h3>
-        <p>Ship with Azure Developer CLI scripts and starter infrastructure as code.</p>
+        <h3>Phased evolution</h3>
+        <p>Add LMS data, LTI delivery, and multi-agent orchestration only when needed.</p>
       </div>
     </section>
     {% endif %}

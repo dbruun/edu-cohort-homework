@@ -1,145 +1,119 @@
 # EDU Homework Agent Accelerator
 
-A student-facing **homework tutor** built on Microsoft Foundry Hosted Agents,
-grounded in your course material through Azure AI Search, launched from your LMS
-over LTI 1.3, and governed by a professor-owned pedagogy policy.
+A hands-on accelerator for building a student homework tutor on Microsoft
+Foundry, grounding it in approved course material with Azure AI Search, and
+evolving it toward LMS delivery and professor-owned pedagogy.
 
-This README walks the **end-to-end story**: stand up the infrastructure, seed the
-knowledge base with course docs, mint your own LTI identities, launch into a
-course context, and land in a chat UI where the tutor answers — grounded on the
-documents you provided and shaped by the pedagogy policy.
+The main path in this repository is the **Phase 1 lab**: deploy a slim Foundry +
+Azure AI Search stack, seed a course knowledge base, create the tutor in the
+Foundry portal, and verify grounded answers with citations. The lab intentionally
+does not deploy containers, an LTI tool, or the professor portal.
 
-> **Running the customer lab?** Follow the guided
-> [getting started guide](docs/getting-started.md): deploy a slim Foundry + Azure AI Search
-> stack, seed a knowledge base, create the agent in the Foundry portal, and ground
-> it in course material (~2–3 hours). It's the fastest path from zero to a working,
-> grounded tutor.
+## Target architecture
 
-## The story, end to end
+The lab proves the agent and knowledge layer at the center of the design. The
+diagram below shows the end-to-end target architecture, including the later LMS,
+delivery, data-integration, and pedagogy layers.
 
-```mermaid
-flowchart LR
-  A[1. Deploy infra<br/>azd provision] --> B[2. Seed knowledge base<br/>course docs]
-  B --> C[3. Create LTI identities<br/>keypair + client id]
-  C --> D[4. Launch in a context<br/>learner / instructor]
-  D --> E[5. Chat UI<br/>grounded answers + citations]
-```
+![Homework Tutor end-to-end architecture](architecture.png)
 
----
+## Start here: build the grounded tutor
 
-### 1. Deploy the infrastructure
+The guided lab takes about **2-3 hours** and has four steps:
 
-One command provisions the whole stack on Azure via the Azure Developer CLI:
-the hosted **Foundry agent** + model deployment, the **Azure AI Search** service
-(with a Foundry connection + a `gpt-5.4-mini` reasoning model for retrieval), the
-**LTI 1.3 tool**, and the **professor portal** scaffold.
+| Step | Outcome | Where |
+| --- | --- | --- |
+| 1. Deploy infrastructure | Foundry project, two model deployments, Azure AI Search, RBAC, and project connection | Terminal |
+| 2. Seed course knowledge | Search index, knowledge source, knowledge base, and sample microbiology content | Terminal |
+| 3. Create the tutor | `homework-tutor` agent using the provided instructions | Foundry portal |
+| 4. Add knowledge | Grounded, cited responses in the Foundry Playground | Foundry portal |
+
+Follow the complete [getting started guide](docs/getting-started.md) for
+prerequisites, portal steps, verification, cleanup, and troubleshooting.
+
+### 1. Deploy the lab infrastructure
+
+From the repository root, choose a short environment name and run:
 
 ```powershell
-./scripts/deploy.ps1 -EnvironmentName <your-env> -Location northcentralus
+./lab/deploy.ps1 -EnvironmentName eduhw01
 ```
 
 ```bash
-bash ./scripts/deploy.sh <your-env> northcentralus
+./lab/deploy.sh eduhw01 northcentralus basic
 ```
 
-This creates resource group `rg-<env>` and deploys every component. See
-[scripts/README.md](scripts/README.md) for parameters and teardown, and
-[docs/architecture.md](docs/architecture.md) for the topology.
+The lab provisions only:
 
-> **Search SKU:** the search service defaults to **Basic** (fine for a pilot).
-> Raise `searchSku` to `standard` (S1)+ for go-live — see
-> [config/knowledge-sources.md](config/knowledge-sources.md).
+- a Microsoft Foundry account and `homework` project
+- `gpt-5.4` and `gpt-5.4-mini` model deployments
+- an Azure AI Search service
+- the RBAC assignments and Foundry project connection needed for grounding
 
-### 2. Seed the knowledge base with course material
+The infrastructure lives in [lab/infra](lab/infra). It deliberately excludes
+ACR, Container Apps, MongoDB, the hosted agent container, and the LTI tool.
 
-The tutor grounds its answers in an **Azure AI Search knowledge base**. This
-script creates the index, knowledge source, and knowledge base, and loads seed
-content (dummy microbiology data out of the box):
+### 2. Seed the knowledge base
 
 ```powershell
-./scripts/setup-knowledge-base.ps1 -EnvironmentName <your-env>
+./scripts/setup-knowledge-base.ps1 -EnvironmentName eduhw01
 ```
 
-Replace the corpus with your own material by editing
-[scripts/seed-data/microbiology.json](scripts/seed-data/microbiology.json) (or
-passing `-SeedDataPath`) and re-running — it is idempotent. Every answer the
-tutor later gives is retrieved from, and cites, these documents.
+This creates `course-materials`, `course-materials-source`, and
+`course-knowledge-base`, then loads the sample content from
+[scripts/seed-data/microbiology.json](scripts/seed-data/microbiology.json).
 
-### 3. Create your own LTI identities
+### 3. Create the agent in Foundry
 
-You act as your **own LTI 1.3 platform** — no dependency on an external LMS to
-test. Generate the signing keypair and a client id:
+Open the `homework` project in the Foundry portal, create an agent named
+`homework-tutor` with the `gpt-5.4` deployment, and paste in
+[lab/agent-instructions.md](lab/agent-instructions.md).
 
-```powershell
-node scripts/gen-platform-key.mjs      # writes .platform-key.pem + prints LTI_KID
-[guid]::NewGuid().ToString()           # your LTI client id
-```
+### 4. Attach knowledge and test
 
-Register the public key on the deployed tool and fill in `scripts/.lti.env`. The
-full walkthrough (registering the platform, populating `.lti.env`) is in
-[scripts/README.md](scripts/README.md) and [docs/lti-configuration.md](docs/lti-configuration.md).
+Add `course-knowledge-base` to the agent, save it, and ask:
 
-### 4. Launch into a course context
+> How do bacteria resist antibiotics?
 
-Drive a **real LTI 1.3 launch** against the deployed tool — the scripts sign the
-`id_token` themselves and carry the state cookie in a single first-party context,
-so launches validate and route by role without an LMS.
+The response should use the seeded course material and include citations. Ask a
+question outside that material to verify that the tutor declines to invent an
+answer.
 
-```powershell
-# Headless PASS/FAIL proof (learner routes to the tutor, instructor to the portal)
-node scripts/lti-launch.mjs --role learner
-node scripts/lti-launch.mjs --role instructor
+## Evolution roadmap
 
-# Visual: opens a browser, renders the live tutor, and streams an answer
-node scripts/lti-launch-browser.mjs --role learner --question "How do bacteria resist antibiotics?"
-```
+The repository is organized so each phase can build on a working tutor rather
+than requiring the entire platform up front.
 
-### 5. Land in the chat UI — grounded on your docs
+![Homework Tutor Agent evolution roadmap](sequence.png)
 
-The learner launch lands in the **student chat UI**
-([ui/tutor/index.html](ui/tutor/index.html)), which speaks the agent's AG-UI
-streaming protocol directly. Ask a homework question and the tutor streams back a
-**guided answer grounded in the seeded course material** — hints and steps rather
-than a direct solution to graded work, with citations — as configured by the
-pedagogy policy. The instructor launch lands in the **professor portal**
-([ui/app](ui/app)) for tuning that policy.
+| Phase | Focus | Repository starting points |
+| --- | --- | --- |
+| 1 | Agent grounded in academic data | [lab](lab), [scripts/setup-knowledge-base.ps1](scripts/setup-knowledge-base.ps1) |
+| 2 | LMS data integration | [config/knowledge-sources.md](config/knowledge-sources.md), [toolbox](toolbox) |
+| 3 | Professor-owned pedagogy | [src/HomeworkAgent/Pedagogy](src/HomeworkAgent/Pedagogy), [ui/app](ui/app) |
+| 4 | LTI 1.3 launch and role routing | [lti-tool](lti-tool), [docs/lti-integration.md](docs/lti-integration.md) |
+| 5 | Optional multi-agent orchestration | [scaling-to-multi-agents](scaling-to-multi-agents) |
 
-> **Cold start:** the agent scales to zero, so the first reply after idle can take
-> up to ~2 minutes. Pre-warm it (hit the agent `/health`) before a live demo.
+The later-phase folders are implementation and exploration surfaces, not part of
+the current lab deployment.
 
----
+## Repository map
 
-## What's included
-
-- A **.NET hosted agent** using the Microsoft Agent Framework, exposed over AG-UI
-- An **Azure AI Search knowledge base** + a Foundry Toolbox definition, extendable
-  to more indexes without redeploying the agent
-- An **LTI 1.3 tool** (ltijs) for LMS launch, with self-owned platform test scripts
-- A **student chat UI** and a **professor portal** for pedagogy tuning
-- **Bicep** infrastructure and **azd** deployment scripts
-- A GitHub Pages-ready **documentation site**
-
-## Repo structure
-
-- [src/HomeworkAgent](src/HomeworkAgent) — hosted agent source and policy prompt composition
-- [toolbox](toolbox) — Foundry Toolbox definition for Azure AI Search
-- [scripts](scripts) — deploy, knowledge-base setup, and LTI launch scripts
-- [scripts/seed-data](scripts/seed-data) — seed course material for the knowledge base
-- [ui](ui) — student chat UI, professor portal, and API scaffold
-- [infra](infra) — Bicep infrastructure as code
-- [config](config) — knowledge-source management guidance
-- [docs](docs) — Jekyll documentation site
-
-## Local development
-
-1. Build the agent: `dotnet build src/HomeworkAgent/HomeworkAgent.csproj`
-2. Run the tests: `dotnet test src/HomeworkAgent.Tests/HomeworkAgent.Tests.csproj`
-3. Build the portal: `npm --prefix ui/app run build`
+- [lab](lab) - the primary infrastructure and agent-creation lab
+- [scripts](scripts) - knowledge setup and supporting automation
+- [src/HomeworkAgent](src/HomeworkAgent) - .NET Agent Framework tutor and pedagogy policy composition
+- [toolbox](toolbox) - Foundry Toolbox definition for Azure AI Search
+- [lti-tool](lti-tool) - LTI 1.3 launch and role-routing implementation
+- [bridge](bridge) - AG-UI streaming bridge
+- [ui](ui) - student tutor UI and professor portal
+- [scaling-to-multi-agents](scaling-to-multi-agents) - optional multi-agent evolution
+- [docs](docs) - GitHub Pages documentation
 
 ## Documentation
 
-- Start with [docs/index.md](docs/index.md) for the overview.
-- See [docs/architecture.md](docs/architecture.md) for the system flow.
-- See [docs/lti-integration.md](docs/lti-integration.md) and
-  [docs/lti-configuration.md](docs/lti-configuration.md) for LMS launch.
-- See [config/knowledge-sources.md](config/knowledge-sources.md) for grounding.
+- [Getting started](docs/getting-started.md) - the main lab walkthrough
+- [Architecture](docs/architecture.md) - components, data flow, and design principles
+- [LTI integration](docs/lti-integration.md) - the later LMS delivery phase
+- [Configuration](docs/configuration.md) - pedagogy and knowledge settings
+- [Troubleshooting](docs/troubleshooting.md) - common deployment and runtime issues
+- [Published documentation](https://dbruun.github.io/edu-cohort-homework/)
