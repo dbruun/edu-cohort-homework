@@ -1,4 +1,4 @@
-// Slim lab resources: Foundry account + project + 2 model deployments, and an
+// Slim lab resources: Foundry account + project + 3 model deployments, and an
 // Azure AI Search service wired for portal knowledge-base grounding.
 //
 // What is intentionally NOT here (vs. the full accelerator in infra/):
@@ -96,6 +96,27 @@ resource kbReasoningDeployment 'Microsoft.CognitiveServices/accounts/deployments
   }
 }
 
+// Embeddings model used both while the loader pushes course documents and by
+// Azure AI Search to vectorize queries at retrieval time.
+resource embeddingDeployment 'Microsoft.CognitiveServices/accounts/deployments@2024-10-01' = {
+  parent: foundry
+  name: 'text-embedding-3-small'
+  dependsOn: [
+    kbReasoningDeployment
+  ]
+  sku: {
+    name: 'GlobalStandard'
+    capacity: 50
+  }
+  properties: {
+    model: {
+      format: 'OpenAI'
+      name: 'text-embedding-3-small'
+      version: '1'
+    }
+  }
+}
+
 // --- Azure AI Search ------------------------------------------------------
 resource search 'Microsoft.Search/searchServices@2024-06-01-preview' = {
   name: 'srch-${resourceToken}'
@@ -115,14 +136,7 @@ resource search 'Microsoft.Search/searchServices@2024-06-01-preview' = {
     // semantic configuration the loader script creates.
     semanticSearch: 'free'
     publicNetworkAccess: 'enabled'
-    // Key auth stays on so the loader script can seed data with the admin key,
-    // while AAD/RBAC is used by the agent + Foundry connection at query time.
     disableLocalAuth: false
-    authOptions: {
-      aadOrApiKey: {
-        aadAuthFailureMode: 'http401WithBearerChallenge'
-      }
-    }
   }
 }
 
@@ -131,6 +145,43 @@ var searchEndpoint = 'https://${search.name}.search.windows.net'
 // The search service calls the KB reasoning model; its system-assigned identity
 // needs OpenAI access on Foundry.
 var openAIUserRoleId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '5e0bd9bd-7b93-4f28-af87-19fc36ad61bd')
+var searchServiceContributorRoleId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7ca78c08-252a-4471-8644-bb5ff32d4ba0')
+var searchIndexDataContributorRoleId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '8ebe5a00-799e-43f5-93ac-243d3dce84a7')
+var deployingPrincipalId = deployer().objectId
+
+// The setup scripts run as the signed-in attendee. These grants let that user
+// create Search data-plane objects, upload documents, and generate embeddings
+// without enabling account keys.
+resource deployerOpenAIRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(foundry.id, deployingPrincipalId, openAIUserRoleId)
+  scope: foundry
+  properties: {
+    principalId: deployingPrincipalId
+    roleDefinitionId: openAIUserRoleId
+    principalType: 'User'
+  }
+}
+
+resource deployerSearchServiceRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(search.id, deployingPrincipalId, searchServiceContributorRoleId)
+  scope: search
+  properties: {
+    principalId: deployingPrincipalId
+    roleDefinitionId: searchServiceContributorRoleId
+    principalType: 'User'
+  }
+}
+
+resource deployerSearchDataRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(search.id, deployingPrincipalId, searchIndexDataContributorRoleId)
+  scope: search
+  properties: {
+    principalId: deployingPrincipalId
+    roleDefinitionId: searchIndexDataContributorRoleId
+    principalType: 'User'
+  }
+}
+
 resource searchOpenAIRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(foundry.id, search.id, openAIUserRoleId)
   scope: foundry
@@ -196,3 +247,4 @@ output searchServiceName string = search.name
 output searchEndpoint string = searchEndpoint
 output chatDeploymentName string = chatModelDeployment.name
 output kbReasoningDeploymentName string = kbReasoningDeployment.name
+output embeddingDeploymentName string = embeddingDeployment.name

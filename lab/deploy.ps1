@@ -1,7 +1,7 @@
 <#
 .SYNOPSIS
   Deploys the HANDS-ON LAB infrastructure via the Azure Developer CLI (azd): a
-  Foundry account + project, two model deployments, and an Azure AI Search service
+  Foundry account + project, three model deployments, and an Azure AI Search service
   (with RBAC + connection for portal knowledge-base grounding). Slim lab stack —
   no hosted agent container, LTI tool, or ACR.
 
@@ -69,6 +69,7 @@ try {
   Write-Host "  search service    : $(Get-AzdValue SEARCH_SERVICE_NAME)"
   Write-Host "  chat model        : $(Get-AzdValue CHAT_DEPLOYMENT_NAME)"
   Write-Host "  KB reasoning model: $(Get-AzdValue KB_REASONING_DEPLOYMENT_NAME)"
+  Write-Host "  embeddings model  : $(Get-AzdValue EMBEDDING_DEPLOYMENT_NAME)"
   Write-Host ""
   Write-Host "Next: seed the knowledge base ->" -ForegroundColor Cyan
   Write-Host "  ./scripts/setup-knowledge-base.ps1 -EnvironmentName $EnvironmentName"
