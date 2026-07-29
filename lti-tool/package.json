@@ -1,0 +1,16 @@
+{
+  "name": "edu-homework-lti-tool",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Thin LTI 1.3 / LTI Advantage tool (ltijs) that surfaces the homework tutor and professor portal inside Canvas & Blackboard.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "ltijs": "^5.9.5"
+  }
+}

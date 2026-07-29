@@ -29,6 +29,9 @@ This accelerator helps institutions provide a tutor experience that is:
 
 ## Get started
 
+- **New here? Start with [getting started](getting-started.md)** — deploy
+  infrastructure, seed a knowledge base, create the agent in the Foundry portal,
+  and ground it in course material (~2–3 hours).
 - Review the [architecture overview](architecture.md) for what is deployed today.
 - Learn how to configure the agent and policy in [configuration.md](configuration.md).
 - See the [usage guide](how-to-use.md) for student, professor, and developer workflows.

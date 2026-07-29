@@ -1,0 +1,14 @@
+{
+  "name": "lti-launch-scripts",
+  "private": true,
+  "type": "module",
+  "description": "Headless LTI 1.3 launch driver for testing the tool without a browser.",
+  "scripts": {
+    "launch:learner": "node lti-launch.mjs --role learner",
+    "launch:instructor": "node lti-launch.mjs --role instructor"
+  },
+  "dependencies": {
+    "jose": "^5.9.6",
+    "playwright": "^1.62.0-alpha-2026-07-20"
+  }
+}
