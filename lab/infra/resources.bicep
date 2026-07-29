@@ -37,7 +37,7 @@ resource foundry 'Microsoft.CognitiveServices/accounts@2026-05-15-preview' = {
   properties: {
     customSubDomainName: 'aif-${resourceToken}'
     publicNetworkAccess: 'Enabled'
-    disableLocalAuth: true
+    disableLocalAuth: false
     // Required so a Foundry project can be created under this AIServices account.
     allowProjectManagement: true
   }
@@ -136,7 +136,7 @@ resource search 'Microsoft.Search/searchServices@2024-06-01-preview' = {
     // semantic configuration the loader script creates.
     semanticSearch: 'free'
     publicNetworkAccess: 'enabled'
-    disableLocalAuth: true
+    disableLocalAuth: false
   }
 }
 
