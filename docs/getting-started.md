@@ -53,8 +53,8 @@ Before you start, make sure you have:
   ```
 - **Azure Developer CLI (azd) 1.28+** — `azd auth login`. Step 1 provisions the
   infrastructure through a dedicated azd environment.
-- **PowerShell 7+** (the scripts are `.ps1`; a `deploy.sh` bash equivalent is also
-  provided for step 1).
+- **PowerShell 7+ or Python 3.10+** for the knowledge setup script. A bash
+  equivalent is also provided for infrastructure deployment.
 - **This repository**, cloned locally, with your terminal in the repo root.
 
 Pick a short **environment name** (letters/numbers, e.g. `eduhw01`). It becomes
@@ -134,6 +134,17 @@ you have something to ground on out of the box.
 ```powershell
 ./scripts/setup-knowledge-base.ps1 -EnvironmentName $env:LAB
 ```
+
+<details>
+<summary>Prefer Python?</summary>
+
+```bash
+python scripts/setup-knowledge-base.py --environment-name eduhw01
+```
+
+The Python version uses only the standard library and Azure CLI; no pip install
+is required.
+</details>
 
 The script auto-discovers the search service and Foundry account in `rg-<env>`,
 so you don't pass endpoints. It's idempotent — safe to re-run.

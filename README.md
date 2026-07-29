@@ -59,6 +59,12 @@ ACR, Container Apps, MongoDB, the hosted agent container, and the LTI tool.
 ./scripts/setup-knowledge-base.ps1 -EnvironmentName eduhw01
 ```
 
+Or use the cross-platform Python version (no pip packages required):
+
+```bash
+python scripts/setup-knowledge-base.py --environment-name eduhw01
+```
+
 This creates `course-materials`, `course-materials-source`, and
 `course-knowledge-base`, then loads the sample content from
 [scripts/seed-data/microbiology.json](scripts/seed-data/microbiology.json).

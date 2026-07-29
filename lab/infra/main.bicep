@@ -1,7 +1,7 @@
 // Subscription-scoped entry point for the HANDS-ON LAB infrastructure.
 //
 // Provisions ONLY what the lab needs: a Foundry (Azure AI Services) account +
-// project, two model deployments (chat + KB reasoning), and an Azure AI Search
+// project, three model deployments (chat + KB reasoning + embeddings), and an Azure AI Search
 // service with the RBAC + connection required for portal knowledge-base
 // grounding. It deliberately does NOT deploy the C# hosted agent container, the
 // LTI tool, ACR, or Mongo — attendees create the agent in the Foundry portal and
@@ -14,7 +14,7 @@ targetScope = 'subscription'
 @description('Environment name — used for resource naming (rg-<token>, aif-<token>, srch-<token>).')
 param environmentName string
 
-@description('Location for all resources. Must have gpt-5.4 + gpt-5.4-mini quota (northcentralus recommended).')
+@description('Location for all resources. Must have gpt-5.4, gpt-5.4-mini, and text-embedding-3-small quota (northcentralus recommended).')
 param location string = deployment().location
 
 @description('SKU for Azure AI Search. \'basic\' is right for the lab; \'standard\' (S1)+ for go-live.')
@@ -59,3 +59,4 @@ output SEARCH_SERVICE_NAME string = resources.outputs.searchServiceName
 output SEARCH_ENDPOINT string = resources.outputs.searchEndpoint
 output CHAT_DEPLOYMENT_NAME string = resources.outputs.chatDeploymentName
 output KB_REASONING_DEPLOYMENT_NAME string = resources.outputs.kbReasoningDeploymentName
+output EMBEDDING_DEPLOYMENT_NAME string = resources.outputs.embeddingDeploymentName
