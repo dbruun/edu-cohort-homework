@@ -1,6 +1,13 @@
 # Architecture overview
 
-The accelerator delivers one core promise — **professor-owned pedagogy for a student-facing tutor** — through three cooperating parts:
+This page describes the **target architecture**. The current Phase 1 lab deploys
+the Foundry project, model deployments, Azure AI Search, RBAC, and project
+connection, then has the participant create and ground the agent in the Foundry
+portal. The hosted container, LTI delivery, professor portal, and data sync shown
+below are later phases and are not provisioned by the lab.
+
+The accelerator's target state delivers one core promise - **professor-owned
+pedagogy for a student-facing tutor** - through three cooperating parts:
 
 - a **hosted tutor agent** on Microsoft Foundry that answers homework questions,
 - a **professor portal** where educators tune the pedagogy policy that shapes those answers, and
@@ -49,12 +56,12 @@ A professor sets the pedagogy policy in the portal. A student asks a question; t
 
 | Component | Responsibility | Source |
 | --- | --- | --- |
-| Hosted tutor agent | Runs on Foundry; answers questions under the pedagogy policy and grounds them through the toolbox | [../src/HomeworkAgent/Program.cs](../src/HomeworkAgent/Program.cs) |
-| Agent + model + toolbox manifest | Declares the agent, model deployment, Azure AI Search toolbox, and environment | [../azure.yaml](../azure.yaml) |
-| Professor Portal UI | Lets professors tune help level, steps, direct answers, and citations | [../ui/app/src/App.jsx](../ui/app/src/App.jsx) |
-| Portal Policy API | Reads and writes the pedagogy policy | [../ui/api/index.js](../ui/api/index.js) |
-| Pedagogy policy | The rules the tutor follows; the shared contract between portal and agent | [../src/HomeworkAgent/Pedagogy/pedagogy-policy.json](../src/HomeworkAgent/Pedagogy/pedagogy-policy.json) |
-| Foundry Toolbox | Curated boundary to course knowledge (Azure AI Search; Canvas Smart Search) | [../toolbox/toolbox.yaml](../toolbox/toolbox.yaml) |
+| Phase 1 lab infrastructure | Provisions Foundry, models, Azure AI Search, RBAC, and the project connection | [lab/infra/main.bicep](https://github.com/dbruun/edu-cohort-homework/blob/main/lab/infra/main.bicep) |
+| Lab tutor instructions | Defines the guarded tutor participants create in the Foundry portal | [lab/agent-instructions.md](https://github.com/dbruun/edu-cohort-homework/blob/main/lab/agent-instructions.md) |
+| Hosted tutor source (later phase) | .NET Agent Framework implementation for a hosted runtime | [src/HomeworkAgent/Program.cs](https://github.com/dbruun/edu-cohort-homework/blob/main/src/HomeworkAgent/Program.cs) |
+| Professor Portal UI (later phase) | Lets professors tune help level, steps, direct answers, and citations | [ui/app/src/App.jsx](https://github.com/dbruun/edu-cohort-homework/blob/main/ui/app/src/App.jsx) |
+| Portal Policy API (later phase) | Reads and writes the pedagogy policy | [ui/api/index.js](https://github.com/dbruun/edu-cohort-homework/blob/main/ui/api/index.js) |
+| Foundry Toolbox (later phase) | Curated boundary to course knowledge | [toolbox/toolbox.yaml](https://github.com/dbruun/edu-cohort-homework/blob/main/toolbox/toolbox.yaml) |
 
 ## The three planes
 
@@ -68,8 +75,8 @@ Keeping these separate is what lets professors change tutoring behavior and know
 
 The portal is where the "professor-owned pedagogy" promise lives:
 
-- a **React UI** ([../ui/app/src/App.jsx](../ui/app/src/App.jsx)) with controls for professor identity, help style, maximum steps revealed, direct-answer toggle, citation requirement, and **course groups**, and
-- a **policy API** ([../ui/api/index.js](../ui/api/index.js)) that reads the current policy on load and writes edits back via `GET`/`POST /api/policy`.
+- a **React UI** ([ui/app/src/App.jsx](https://github.com/dbruun/edu-cohort-homework/blob/main/ui/app/src/App.jsx)) with controls for professor identity, help style, maximum steps revealed, direct-answer toggle, citation requirement, and **course groups**, and
+- a **policy API** ([ui/api/index.js](https://github.com/dbruun/edu-cohort-homework/blob/main/ui/api/index.js)) that reads the current policy on load and writes edits back via `GET`/`POST /api/policy`.
 
 The UI and API round-trip the same pedagogy policy document the tutor consumes, so a professor's edits flow into the tutor's behavior. Here is the portal, showing the professor identity and a course group:
 
@@ -151,11 +158,16 @@ sequenceDiagram
 
 ## Deployment topology
 
-- The tutor is deployed as a **hosted Foundry agent** via Azure Developer CLI, backed by a Foundry **model deployment**.
-- The **professor portal** runs as a static web app with a lightweight policy API.
-- The **knowledge layer** connects the toolbox to an Azure AI Search index by default, with Canvas Smart Search as an alternative source.
+**Phase 1 lab:** [lab/deploy.ps1](https://github.com/dbruun/edu-cohort-homework/blob/main/lab/deploy.ps1) or
+[lab/deploy.sh](https://github.com/dbruun/edu-cohort-homework/blob/main/lab/deploy.sh) provisions the Foundry account and project,
+the two model deployments, Azure AI Search, RBAC, and the Foundry search
+connection. The participant creates the tutor in the portal and tests it in the
+Playground.
 
-See [../scripts/deploy.ps1](../scripts/deploy.ps1) or [../scripts/deploy.sh](../scripts/deploy.sh) for the deployment entry points.
+**Later phases:** the hosted agent source, AG-UI bridge, LTI tool, student UI,
+professor portal, and data-integration components remain in the repository as
+starting points. Their container infrastructure was intentionally removed and
+will be added back as those phases become the active path.
 
 ## Design principles
 

@@ -1,10 +1,14 @@
 # Configuration guide
 
-The deployed hosted agent is configured through **environment variables** (declared in its Foundry manifest) and the **pedagogy policy** that shapes tutoring behavior. Course knowledge is grounded through an Azure AI Search **toolbox**.
+The Phase 1 lab configures the tutor through
+[agent instructions](https://github.com/dbruun/edu-cohort-homework/blob/main/lab/agent-instructions.md) in the Foundry portal and
+attaches `course-knowledge-base` directly. The environment-variable, .NET policy,
+and toolbox configuration below documents the later hosted-agent implementation;
+it is not deployed by the current lab.
 
 ## Environment variables
 
-The hosted agent's manifest ([../azure.yaml](../azure.yaml)) declares these. Foundry injects the project endpoint automatically at runtime.
+The hosted agent's manifest ([azure.yaml](https://github.com/dbruun/edu-cohort-homework/blob/main/azure.yaml)) declares these. Foundry injects the project endpoint automatically at runtime.
 
 | Variable | Purpose | Example |
 | --- | --- | --- |
@@ -13,13 +17,13 @@ The hosted agent's manifest ([../azure.yaml](../azure.yaml)) declares these. Fou
 | `TOOLBOX_NAME` | Name of the Foundry Toolbox the agent loads for course knowledge | `course-knowledge` |
 | `PEDAGOGY_POLICY_URI` | Path to the pedagogy policy JSON (baked into the image) | `./Pedagogy/pedagogy-policy.json` |
 
-The `scripts/deploy.*` scripts set `AZURE_AI_MODEL_DEPLOYMENT_NAME`, `PEDAGOGY_POLICY_URI`, and the subscription/location into the `azd` environment before deploy — see [../scripts/README.md](../scripts/README.md).
+The `scripts/deploy.*` scripts set `AZURE_AI_MODEL_DEPLOYMENT_NAME`, `PEDAGOGY_POLICY_URI`, and the subscription/location into the `azd` environment before deploy — see [scripts/README.md](https://github.com/dbruun/edu-cohort-homework/blob/main/scripts/README.md).
 
 > **Legacy note:** Older docs referenced a `TOOLBOX_ENDPOINT` URL variable. That belonged to an earlier self-hosted prototype; the hosted Foundry agent now loads its toolbox by name (`TOOLBOX_NAME`), so `TOOLBOX_ENDPOINT` is no longer used.
 
 ## Pedagogy policy
 
-The policy is a small JSON document. Its schema matches [../src/HomeworkAgent/Pedagogy/PedagogyPolicy.cs](../src/HomeworkAgent/Pedagogy/PedagogyPolicy.cs), and the seed values live in [../src/HomeworkAgent/Pedagogy/pedagogy-policy.json](../src/HomeworkAgent/Pedagogy/pedagogy-policy.json).
+The policy is a small JSON document. Its schema matches [src/HomeworkAgent/Pedagogy/PedagogyPolicy.cs](https://github.com/dbruun/edu-cohort-homework/blob/main/src/HomeworkAgent/Pedagogy/PedagogyPolicy.cs), and the seed values live in [src/HomeworkAgent/Pedagogy/pedagogy-policy.json](https://github.com/dbruun/edu-cohort-homework/blob/main/src/HomeworkAgent/Pedagogy/pedagogy-policy.json).
 
 | Field | Type | Default | Meaning |
 | --- | --- | --- | --- |
@@ -65,12 +69,12 @@ The policy is a small JSON document. Its schema matches [../src/HomeworkAgent/Pe
 
 Each pedagogy is **owned by a professor** (`professorId` / `professorName`). Because a student can take courses from multiple professors, the tutor resolves the pedagogy from whichever professor owns the course being asked about — so two students in the same session can be held to different rules set by different instructors.
 
-Within a professor's pedagogy, **course groups** let one set of limits apply to many courses at once. Each course carries an `id` and a human-readable `description`. A course in a group uses that group's limits; any field the group leaves unset falls back to the professor's top-level defaults. Resolution is implemented in [../src/HomeworkAgent/Pedagogy/PedagogyPolicy.cs](../src/HomeworkAgent/Pedagogy/PedagogyPolicy.cs) (`PedagogyCatalog.ResolveForCourse` → `PedagogyPolicy.ResolveForCourse`).
+Within a professor's pedagogy, **course groups** let one set of limits apply to many courses at once. Each course carries an `id` and a human-readable `description`. A course in a group uses that group's limits; any field the group leaves unset falls back to the professor's top-level defaults. Resolution is implemented in [src/HomeworkAgent/Pedagogy/PedagogyPolicy.cs](https://github.com/dbruun/edu-cohort-homework/blob/main/src/HomeworkAgent/Pedagogy/PedagogyPolicy.cs) (`PedagogyCatalog.ResolveForCourse` → `PedagogyPolicy.ResolveForCourse`).
 
 ### How the policy is applied
 
-The pedagogy policy is composed into the hosted agent's instructions at startup in [../src/HomeworkAgent/Program.cs](../src/HomeworkAgent/Program.cs) (`PromptComposer.Compose` over the policy loaded by `PedagogyPolicy.LoadAsync`). Because it is read when the container starts, **changing the policy takes effect on the next deploy/restart** (`azd deploy`). A live per-request read from external storage is not enabled in this environment — see the architecture doc for why.
+The pedagogy policy is composed into the hosted agent's instructions at startup in [src/HomeworkAgent/Program.cs](https://github.com/dbruun/edu-cohort-homework/blob/main/src/HomeworkAgent/Program.cs) (`PromptComposer.Compose` over the policy loaded by `PedagogyPolicy.LoadAsync`). Because it is read when the container starts, **changing the policy takes effect on the next deploy/restart** (`azd deploy`). A live per-request read from external storage is not enabled in this environment — see the architecture doc for why.
 
 ## Knowledge sources
 
-Course knowledge is grounded through an Azure AI Search **toolbox** declared as the `course-knowledge` `host: azure.ai.toolbox` service in [../azure.yaml](../azure.yaml) (a reference copy lives in [../toolbox/toolbox.yaml](../toolbox/toolbox.yaml)). It exposes a `course-search` tool over the `course-materials` index using `vector_semantic_hybrid` retrieval. The agent loads it by name (`TOOLBOX_NAME=course-knowledge`) via `AddFoundryToolboxes`. The tool references an existing `course-knowledge-connection` (`CognitiveSearch`) that must be created once before the first deploy — the [deploy scripts](../scripts/README.md) create it when given a Search endpoint + admin key. Adding or swapping a source is a toolbox/connection change, not an agent change. See [../config/knowledge-sources.md](../config/knowledge-sources.md) for the source-management guidance.
+Course knowledge is grounded through an Azure AI Search **toolbox** declared as the `course-knowledge` `host: azure.ai.toolbox` service in [azure.yaml](https://github.com/dbruun/edu-cohort-homework/blob/main/azure.yaml) (a reference copy lives in [toolbox/toolbox.yaml](https://github.com/dbruun/edu-cohort-homework/blob/main/toolbox/toolbox.yaml)). It exposes a `course-search` tool over the `course-materials` index using `vector_semantic_hybrid` retrieval. The agent loads it by name (`TOOLBOX_NAME=course-knowledge`) via `AddFoundryToolboxes`. The tool references an existing `course-knowledge-connection` (`CognitiveSearch`) that must be created once before the first deploy — the [deploy scripts](https://github.com/dbruun/edu-cohort-homework/blob/main/scripts/README.md) create it when given a Search endpoint + admin key. Adding or swapping a source is a toolbox/connection change, not an agent change. See [config/knowledge-sources.md](https://github.com/dbruun/edu-cohort-homework/blob/main/config/knowledge-sources.md) for the source-management guidance.

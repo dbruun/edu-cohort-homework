@@ -22,6 +22,7 @@ jobs:
           bundler-cache: true
       - name: Build Jekyll site
         run: |
+          cp architecture.png sequence.png docs/
           cd docs
           bundle install
           bundle exec jekyll build

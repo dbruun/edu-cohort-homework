@@ -1,38 +1,46 @@
 # EDU Homework Agent Accelerator
 
-The EDU Homework Agent Accelerator is a practical foundation for bringing AI-assisted homework support to academic environments with clear pedagogical controls, configurable knowledge access, and a professor-friendly management experience.
+The main path is a **2-3 hour hands-on lab** for building a homework tutor on
+Microsoft Foundry and grounding it in approved course material through Azure AI
+Search. You deploy the cloud foundation, seed a knowledge base, create the agent
+in the Foundry portal, and verify grounded answers with citations.
 
-## Why it matters
+## Start with Phase 1
 
-This accelerator helps institutions provide a tutor experience that is:
+| Step | What you do | Result |
+| --- | --- | --- |
+| 1 | Run the lab deployment | Foundry project, models, Azure AI Search, RBAC, and connection |
+| 2 | Seed the knowledge base | Search index and sample microbiology course content |
+| 3 | Create the tutor in Foundry | A guarded `homework-tutor` agent |
+| 4 | Attach knowledge and test | Grounded, cited answers in the Playground |
 
-- supportive and student-friendly
-- guided by an explicit, professor-owned pedagogy policy
-- deployed as a managed agent on Microsoft Foundry
-- designed to extend toward Azure AI Search-backed knowledge over time
+[Start the guided lab](getting-started.md). It includes prerequisites, exact
+commands, portal steps, verification, cleanup, and troubleshooting.
 
-## What the solution includes
+## Where the lab fits
 
-- a hosted homework tutor deployed on Microsoft Foundry using the Microsoft Agent Framework
-- a **professor portal** (React UI + policy API) for tuning the pedagogy that shapes the tutor
-- a pedagogy policy that is the shared contract between the portal and the tutor
-- a documentation site and an `azd`-based deployment path
+The lab deploys the Foundry and knowledge components at the center of this target
+architecture. LMS launch, the streaming bridge, periodic LMS data sync, and
+professor-managed pedagogy are later phases and are not provisioned by the lab.
 
-> **Status note:** The hosted tutor is deployed and verified, and the professor portal is fully built and runs locally. The remaining integration step is connecting the portal's saved policy to the **deployed** agent for a live read — today those changes are applied by redeploying the agent. The Azure AI Search toolbox is defined but not yet connected. See the [architecture overview](architecture.md) for the full picture.
+![Homework Tutor end-to-end architecture](architecture.png)
 
-## How it works
+## Grow in phases
 
-1. Professors set the pedagogy policy in the portal — help level, step limits, direct-answer and citation rules.
-2. Students ask homework-related questions through the tutor.
-3. The tutor answers under that pedagogy policy, preferring hints and guided steps over direct answers.
-4. A planned Foundry Toolbox will let the tutor ground responses in approved Azure AI Search content.
+The repository carries starting points for the broader solution, but the value
+path is intentionally incremental.
 
-## Get started
+![Homework Tutor Agent evolution roadmap](sequence.png)
 
-- **New here? Start with [getting started](getting-started.md)** — deploy
-  infrastructure, seed a knowledge base, create the agent in the Foundry portal,
-  and ground it in course material (~2–3 hours).
-- Review the [architecture overview](architecture.md) for what is deployed today.
-- Learn how to configure the agent and policy in [configuration.md](configuration.md).
-- See the [usage guide](how-to-use.md) for student, professor, and developer workflows.
-- Deploy the hosted agent with [scripts/deploy.ps1](../scripts/deploy.ps1) or [scripts/deploy.sh](../scripts/deploy.sh).
+1. Ground the agent in academic data.
+2. Add LMS data integration.
+3. Add professor-owned pedagogy controls.
+4. Launch from the LMS over LTI 1.3.
+5. Introduce multi-agent orchestration only if scale or specialization requires it.
+
+## Continue exploring
+
+- Review the [architecture overview](architecture.md) for the target system and current lab boundary.
+- Learn how the later agent and pedagogy implementation is [configured](configuration.md).
+- Explore [LTI integration](lti-integration.md) for the LMS delivery phase.
+- Use the [troubleshooting guide](troubleshooting.md) for lab deployment and grounding issues.

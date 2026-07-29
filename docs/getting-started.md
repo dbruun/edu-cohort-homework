@@ -146,11 +146,11 @@ so you don't pass endpoints. It's idempotent — safe to re-run.
   that index.
 - **Knowledge base** `course-knowledge-base` — what the agent retrieves from; uses
   `gpt-5.4-mini` for query planning and answer synthesis.
-- **Seed documents** from [scripts/seed-data/microbiology.json](../scripts/seed-data/microbiology.json).
+- **Seed documents** from [scripts/seed-data/microbiology.json](https://github.com/dbruun/edu-cohort-homework/blob/main/scripts/seed-data/microbiology.json).
 
 ### Use your own course material (optional)
 
-Edit [scripts/seed-data/microbiology.json](../scripts/seed-data/microbiology.json)
+Edit [scripts/seed-data/microbiology.json](https://github.com/dbruun/edu-cohort-homework/blob/main/scripts/seed-data/microbiology.json)
 — each entry is `{ "id", "title", "content", "subject", "url" }` — or point at your
 own file and re-run:
 
@@ -179,7 +179,7 @@ agent is defined.
 3. Configure it:
    - **Name:** `homework-tutor`
    - **Model / deployment:** `gpt-5.4`
-   - **Instructions:** open [lab/agent-instructions.md](../lab/agent-instructions.md)
+  - **Instructions:** open [lab/agent-instructions.md](https://github.com/dbruun/edu-cohort-homework/blob/main/lab/agent-instructions.md)
      and paste the instructions block into the **Instructions** (system prompt)
      box.
 4. **Save** / **Create**.
@@ -196,7 +196,7 @@ material doesn't cover the topic (or refuse to cite). **This is expected** — y
 about to fix it in Step 4, and the contrast is the point.
 
 > **Fallback (if you can't use the portal):** you can create the same agent from a
-> script — see [scripts/create-foundry-agent.py](../scripts/create-foundry-agent.py).
+> script — see [scripts/create-foundry-agent.py](https://github.com/dbruun/edu-cohort-homework/blob/main/scripts/create-foundry-agent.py).
 > Set `PROJECT_ENDPOINT` to the endpoint from Step 1 and run it. But do Step 4's
 > linking in the portal to get the full experience.
 
@@ -269,10 +269,10 @@ the missing layer is
   agent kept private behind the tool's managed identity instead of exposed to the
   browser.
 
-That layer is fully built in this repo (see the `lti-tool/` service and
-[lti-integration.md](lti-integration.md) / [lti-configuration.md](lti-configuration.md))
-and is worth a slide to acknowledge, but it's intentionally not part of the
-hands-on flow above.
+The repository contains an LTI tool implementation and supporting documentation
+(see `lti-tool/`, [lti-integration.md](lti-integration.md), and
+[lti-configuration.md](lti-configuration.md)), but its container infrastructure
+is intentionally not part of the current hands-on flow.
 
 ---
 
