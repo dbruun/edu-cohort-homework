@@ -29,6 +29,8 @@ const defaultPolicy = {
 export default function App() {
   const [policy, setPolicy] = useState(defaultPolicy);
   const [status, setStatus] = useState('Loading policy from the API...');
+  const [imsccFile, setImsccFile] = useState(null);
+  const [courseSubject, setCourseSubject] = useState('');
 
   useEffect(() => {
     const loadPolicy = async () => {
@@ -102,7 +104,7 @@ export default function App() {
   const savePolicy = async () => {
     try {
       const response = await fetch('/api/policy', {
-        method: 'POST',
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(policy)
       });
@@ -116,6 +118,30 @@ export default function App() {
       setStatus('Policy saved to the API and ready for the agent.');
     } catch {
       setStatus('Could not reach the API. The policy is still staged locally in the UI.');
+    }
+  };
+
+  const importImscc = async () => {
+    if (!imsccFile || !courseSubject.trim()) {
+      setStatus('Choose a Canvas export and enter its course name.');
+      return;
+    }
+    setStatus('Importing Canvas course content...');
+    try {
+      const response = await fetch('/api/imscc-import', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/octet-stream',
+          'X-Course-Subject': courseSubject.trim()
+        },
+        body: imsccFile
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Import failed');
+      setStatus(`Imported ${result.imported} course document(s).`);
+      setImsccFile(null);
+    } catch (error) {
+      setStatus(error.message || 'Could not import the Canvas export.');
     }
   };
 
@@ -261,11 +287,16 @@ export default function App() {
       </section>
 
       <section style={{ background: '#fff', border: '1px solid #dbe2ea', borderRadius: 12, padding: 20 }}>
-        <h2>Knowledge sources</h2>
-        <ul>
-          <li>course-materials</li>
-          <li>assignment-guidance</li>
-        </ul>
+        <h2>Canvas course content</h2>
+        <p>Upload a Canvas course export (.imscc) to add its pages and assignment instructions to this course&apos;s knowledge base.</p>
+        <label style={{ display: 'block', marginBottom: 12 }}>
+          Course name
+          <input value={courseSubject} onChange={(event) => setCourseSubject(event.target.value)} maxLength="200" style={{ display: 'block', marginTop: 6, width: '100%', padding: 8 }} />
+        </label>
+        <input type="file" accept=".imscc,application/zip" onChange={(event) => setImsccFile(event.target.files?.[0] || null)} />
+        <button onClick={importImscc} disabled={!imsccFile} style={{ display: 'block', marginTop: 12, padding: '10px 16px', borderRadius: 8, border: 'none', background: '#2563eb', color: 'white', cursor: 'pointer' }}>
+          Import Canvas export
+        </button>
         <p>{summary}</p>
         <p>{status}</p>
       </section>

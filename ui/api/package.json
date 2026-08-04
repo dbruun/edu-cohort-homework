@@ -2,7 +2,21 @@
   "name": "professor-api",
   "version": "1.0.0",
   "private": true,
+  "main": "index.js",
   "scripts": {
-    "build": "node -e \"console.log('Function API build complete')\""
+    "build": "node --check index.js && node --check imscc.js && node --check policy.js",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.10.0",
+    "@azure/identity": "^4.13.0",
+    "@azure/storage-blob": "^12.29.1",
+    "unzipper": "^0.12.3"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.16.2",
+    "@azure/identity": "^4.13.1",
+    "@azure/storage-blob": "^12.33.0",
+    "unzipper": "^0.12.3"
   }
 }

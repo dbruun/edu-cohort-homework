@@ -1,9 +1,24 @@
 {
   "routes": [
     {
+      "route": "/api/*",
+      "allowedRoles": ["professor"]
+    },
+    {
       "route": "/*",
       "serve": "/index.html",
       "statusCode": 200
     }
-  ]
+  ],
+  "responseOverrides": {
+    "401": {
+      "redirect": "/.auth/login/aad",
+      "statusCode": 302
+    }
+  },
+  "globalHeaders": {
+    "Content-Security-Policy": "default-src 'self'; connect-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; frame-ancestors 'none'",
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "same-origin"
+  }
 }
