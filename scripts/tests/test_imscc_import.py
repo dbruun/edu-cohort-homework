@@ -6,6 +6,7 @@ import zipfile
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / "setup-knowledge-base.py"
+CANVAS_EXPORT = Path(__file__).resolve().parent / "fixtures" / "canvas-biology-101.imscc"
 SPEC = importlib.util.spec_from_file_location("setup_knowledge_base", SCRIPT)
 assert SPEC and SPEC.loader
 setup_knowledge_base = importlib.util.module_from_spec(SPEC)
@@ -22,39 +23,25 @@ class IMSCCImportTests(unittest.TestCase):
                 archive.writestr(name, content)
         return package
 
-    def test_imports_html_and_assignment_content_from_manifest_resources(self) -> None:
-        package = self.create_package(
-            {
-                "imsmanifest.xml": """<manifest>
-                  <metadata><title>Biology 101</title></metadata>
-                  <resources>
-                    <resource identifier="page"><title>Week 1</title><file href="wiki_content/week_1.html"/></resource>
-                    <resource identifier="assignment"><title>Lab report</title><file href="assignments/lab.xml"/></resource>
-                  </resources>
-                </manifest>""",
-                "wiki_content/week_1.html": "<h1>Cells</h1><p>Cells are alive.</p><script>ignore()</script>",
-                "assignments/lab.xml": "<assignment><instructions>Observe a specimen.</instructions></assignment>",
-            }
-        )
-
-        documents = setup_knowledge_base.load_imscc_documents(package)
+    def test_imports_canvas_html_and_assignment_content_from_manifest_resources(self) -> None:
+        documents = setup_knowledge_base.load_imscc_documents(CANVAS_EXPORT)
 
         self.assertEqual(
             documents,
             [
                 {
                     "id": documents[0]["id"],
-                    "title": "Week 1",
-                    "content": "Cells Cells are alive.",
+                    "title": "wiki-page-week-1",
+                    "content": "Week 1 overview Week 1: Cells Review the cell theory before class.",
                     "subject": "Biology 101",
-                    "url": "imscc://course/wiki_content/week_1.html",
+                    "url": "imscc://canvas-biology-101/wiki_content/week_1_overview.html",
                 },
                 {
                     "id": documents[1]["id"],
-                    "title": "Lab report",
-                    "content": "Observe a specimen.",
+                    "title": "assignment-cell-observation",
+                    "content": "Cell observation Observe one prepared specimen and submit your notes. 10",
                     "subject": "Biology 101",
-                    "url": "imscc://course/assignments/lab.xml",
+                    "url": "imscc://canvas-biology-101/assignment_settings/cell_observation.xml",
                 },
             ],
         )
