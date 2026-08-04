@@ -9,11 +9,22 @@ const MAX_MEMBERS = 500;
 const TEXT_EXTENSIONS = new Set(['.htm', '.html', '.md', '.txt', '.xml']);
 
 function htmlToText(value) {
-  return value
-    .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, '')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+  const ignored = new Set(['script', 'style']);
+  let ignoredDepth = 0;
+  let text = '';
+  for (const part of value.split(/(<[^>]*>)/)) {
+    if (!part.startsWith('<')) {
+      if (!ignoredDepth) text += part;
+      continue;
+    }
+    const match = part.match(/^<\s*(\/?)\s*([a-z0-9]+)/i);
+    if (!match || !ignored.has(match[2].toLowerCase())) {
+      if (!ignoredDepth) text += ' ';
+      continue;
+    }
+    ignoredDepth += match[1] ? -1 : 1;
+  }
+  return text.replace(/\s+/g, ' ').trim();
 }
 
 function xmlToText(value) {
