@@ -171,6 +171,20 @@ own file and re-run:
 
 Every answer the tutor later gives is retrieved from, and cites, these documents.
 
+### Import a Canvas course export
+
+Export the course from Canvas as an **IMSCC** package, then load it with the
+Python setup script:
+
+```bash
+python scripts/setup-knowledge-base.py --environment-name eduhw01 \
+  --imscc-path ./my-course-export.imscc --subject "Biology 101"
+```
+
+The importer reads the package manifest and adds its HTML pages, text files, and
+XML course-work resources (including assignment instructions) to the course
+knowledge base. The original IMSCC file stays local; it is not extracted.
+
 ### Verify
 
 In the Foundry portal → your project → **Knowledge bases** (or **Search** service
