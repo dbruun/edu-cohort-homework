@@ -26,6 +26,7 @@ You'll go through four steps:
 | 2. Deploy knowledge data | Run one setup script | Terminal |
 | 3. Create the agent | Click through the portal | Foundry portal |
 | 4. Link the agent to knowledge | Click through the portal | Foundry portal |
+| 5. Deploy the professor portal | Run one deploy script | App Service |
 
 > **LTI / LMS launch is out of scope for this lab.** In production, students launch
 > the tutor from your LMS (Canvas, Blackboard, Moodle…) over **LTI 1.3**, and the
@@ -70,10 +71,11 @@ $env:LAB = "eduhw01"   # your environment name — reuse it in every step
 
 ## Step 1 — Deploy the infrastructure
 
-This provisions the **slim lab stack**: a Foundry (Azure AI Services) account and
+This provisions the **lab stack**: a Foundry (Azure AI Services) account and
 project, two model deployments (`gpt-5.4` for the tutor, `gpt-5.4-mini` for
-knowledge-base reasoning), and an **Azure AI Search** service — plus the RBAC and
-project connection that make portal grounding work later.
+knowledge-base reasoning), an **Azure AI Search** service, and a Linux App Service
+with private Blob storage for the professor portal — plus the RBAC and project
+connection that make grounding and course administration work later.
 
 The deploy script creates a **new azd environment** for you, sets the
 subscription/region, and runs `azd provision`:
@@ -107,6 +109,8 @@ project endpoint : https://aif-eduhw01.services.ai.azure.com/api/projects/homewo
 | Model deployment | `gpt-5.4` | The tutor's chat model |
 | Model deployment | `gpt-5.4-mini` | Knowledge-base query planning / answer synthesis |
 | Azure AI Search | `srch-<env>` | Stores + retrieves course material |
+| Linux App Service | `app-professor-<env>` | Hosts the professor portal and API |
+| Storage account | generated `st...` name | Stores one private policy blob per professor |
 | RBAC + connection | — | Lets the agent read the search index and the search service call the model |
 
 ### Verify
@@ -263,6 +267,40 @@ watch it decline rather than make something up.
 > `course-knowledge-base`, not an empty index.
 
 You now have a working, grounded homework tutor. 🎓
+
+---
+
+## Step 5 — Deploy the professor portal
+
+The professor portal is a React application and Node API hosted together on the
+Linux App Service from Step 1. Its system-assigned identity writes policies to
+Blob Storage, uploads IMSCC-derived documents to Azure AI Search, and creates
+embeddings through Foundry without account keys.
+
+```powershell
+./scripts/deploy-professor-portal.ps1 -EnvironmentName $env:LAB
+```
+
+The first run creates a tenant-only Microsoft Entra app registration, stores its
+generated credential in App Service settings, deploys the portal package, and
+enables App Service Authentication. Creating app registrations may require an
+Entra Application Administrator if your tenant prevents users from registering
+applications.
+
+Open the URL printed by the script. An unauthenticated browser is redirected to
+Microsoft sign-in. For this lab, every signed-in user in the selected tenant is
+treated as a professor; production deployments should use an explicit app role
+or group assignment.
+
+Verify both workflows:
+
+1. Change a pedagogy control, save, refresh, and confirm the setting persists.
+2. Upload a small Canvas `.imscc` export and confirm the portal reports the
+  number of imported documents.
+
+> The App Service B1 plan has an ongoing cost until the resource group is
+> deleted. The synchronous IMSCC endpoint is suitable for lab-sized exports;
+> large production courses should use an asynchronous import job.
 
 ---
 

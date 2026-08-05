@@ -60,3 +60,6 @@ output SEARCH_ENDPOINT string = resources.outputs.searchEndpoint
 output CHAT_DEPLOYMENT_NAME string = resources.outputs.chatDeploymentName
 output KB_REASONING_DEPLOYMENT_NAME string = resources.outputs.kbReasoningDeploymentName
 output EMBEDDING_DEPLOYMENT_NAME string = resources.outputs.embeddingDeploymentName
+output PORTAL_APP_NAME string = resources.outputs.portalAppName
+output PORTAL_URL string = resources.outputs.portalUrl
+output POLICY_STORAGE_ACCOUNT string = resources.outputs.policyStorageAccountName
