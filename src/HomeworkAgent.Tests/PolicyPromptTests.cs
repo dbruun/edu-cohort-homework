@@ -105,6 +105,37 @@ public class PolicyPromptTests
     }
 
     [Fact]
+    public void CourseGroupRestrictionIsComposedIntoAgentInstructions()
+    {
+        var policy = new PedagogyPolicy
+        {
+            HelpLevel = "full_solution",
+            MaxStepsRevealed = 8,
+            AllowDirectAnswers = true,
+            CitationsRequired = false,
+            CourseGroups = new List<CourseGroup>
+            {
+                new()
+                {
+                    Name = "Restricted course",
+                    Courses = new List<Course> { new() { Id = "CS101" } },
+                    HelpLevel = "hint_only",
+                    MaxStepsRevealed = 1,
+                    AllowDirectAnswers = false,
+                    CitationsRequired = true
+                }
+            }
+        };
+
+        var prompt = PromptComposer.Compose("BASE", policy.ResolveForCourse("CS101"));
+
+        Assert.Contains("\"HelpLevel\": \"hint_only\"", prompt);
+        Assert.Contains("\"MaxStepsRevealed\": 1", prompt);
+        Assert.Contains("\"AllowDirectAnswers\": false", prompt);
+        Assert.Contains("\"CitationsRequired\": true", prompt);
+    }
+
+    [Fact]
     public void CourseNotInAnyGroupUsesDefaults()
     {
         var policy = new PedagogyPolicy

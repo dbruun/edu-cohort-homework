@@ -9,6 +9,7 @@ const defaultPolicy = {
  subjectOverrides: {},
  courseGroups: []
 };
+const helpLevels = new Set(['hint_only', 'guided', 'worked_example', 'full_solution']);
 
 function getPolicyClient(professorId) {
  const accountName = process.env.POLICY_STORAGE_ACCOUNT;
@@ -24,7 +25,7 @@ function validatePolicy(policy) {
  if (!policy || typeof policy !== 'object' || Array.isArray(policy)) {
    throw new Error('Policy must be an object.');
  }
- if (!['hint_only', 'guided', 'worked_example', 'full_solution'].includes(policy.helpLevel)) {
+ if (!helpLevels.has(policy.helpLevel)) {
    throw new Error('Policy helpLevel is invalid.');
  }
  if (!Number.isInteger(policy.maxStepsRevealed) || policy.maxStepsRevealed < 1 || policy.maxStepsRevealed > 8) {
@@ -32,6 +33,29 @@ function validatePolicy(policy) {
  }
  if (typeof policy.allowDirectAnswers !== 'boolean' || typeof policy.citationsRequired !== 'boolean') {
    throw new Error('Policy boolean controls are invalid.');
+ }
+ if (!policy.subjectOverrides || typeof policy.subjectOverrides !== 'object' || Array.isArray(policy.subjectOverrides) ||
+   Object.values(policy.subjectOverrides).some((helpLevel) => !helpLevels.has(helpLevel))) {
+   throw new Error('Policy subject overrides are invalid.');
+ }
+ if (!Array.isArray(policy.courseGroups)) throw new Error('Policy course groups are invalid.');
+
+ const courseIds = new Set();
+ for (const group of policy.courseGroups) {
+   if (!group || typeof group !== 'object' || typeof group.name !== 'string' || !Array.isArray(group.courses) ||
+     (group.helpLevel !== undefined && !helpLevels.has(group.helpLevel)) ||
+     (group.maxStepsRevealed !== undefined && (!Number.isInteger(group.maxStepsRevealed) || group.maxStepsRevealed < 1 || group.maxStepsRevealed > 8)) ||
+     (group.allowDirectAnswers !== undefined && typeof group.allowDirectAnswers !== 'boolean') ||
+     (group.citationsRequired !== undefined && typeof group.citationsRequired !== 'boolean')) {
+     throw new Error('Policy course groups are invalid.');
+   }
+   for (const course of group.courses) {
+     const courseId = course?.id?.trim().toLowerCase();
+     if (!courseId || typeof course.description !== 'string' || courseIds.has(courseId)) {
+       throw new Error('Policy courses must have unique, non-empty IDs.');
+     }
+     courseIds.add(courseId);
+   }
  }
 }
 
