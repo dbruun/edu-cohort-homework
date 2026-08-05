@@ -53,6 +53,50 @@ class IMSCCImportTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "imsmanifest.xml"):
             setup_knowledge_base.load_imscc_documents(package)
 
+    def test_uses_subject_override_and_skips_empty_missing_and_duplicate_resources(self) -> None:
+        package = self.create_package(
+            {
+                "imsmanifest.xml": """<manifest>
+                  <metadata><title>Default course title</title></metadata>
+                  <resources>
+                    <resource identifier="overview" href="pages/overview.txt"/>
+                    <resource identifier="duplicate"><file href="pages/overview.txt"/></resource>
+                    <resource identifier="empty"><file href="pages/empty.html"/></resource>
+                    <resource identifier="missing"><file href="pages/missing.html"/></resource>
+                  </resources>
+                </manifest>""",
+                "pages/overview.txt": "Read chapter one.",
+                "pages/empty.html": "<p>  </p>",
+            }
+        )
+
+        documents = setup_knowledge_base.load_imscc_documents(package, subject="Override course")
+
+        self.assertEqual(
+            documents,
+            [
+                {
+                    "id": documents[0]["id"],
+                    "title": "overview",
+                    "content": "Read chapter one.",
+                    "subject": "Override course",
+                    "url": "imscc://course/pages/overview.txt",
+                }
+            ],
+        )
+
+    def test_rejects_invalid_archives_and_manifests_without_course_content(self) -> None:
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        not_an_archive = Path(directory.name) / "not-an-archive.imscc"
+        not_an_archive.write_text("not a zip archive", encoding="utf-8")
+        empty_manifest = self.create_package({"imsmanifest.xml": "<manifest><resources/></manifest>"})
+
+        with self.assertRaisesRegex(ValueError, "not a ZIP archive"):
+            setup_knowledge_base.load_imscc_documents(not_an_archive)
+        with self.assertRaisesRegex(ValueError, "No text course content"):
+            setup_knowledge_base.load_imscc_documents(empty_manifest)
+
 
 if __name__ == "__main__":
     unittest.main()

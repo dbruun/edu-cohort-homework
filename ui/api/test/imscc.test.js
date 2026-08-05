@@ -9,6 +9,18 @@ const archive = fs.readFileSync(path.join(
   '../../../scripts/tests/fixtures/canvas-biology-101.imscc'
 ));
 
+function replaceAll(buffer, from, to) {
+  assert.equal(Buffer.byteLength(from), Buffer.byteLength(to));
+  const copy = Buffer.from(buffer);
+  let offset = copy.indexOf(from);
+  assert.notEqual(offset, -1);
+  while (offset !== -1) {
+    copy.write(to, offset);
+    offset = copy.indexOf(from, offset + Buffer.byteLength(to));
+  }
+  return copy;
+}
+
 test('imports manifest-listed Canvas HTML and assignment XML as course content', async () => {
   const documents = await loadImsccDocuments(archive, 'Biology 101');
 
@@ -26,4 +38,13 @@ test('imports manifest-listed Canvas HTML and assignment XML as course content',
       url: 'imscc://portal/assignment_settings%2Fcell_observation.xml'
     }
   ]);
+});
+
+test('rejects empty, non-archive, and manifest-less uploads', async () => {
+  await assert.rejects(loadImsccDocuments(Buffer.alloc(0), 'Biology 101'), /non-empty file/);
+  await assert.rejects(loadImsccDocuments(Buffer.from('not a zip'), 'Biology 101'));
+  await assert.rejects(
+    loadImsccDocuments(replaceAll(archive, 'imsmanifest.xml', 'notmanifest.xml'), 'Biology 101'),
+    /imsmanifest.xml/
+  );
 });

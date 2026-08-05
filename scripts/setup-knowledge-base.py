@@ -260,7 +260,7 @@ def load_imscc_documents(path: Path, subject: str | None = None) -> list[dict[st
                 if file.get("href") and Path(file.get("href", "")).suffix.lower() in IMSCC_TEXT_EXTENSIONS
             ]
             if not member_names and resource.get("href"):
-                member_names = [resource["href"]]
+                member_names = [resource.get("href")]
 
             for member_name in member_names:
                 if member_name in seen_members:
