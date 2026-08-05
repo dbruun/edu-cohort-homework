@@ -132,6 +132,11 @@ resource search 'Microsoft.Search/searchServices@2024-06-01-preview' = {
     replicaCount: 1
     partitionCount: 1
     hostingMode: 'default'
+    authOptions: {
+      aadOrApiKey: {
+        aadAuthFailureMode: 'http403'
+      }
+    }
     // 'free' semantic ranker is enough for the lab and is required by the
     // semantic configuration the loader script creates.
     semanticSearch: 'free'
