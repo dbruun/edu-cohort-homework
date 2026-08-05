@@ -64,7 +64,12 @@ try {
   Compress-Archive -Path (Join-Path $stage '*') -DestinationPath $archive -Force
 
   Write-Host '==> Deploying the portal package...' -ForegroundColor Cyan
-  Invoke-Az webapp deploy -g $resourceGroup -n $appName --src-path $archive --type zip --clean true --restart true
+  for ($attempt = 1; $attempt -le 2; $attempt++) {
+    & az webapp deploy -g $resourceGroup -n $appName --src-path $archive --type zip --clean true --restart true
+    if ($LASTEXITCODE -eq 0) { break }
+    if ($attempt -eq 2) { throw 'App Service package deployment failed after two attempts.' }
+    Write-Warning 'Kudu rejected the package deployment; retrying once.'
+  }
 
   Write-Host '==> Configuring tenant-restricted Microsoft sign-in...' -ForegroundColor Cyan
   $tenantId = az account show --query tenantId -o tsv
@@ -120,9 +125,12 @@ try {
     }
   } | ConvertTo-Json -Depth 12 -Compress
   $subscriptionId = az account show --query id -o tsv
+  $authSettingsPath = Join-Path $stage 'authsettings.json'
+  [System.IO.File]::WriteAllText($authSettingsPath, $authSettings)
   Invoke-Az rest --method put `
     --uri "/subscriptions/$subscriptionId/resourceGroups/$resourceGroup/providers/Microsoft.Web/sites/$appName/config/authsettingsV2?api-version=2024-04-01" `
-    --body $authSettings
+    --headers 'Content-Type=application/json' `
+    --body "@$authSettingsPath"
 
   Write-Host "Professor portal deployed: https://$hostName" -ForegroundColor Green
   Write-Host 'All users must sign in through the current Microsoft Entra tenant.'

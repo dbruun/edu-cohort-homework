@@ -6,7 +6,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "build": "npm --prefix app install --include=dev && npm --prefix app run build",
+    "build": "node --check server.js",
     "start": "node server.js",
     "test": "node --test api/test/*.test.js"
   },
