@@ -109,6 +109,11 @@ The Python equivalents are `--search-service`, `--resource-group`,
 `scripts/seed-data/microbiology.json`. See [../config/knowledge-sources.md](../config/knowledge-sources.md)
 for the go-live checklist (Standard SKU, integrated vectorization).
 
+To import a Canvas course export instead, use the Python script with
+`--imscc-path ./course-export.imscc`. It imports manifest-listed HTML, text, and
+XML course-work resources into the same knowledge base; use `--subject "Course
+Name"` to set the course label for the imported documents.
+
 ---
 
 # LTI launch test scripts

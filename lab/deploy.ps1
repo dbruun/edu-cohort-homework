@@ -70,6 +70,8 @@ try {
   Write-Host "  chat model        : $(Get-AzdValue CHAT_DEPLOYMENT_NAME)"
   Write-Host "  KB reasoning model: $(Get-AzdValue KB_REASONING_DEPLOYMENT_NAME)"
   Write-Host "  embeddings model  : $(Get-AzdValue EMBEDDING_DEPLOYMENT_NAME)"
+  Write-Host "  professor portal  : $(Get-AzdValue PORTAL_URL)"
+  Write-Host "  policy storage    : $(Get-AzdValue POLICY_STORAGE_ACCOUNT)"
   Write-Host ""
   Write-Host "Next: seed the knowledge base ->" -ForegroundColor Cyan
   Write-Host "  ./scripts/setup-knowledge-base.ps1 -EnvironmentName $EnvironmentName"

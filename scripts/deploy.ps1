@@ -11,7 +11,10 @@ param(
   # azure.yaml, set -ToolboxName course-knowledge, and provide the Search endpoint + key below.
   [string]$ToolboxName = "",
   [string]$SearchEndpoint = "",
-  [string]$SearchAdminKey = ""
+  [string]$SearchAdminKey = "",
+  # Course configured in the professor portal whose group-specific limits this agent applies.
+  [string]$CourseId = "",
+  [string]$PedagogyPolicyUri = "./Pedagogy/pedagogy-policy.json"
 )
 
 $ErrorActionPreference = "Stop"
@@ -50,7 +53,8 @@ try {
   # Must be set before deploy so the agent starts with a valid model deployment.
   azd env set AZURE_AI_MODEL_DEPLOYMENT_NAME $ModelDeploymentName | Out-Null
   # Pedagogy policy path (baked into the image under ./Pedagogy).
-  azd env set PEDAGOGY_POLICY_URI "./Pedagogy/pedagogy-policy.json" | Out-Null
+  azd env set PEDAGOGY_POLICY_URI $PedagogyPolicyUri | Out-Null
+  azd env set COURSE_ID $CourseId | Out-Null
   # Empty = tutor only; a name attaches that Foundry Toolbox for course-knowledge grounding.
   azd env set TOOLBOX_NAME $ToolboxName | Out-Null
 

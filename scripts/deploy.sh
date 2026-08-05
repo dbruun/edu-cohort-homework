@@ -14,6 +14,9 @@ PROJECT_ENDPOINT="${4:-}"
 TOOLBOX_NAME_ARG="${5:-}"
 SEARCH_ENDPOINT="${6:-}"
 SEARCH_ADMIN_KEY="${7:-}"
+# Course configured in the professor portal whose group-specific limits this agent applies.
+COURSE_ID="${8:-}"
+PEDAGOGY_POLICY_URI="${9:-./Pedagogy/pedagogy-policy.json}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Deploy the EDU Homework Tutor from the repo-root azure.yaml (ai-project model + src/HomeworkAgent
@@ -49,7 +52,8 @@ azd env set AZURE_LOCATION "$LOCATION" >/dev/null
 # Must be set before deploy so the agent starts with a valid model deployment.
 azd env set AZURE_AI_MODEL_DEPLOYMENT_NAME "$MODEL_DEPLOYMENT_NAME" >/dev/null
 # Pedagogy policy path (baked into the image under ./Pedagogy).
-azd env set PEDAGOGY_POLICY_URI "./Pedagogy/pedagogy-policy.json" >/dev/null
+azd env set PEDAGOGY_POLICY_URI "$PEDAGOGY_POLICY_URI" >/dev/null
+azd env set COURSE_ID "$COURSE_ID" >/dev/null
 # Empty = tutor only; a name attaches that Foundry Toolbox for course-knowledge grounding.
 azd env set TOOLBOX_NAME "$TOOLBOX_NAME_ARG" >/dev/null
 

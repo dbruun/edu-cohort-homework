@@ -1,11 +1,11 @@
-// Slim lab resources: Foundry account + project + 3 model deployments, and an
-// Azure AI Search service wired for portal knowledge-base grounding.
+// Lab resources: Foundry account + project + 3 model deployments, Azure AI
+// Search, and an App Service professor portal with private policy storage.
 //
 // What is intentionally NOT here (vs. the full accelerator in infra/):
 //   - No Container Apps environment, hosted C# agent, or ACR — the agent is
 //     created in the Foundry portal during the lab.
 //   - No LTI tool / Mongo sidecar — LTI is out of scope for the lab.
-//   - No Log Analytics / App Insights — not needed to stand up the agent.
+//   - No Log Analytics / App Insights — not needed for the hands-on flow.
 //
 // The index / knowledge source / knowledge base are DATA-PLANE objects created
 // by scripts/setup-knowledge-base.ps1 after this deploys.
@@ -132,6 +132,11 @@ resource search 'Microsoft.Search/searchServices@2024-06-01-preview' = {
     replicaCount: 1
     partitionCount: 1
     hostingMode: 'default'
+    authOptions: {
+      aadOrApiKey: {
+        aadAuthFailureMode: 'http403'
+      }
+    }
     // 'free' semantic ranker is enough for the lab and is required by the
     // semantic configuration the loader script creates.
     semanticSearch: 'free'
@@ -240,6 +245,128 @@ resource searchConnection 'Microsoft.CognitiveServices/accounts/projects/connect
   }
 }
 
+// --- Professor portal (App Service) --------------------------------------
+resource policyStorage 'Microsoft.Storage/storageAccounts@2023-05-01' = {
+  name: 'st${uniqueString(resourceGroup().id)}'
+  location: location
+  tags: tags
+  sku: {
+    name: 'Standard_LRS'
+  }
+  kind: 'StorageV2'
+  properties: {
+    allowBlobPublicAccess: false
+    minimumTlsVersion: 'TLS1_2'
+    supportsHttpsTrafficOnly: true
+  }
+}
+
+resource policyBlobService 'Microsoft.Storage/storageAccounts/blobServices@2023-05-01' = {
+  parent: policyStorage
+  name: 'default'
+}
+
+resource policyContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-05-01' = {
+  parent: policyBlobService
+  name: 'policies'
+  properties: {
+    publicAccess: 'None'
+  }
+}
+
+resource portalPlan 'Microsoft.Web/serverfarms@2024-04-01' = {
+  name: 'plan-professor-${resourceToken}'
+  location: location
+  tags: tags
+  kind: 'linux'
+  sku: {
+    name: 'B1'
+    tier: 'Basic'
+  }
+  properties: {
+    reserved: true
+  }
+}
+
+resource portal 'Microsoft.Web/sites@2024-04-01' = {
+  name: 'app-professor-${resourceToken}'
+  location: location
+  tags: tags
+  kind: 'app,linux'
+  identity: {
+    type: 'SystemAssigned'
+  }
+  properties: {
+    serverFarmId: portalPlan.id
+    httpsOnly: true
+    publicNetworkAccess: 'Enabled'
+    siteConfig: {
+      alwaysOn: true
+      ftpsState: 'Disabled'
+      linuxFxVersion: 'NODE|22-lts'
+      minTlsVersion: '1.2'
+      appSettings: [
+        {
+          name: 'POLICY_STORAGE_ACCOUNT'
+          value: policyStorage.name
+        }
+        {
+          name: 'SEARCH_ENDPOINT'
+          value: searchEndpoint
+        }
+        {
+          name: 'SEARCH_INDEX_NAME'
+          value: 'course-materials'
+        }
+        {
+          name: 'OPENAI_ENDPOINT'
+          value: 'https://${foundry.name}.openai.azure.com'
+        }
+        {
+          name: 'EMBEDDING_DEPLOYMENT'
+          value: embeddingDeployment.name
+        }
+        {
+          name: 'SCM_DO_BUILD_DURING_DEPLOYMENT'
+          value: 'true'
+        }
+      ]
+    }
+  }
+}
+
+var storageBlobDataContributorRoleId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')
+
+resource portalStorageRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(policyStorage.id, portal.id, storageBlobDataContributorRoleId)
+  scope: policyStorage
+  properties: {
+    principalId: portal.identity.principalId
+    roleDefinitionId: storageBlobDataContributorRoleId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+resource portalSearchDataRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(search.id, portal.id, searchIndexDataContributorRoleId)
+  scope: search
+  properties: {
+    principalId: portal.identity.principalId
+    roleDefinitionId: searchIndexDataContributorRoleId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+resource portalOpenAIRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(foundry.id, portal.id, openAIUserRoleId)
+  scope: foundry
+  properties: {
+    principalId: portal.identity.principalId
+    roleDefinitionId: openAIUserRoleId
+    principalType: 'ServicePrincipal'
+  }
+}
+
 output foundryAccountName string = foundry.name
 output foundryProjectName string = foundryProject.name
 output foundryProjectEndpoint string = 'https://${foundry.name}.services.ai.azure.com/api/projects/${foundryProject.name}'
@@ -248,3 +375,6 @@ output searchEndpoint string = searchEndpoint
 output chatDeploymentName string = chatModelDeployment.name
 output kbReasoningDeploymentName string = kbReasoningDeployment.name
 output embeddingDeploymentName string = embeddingDeployment.name
+output portalAppName string = portal.name
+output portalUrl string = 'https://${portal.properties.defaultHostName}'
+output policyStorageAccountName string = policyStorage.name

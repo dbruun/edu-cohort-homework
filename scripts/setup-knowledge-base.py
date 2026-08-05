@@ -8,6 +8,8 @@ and knowledge base. It is idempotent and requires only Python 3 and Azure CLI.
 from __future__ import annotations
 
 import argparse
+from html.parser import HTMLParser
+import hashlib
 import json
 from pathlib import Path
 import shutil
@@ -17,10 +19,33 @@ from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
+import xml.etree.ElementTree as ElementTree
+import zipfile
 
 
 DEFAULT_API_VERSION = "2026-04-01"
 KB_MODEL_NAMES = ("gpt-5.4-mini", "gpt-5.4-nano", "gpt-5-mini", "gpt-5-nano")
+IMSCC_TEXT_EXTENSIONS = {".htm", ".html", ".md", ".txt", ".xml"}
+MAX_IMSCC_MEMBER_BYTES = 10 * 1024 * 1024
+
+
+class HTMLTextExtractor(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__()
+        self.parts: list[str] = []
+        self.ignored_depth = 0
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag in {"script", "style"}:
+            self.ignored_depth += 1
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag in {"script", "style"} and self.ignored_depth:
+            self.ignored_depth -= 1
+
+    def handle_data(self, data: str) -> None:
+        if not self.ignored_depth:
+            self.parts.append(data)
 
 
 def parse_args() -> argparse.Namespace:
@@ -51,6 +76,15 @@ def parse_args() -> argparse.Namespace:
         "--seed-data-path",
         type=Path,
         default=Path(__file__).resolve().parent / "seed-data" / "microbiology.json",
+    )
+    parser.add_argument(
+        "--imscc-path",
+        type=Path,
+        help="Canvas IMSCC export to import instead of the JSON seed data",
+    )
+    parser.add_argument(
+        "--subject",
+        help="Course name to associate with imported IMSCC documents",
     )
     return parser.parse_args()
 
@@ -176,6 +210,97 @@ def load_documents(path: Path) -> list[dict[str, Any]]:
     return documents
 
 
+def html_to_text(content: str) -> str:
+    parser = HTMLTextExtractor()
+    parser.feed(content)
+    parser.close()
+    return " ".join(" ".join(parser.parts).split())
+
+
+def elements_named(root: ElementTree.Element, name: str) -> list[ElementTree.Element]:
+    return [element for element in root.iter() if element.tag.rsplit("}", 1)[-1] == name]
+
+
+def load_imscc_documents(path: Path, subject: str | None = None) -> list[dict[str, Any]]:
+    if not path.is_file():
+        raise FileNotFoundError(f"IMSCC file not found: {path}")
+    if not zipfile.is_zipfile(path):
+        raise ValueError(f"IMSCC file is not a ZIP archive: {path}")
+
+    with zipfile.ZipFile(path) as package:
+        try:
+            manifest = ElementTree.fromstring(package.read("imsmanifest.xml"))
+        except KeyError as error:
+            raise ValueError("IMSCC file does not contain imsmanifest.xml.") from error
+        except ElementTree.ParseError as error:
+            raise ValueError(f"IMSCC manifest is not valid XML: {error}") from error
+
+        course_title = next(
+            (
+                title.text.strip()
+                for title in elements_named(manifest, "title")
+                if title.text and title.text.strip()
+            ),
+            path.stem,
+        )
+        documents: list[dict[str, Any]] = []
+        seen_members: set[str] = set()
+        for resource in elements_named(manifest, "resource"):
+            title = next(
+                (
+                    element.text.strip()
+                    for element in elements_named(resource, "title")
+                    if element.text and element.text.strip()
+                ),
+                resource.get("identifier", "Canvas course content"),
+            )
+            member_names = [
+                file.get("href")
+                for file in elements_named(resource, "file")
+                if file.get("href") and Path(file.get("href", "")).suffix.lower() in IMSCC_TEXT_EXTENSIONS
+            ]
+            if not member_names and resource.get("href"):
+                member_names = [resource.get("href")]
+
+            for member_name in member_names:
+                if member_name in seen_members:
+                    continue
+                try:
+                    member = package.getinfo(member_name)
+                except KeyError:
+                    continue
+                if member.file_size > MAX_IMSCC_MEMBER_BYTES:
+                    raise ValueError(
+                        f"IMSCC member exceeds the {MAX_IMSCC_MEMBER_BYTES // (1024 * 1024)} MB limit: {member_name}"
+                    )
+                raw_content = package.read(member).decode("utf-8", errors="replace")
+                suffix = Path(member_name).suffix.lower()
+                content = (
+                    html_to_text(raw_content)
+                    if suffix in {".htm", ".html"}
+                    else " ".join(ElementTree.fromstring(raw_content).itertext()).strip()
+                    if suffix == ".xml"
+                    else raw_content.strip()
+                )
+                content = " ".join(content.split())
+                if not content:
+                    continue
+                seen_members.add(member_name)
+                documents.append(
+                    {
+                        "id": f"imscc-{hashlib.sha256(member_name.encode()).hexdigest()[:24]}",
+                        "title": title,
+                        "content": content,
+                        "subject": subject or course_title,
+                        "url": f"imscc://{path.stem}/{member_name}",
+                    }
+                )
+
+    if not documents:
+        raise ValueError(f"No text course content found in IMSCC file: {path}")
+    return documents
+
+
 def main() -> int:
     args = parse_args()
     resource_group = resolve_resource_group(args.resource_group, args.environment_name)
@@ -211,7 +336,12 @@ def main() -> int:
             raise RuntimeError(f"No AIServices account found in {resource_group}.")
     print(f"==> Foundry account: {foundry_account}")
 
-    documents = load_documents(args.seed_data_path)
+    source_path = args.imscc_path or args.seed_data_path
+    documents = (
+        load_imscc_documents(args.imscc_path, args.subject)
+        if args.imscc_path
+        else load_documents(args.seed_data_path)
+    )
     search_endpoint = f"https://{search_service}.search.windows.net"
     openai_resource_uri = f"https://{foundry_account}.openai.azure.com/"
 
@@ -298,7 +428,7 @@ def main() -> int:
     search.request("PUT", f"/indexes('{args.index_name}')", index)
     print("    index ready.")
 
-    print(f"==> Uploading seed documents from {args.seed_data_path}...")
+    print(f"==> Uploading course documents from {source_path}...")
     embedding_inputs = [
         f"{document.get('title', '')}\n{document.get('subject', '')}\n\n{document.get('content', '')}"
         for document in documents
