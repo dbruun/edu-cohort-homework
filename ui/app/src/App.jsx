@@ -107,6 +107,15 @@ export default function App() {
     );
   };
 
+  const addCourseFromRow = (index, row) => {
+    const idInput = row.querySelector('[data-role="course-id"]');
+    const descriptionInput = row.querySelector('[data-role="course-desc"]');
+    addCourseToGroup(index, idInput.value, descriptionInput.value);
+    idInput.value = '';
+    descriptionInput.value = '';
+    idInput.focus();
+  };
+
   const removeCourseFromGroup = (index, courseId) => {
     updateGroups(
       courseGroups.map((group, i) =>
@@ -258,15 +267,20 @@ export default function App() {
                 data-role="course-desc"
                 onKeyDown={(event) => {
                   if (event.key === 'Enter') {
-                    const row = event.target.parentElement;
-                    const idInput = row.querySelector('[data-role="course-id"]');
-                    addCourseToGroup(index, idInput.value, event.target.value);
-                    idInput.value = '';
-                    event.target.value = '';
+                    addCourseFromRow(index, event.currentTarget.parentElement);
                   }
                 }}
                 style={{ flex: 1, padding: '6px 10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 14 }}
               />
+              <button
+                type="button"
+                aria-label={`Add course to ${group.name}`}
+                title="Add course"
+                onClick={(event) => addCourseFromRow(index, event.currentTarget.parentElement)}
+                style={{ width: 40, minWidth: 40, borderRadius: 8, border: '1px solid #2563eb', background: '#2563eb', color: 'white', cursor: 'pointer', fontSize: 22, lineHeight: 1 }}
+              >
+                +
+              </button>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 14 }}>
@@ -298,6 +312,10 @@ export default function App() {
             </div>
           </div>
         ))}
+
+        <button onClick={savePolicy} style={{ marginTop: 16, padding: '10px 16px', borderRadius: 8, border: 'none', background: '#2563eb', color: 'white', cursor: 'pointer' }}>
+          Save course groups
+        </button>
       </section>
 
       <section style={{ background: '#fff', border: '1px solid #dbe2ea', borderRadius: 12, padding: 20 }}>
