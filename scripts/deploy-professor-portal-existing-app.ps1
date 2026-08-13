@@ -72,6 +72,7 @@ try {
   New-Item -ItemType Directory -Path (Join-Path $stage 'api') | Out-Null
   New-Item -ItemType Directory -Path (Join-Path $stage 'app') | Out-Null
   Copy-Item (Join-Path $uiRoot 'package.json') $stage
+  Copy-Item (Join-Path $uiRoot 'package-lock.json') $stage
   Copy-Item (Join-Path $uiRoot 'server.js') $stage
   Copy-Item (Join-Path $uiRoot 'api\auth.js') (Join-Path $stage 'api')
   Copy-Item (Join-Path $uiRoot 'api\documents.js') (Join-Path $stage 'api')
@@ -79,6 +80,10 @@ try {
   Copy-Item (Join-Path $uiRoot 'api\policy.js') (Join-Path $stage 'api')
   Copy-Item (Join-Path $uiRoot 'app\dist') (Join-Path $stage 'app') -Recurse
   Compress-Archive -Path (Join-Path $stage '*') -DestinationPath $archive -Force
+
+  Write-Host '==> Enabling App Service dependency installation...' -ForegroundColor Cyan
+  Invoke-Az webapp config appsettings set -g $resourceGroup -n $appName `
+    --settings SCM_DO_BUILD_DURING_DEPLOYMENT=true ENABLE_ORYX_BUILD=true
 
   Write-Host '==> Deploying the portal package...' -ForegroundColor Cyan
   for ($attempt = 1; $attempt -le 2; $attempt++) {
