@@ -28,6 +28,9 @@ async function readBody(request, limit) {
 
 async function handleApi(request, response, pathname) {
   const professor = professorFromHeaders(request.headers);
+  if (pathname === '/api/me' && request.method === 'GET') {
+    return sendJson(response, 200, professor);
+  }
   if (pathname === '/api/policy' && request.method === 'GET') {
     return sendJson(response, 200, await readPolicy(professor));
   }

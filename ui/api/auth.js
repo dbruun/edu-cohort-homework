@@ -7,19 +7,21 @@ function headerValue(headers, name) {
 function professorFromHeaders(headers) {
   const id = headerValue(headers, 'x-ms-client-principal-id');
   const name = headerValue(headers, 'x-ms-client-principal-name');
-  if (id) return { id, name: name || 'Professor' };
-
   const encoded = headerValue(headers, 'x-ms-client-principal');
-  if (!encoded) throw new Error('Authentication is required.');
-  const principal = JSON.parse(Buffer.from(encoded, 'base64url').toString('utf8'));
-  const roles = principal.userRoles || [];
-  if (process.env.REQUIRE_PROFESSOR_ROLE === 'true' && !roles.includes('professor')) {
-    throw new Error('Professor access is required.');
+  if (encoded) {
+    const principal = JSON.parse(Buffer.from(encoded, 'base64url').toString('utf8'));
+    const roles = principal.userRoles || [];
+    if (process.env.REQUIRE_PROFESSOR_ROLE === 'true' && !roles.includes('professor')) {
+      throw new Error('Professor access is required.');
+    }
+    const claims = Object.fromEntries((principal.claims || []).map((claim) => [claim.typ, claim.val]));
+    const principalId = claims.oid || claims.sub || principal.userId || id;
+    if (!principalId) throw new Error('Authenticated identity has no stable identifier.');
+    return { id: principalId, name: claims.name || principal.userDetails || name || 'Professor' };
   }
-  const claims = Object.fromEntries((principal.claims || []).map((claim) => [claim.typ, claim.val]));
-  const principalId = claims.oid || claims.sub || principal.userId;
-  if (!principalId) throw new Error('Authenticated identity has no stable identifier.');
-  return { id: principalId, name: claims.name || principal.userDetails || 'Professor' };
+
+  if (id) return { id, name: name || 'Professor' };
+  throw new Error('Authentication is required.');
 }
 
 module.exports = { professorFromHeaders };

@@ -24493,8 +24493,8 @@ var import_client = __toESM(require_client());
 var import_react = __toESM(require_react());
 var import_jsx_runtime = __toESM(require_jsx_runtime());
 var defaultPolicy = {
-  professorId: "prof-adams",
-  professorName: "Dr. Adams",
+  professorId: "",
+  professorName: "",
   helpLevel: "guided",
   maxStepsRevealed: 3,
   allowDirectAnswers: false,
@@ -24524,7 +24524,18 @@ function App() {
   const [courseSubject, setCourseSubject] = (0, import_react.useState)("");
   (0, import_react.useEffect)(() => {
     const loadPolicy = async () => {
+      let identityLoaded = false;
       try {
+        const identityResponse = await fetch("/api/me");
+        if (identityResponse.ok) {
+          const professor = await identityResponse.json();
+          setPolicy((current) => ({
+            ...current,
+            professorId: professor.id,
+            professorName: professor.name
+          }));
+          identityLoaded = true;
+        }
         const response = await fetch("/api/policy");
         if (response.ok) {
           const data = await response.json();
@@ -24534,7 +24545,7 @@ function App() {
         }
       } catch {
       }
-      setStatus("Using local defaults because the API is not available yet.");
+      setStatus(identityLoaded ? "Signed in, but the saved policy could not be loaded." : "Sign in through the deployed portal to load your professor profile.");
     };
     loadPolicy();
   }, []);
@@ -24625,11 +24636,11 @@ function App() {
       /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }, children: [
         /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", { children: [
           "Name",
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", { value: policy.professorName || "", onChange: (event) => updateField("professorName", event.target.value), style: { display: "block", marginTop: 6, width: "100%", padding: 8 } })
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", { value: policy.professorName || "", placeholder: "Loading signed-in professor...", readOnly: true, style: { display: "block", marginTop: 6, width: "100%", padding: 8 } })
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", { children: [
           "Professor ID",
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", { value: policy.professorId || "", onChange: (event) => updateField("professorId", event.target.value), style: { display: "block", marginTop: 6, width: "100%", padding: 8 } })
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", { value: policy.professorId || "", placeholder: "Provided by Microsoft Entra ID", readOnly: true, style: { display: "block", marginTop: 6, width: "100%", padding: 8 } })
         ] })
       ] })
     ] }),

@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { validatePolicy } = require('../policy');
+const { applyProfessorIdentity, validatePolicy } = require('../policy');
 
 const policy = {
   helpLevel: 'guided',
@@ -20,6 +20,21 @@ const policy = {
 
 test('accepts course-specific restrictive policy configuration', () => {
   assert.doesNotThrow(() => validatePolicy(policy));
+});
+
+test('uses the current signed-in identity instead of stored policy identity', () => {
+  assert.deepEqual(applyProfessorIdentity({
+    ...policy,
+    professorId: 'stored-id',
+    professorName: 'Dr. Adams'
+  }, {
+    id: 'signed-in-id',
+    name: 'Professor Ada Lovelace'
+  }), {
+    ...policy,
+    professorId: 'signed-in-id',
+    professorName: 'Professor Ada Lovelace'
+  });
 });
 
 test('rejects duplicate course assignments and invalid group restrictions', () => {

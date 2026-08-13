@@ -63,13 +63,17 @@ async function readPolicy(professor) {
  const blob = getPolicyClient(professor.id);
  try {
    const response = await blob.download();
-   return JSON.parse(await streamToString(response.readableStreamBody));
+   return applyProfessorIdentity(JSON.parse(await streamToString(response.readableStreamBody)), professor);
  } catch (error) {
    if (error.statusCode === 404) {
-     return { ...defaultPolicy, professorId: professor.id, professorName: professor.name };
+     return applyProfessorIdentity(defaultPolicy, professor);
    }
    throw error;
  }
+}
+
+function applyProfessorIdentity(policy, professor) {
+ return { ...policy, professorId: professor.id, professorName: professor.name };
 }
 
 async function writePolicy(professor, policy) {
@@ -94,4 +98,4 @@ async function streamToString(stream) {
  return Buffer.concat(chunks).toString('utf8');
 }
 
-module.exports = { readPolicy, writePolicy, validatePolicy };
+module.exports = { applyProfessorIdentity, readPolicy, writePolicy, validatePolicy };

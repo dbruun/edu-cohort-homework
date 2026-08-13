@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 
 const defaultPolicy = {
-  professorId: 'prof-adams',
-  professorName: 'Dr. Adams',
+  professorId: '',
+  professorName: '',
   helpLevel: 'guided',
   maxStepsRevealed: 3,
   allowDirectAnswers: false,
@@ -34,7 +34,19 @@ export default function App() {
 
   useEffect(() => {
     const loadPolicy = async () => {
+      let identityLoaded = false;
       try {
+        const identityResponse = await fetch('/api/me');
+        if (identityResponse.ok) {
+          const professor = await identityResponse.json();
+          setPolicy((current) => ({
+            ...current,
+            professorId: professor.id,
+            professorName: professor.name
+          }));
+          identityLoaded = true;
+        }
+
         const response = await fetch('/api/policy');
         if (response.ok) {
           const data = await response.json();
@@ -46,7 +58,9 @@ export default function App() {
         // ignore and fall back to local defaults
       }
 
-      setStatus('Using local defaults because the API is not available yet.');
+      setStatus(identityLoaded
+        ? 'Signed in, but the saved policy could not be loaded.'
+        : 'Sign in through the deployed portal to load your professor profile.');
     };
 
     loadPolicy();
@@ -156,11 +170,11 @@ export default function App() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <label>
             Name
-            <input value={policy.professorName || ''} onChange={(event) => updateField('professorName', event.target.value)} style={{ display: 'block', marginTop: 6, width: '100%', padding: 8 }} />
+            <input value={policy.professorName || ''} placeholder="Loading signed-in professor..." readOnly style={{ display: 'block', marginTop: 6, width: '100%', padding: 8 }} />
           </label>
           <label>
             Professor ID
-            <input value={policy.professorId || ''} onChange={(event) => updateField('professorId', event.target.value)} style={{ display: 'block', marginTop: 6, width: '100%', padding: 8 }} />
+            <input value={policy.professorId || ''} placeholder="Provided by Microsoft Entra ID" readOnly style={{ display: 'block', marginTop: 6, width: '100%', padding: 8 }} />
           </label>
         </div>
       </section>

@@ -29,6 +29,13 @@ app.http('policy', {
   })
 });
 
+app.http('me', {
+  route: 'me',
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  handler: handler(async (_request, _context, professor) => ({ jsonBody: professor }))
+});
+
 app.http('imsccImport', {
   route: 'imscc-import',
   methods: ['POST'],
