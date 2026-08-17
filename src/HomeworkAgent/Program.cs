@@ -25,6 +25,7 @@
  *
  * Optional environment variables:
  *   PEDAGOGY_POLICY_URI              — Path to the pedagogy policy JSON (defaults to Pedagogy/pedagogy-policy.json)
+ *   COURSE_ID                        — Course whose group-specific policy limits apply
  */
 
 #pragma warning disable OPENAI001 // Foundry Toolbox hosting APIs are experimental
@@ -45,17 +46,18 @@ var deployment = Environment.GetEnvironmentVariable("AZURE_AI_MODEL_DEPLOYMENT_N
 var toolboxName = Environment.GetEnvironmentVariable("TOOLBOX_NAME");
 
 var pedagogyPolicyUri = Environment.GetEnvironmentVariable("PEDAGOGY_POLICY_URI");
+var courseId = Environment.GetEnvironmentVariable("COURSE_ID");
 
 // Compose the agent instructions from the base tutor persona plus the professor-managed
 // pedagogy policy. If the policy file is missing, PedagogyPolicy.LoadAsync returns defaults
 // so the tutor always stays online.
 var systemPrompt = await File.ReadAllTextAsync(
     Path.Combine(AppContext.BaseDirectory, "instructions", "tutor-system-prompt.md"));
-var policyPath = PolicyStore.ResolvePath(pedagogyPolicyUri);
-var policy = await PedagogyPolicy.LoadAsync(policyPath);
+var policy = await PolicyStore.LoadAsync(pedagogyPolicyUri);
+policy = policy.ResolveForCourse(courseId);
 var instructions = PromptComposer.Compose(systemPrompt, policy);
 
-Console.WriteLine($"[INFO] Loaded pedagogy policy from '{policyPath}' (helpLevel={policy.HelpLevel}).");
+Console.WriteLine($"[INFO] Loaded pedagogy policy from '{pedagogyPolicyUri ?? "default"}' (courseId={courseId ?? "default"}, helpLevel={policy.HelpLevel}).");
 
 // Create an AIAgent backed by a Foundry model. The agent framework manages the LLM call,
 // conversation sessions, and response lifecycle.

@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 
 const defaultPolicy = {
-  professorId: 'prof-adams',
-  professorName: 'Dr. Adams',
+  professorId: '',
+  professorName: '',
   helpLevel: 'guided',
   maxStepsRevealed: 3,
   allowDirectAnswers: false,
@@ -29,10 +29,24 @@ const defaultPolicy = {
 export default function App() {
   const [policy, setPolicy] = useState(defaultPolicy);
   const [status, setStatus] = useState('Loading policy from the API...');
+  const [imsccFile, setImsccFile] = useState(null);
+  const [courseSubject, setCourseSubject] = useState('');
 
   useEffect(() => {
     const loadPolicy = async () => {
+      let identityLoaded = false;
       try {
+        const identityResponse = await fetch('/api/me');
+        if (identityResponse.ok) {
+          const professor = await identityResponse.json();
+          setPolicy((current) => ({
+            ...current,
+            professorId: professor.id,
+            professorName: professor.name
+          }));
+          identityLoaded = true;
+        }
+
         const response = await fetch('/api/policy');
         if (response.ok) {
           const data = await response.json();
@@ -44,7 +58,9 @@ export default function App() {
         // ignore and fall back to local defaults
       }
 
-      setStatus('Using local defaults because the API is not available yet.');
+      setStatus(identityLoaded
+        ? 'Signed in, but the saved policy could not be loaded.'
+        : 'Sign in through the deployed portal to load your professor profile.');
     };
 
     loadPolicy();
@@ -91,6 +107,15 @@ export default function App() {
     );
   };
 
+  const addCourseFromRow = (index, row) => {
+    const idInput = row.querySelector('[data-role="course-id"]');
+    const descriptionInput = row.querySelector('[data-role="course-desc"]');
+    addCourseToGroup(index, idInput.value, descriptionInput.value);
+    idInput.value = '';
+    descriptionInput.value = '';
+    idInput.focus();
+  };
+
   const removeCourseFromGroup = (index, courseId) => {
     updateGroups(
       courseGroups.map((group, i) =>
@@ -102,7 +127,7 @@ export default function App() {
   const savePolicy = async () => {
     try {
       const response = await fetch('/api/policy', {
-        method: 'POST',
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(policy)
       });
@@ -119,6 +144,30 @@ export default function App() {
     }
   };
 
+  const importImscc = async () => {
+    if (!imsccFile || !courseSubject.trim()) {
+      setStatus('Choose a Canvas export and enter its course name.');
+      return;
+    }
+    setStatus('Importing Canvas course content...');
+    try {
+      const response = await fetch('/api/imscc-import', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/octet-stream',
+          'X-Course-Subject': courseSubject.trim()
+        },
+        body: imsccFile
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Import failed');
+      setStatus(`Imported ${result.imported} course document(s).`);
+      setImsccFile(null);
+    } catch (error) {
+      setStatus(error.message || 'Could not import the Canvas export.');
+    }
+  };
+
   return (
     <main style={{ fontFamily: 'Segoe UI, sans-serif', maxWidth: 900, margin: '0 auto', padding: 24 }}>
       <h1>Professor Portal</h1>
@@ -130,11 +179,11 @@ export default function App() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <label>
             Name
-            <input value={policy.professorName || ''} onChange={(event) => updateField('professorName', event.target.value)} style={{ display: 'block', marginTop: 6, width: '100%', padding: 8 }} />
+            <input value={policy.professorName || ''} placeholder="Loading signed-in professor..." readOnly style={{ display: 'block', marginTop: 6, width: '100%', padding: 8 }} />
           </label>
           <label>
             Professor ID
-            <input value={policy.professorId || ''} onChange={(event) => updateField('professorId', event.target.value)} style={{ display: 'block', marginTop: 6, width: '100%', padding: 8 }} />
+            <input value={policy.professorId || ''} placeholder="Provided by Microsoft Entra ID" readOnly style={{ display: 'block', marginTop: 6, width: '100%', padding: 8 }} />
           </label>
         </div>
       </section>
@@ -218,15 +267,20 @@ export default function App() {
                 data-role="course-desc"
                 onKeyDown={(event) => {
                   if (event.key === 'Enter') {
-                    const row = event.target.parentElement;
-                    const idInput = row.querySelector('[data-role="course-id"]');
-                    addCourseToGroup(index, idInput.value, event.target.value);
-                    idInput.value = '';
-                    event.target.value = '';
+                    addCourseFromRow(index, event.currentTarget.parentElement);
                   }
                 }}
                 style={{ flex: 1, padding: '6px 10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 14 }}
               />
+              <button
+                type="button"
+                aria-label={`Add course to ${group.name}`}
+                title="Add course"
+                onClick={(event) => addCourseFromRow(index, event.currentTarget.parentElement)}
+                style={{ width: 40, minWidth: 40, borderRadius: 8, border: '1px solid #2563eb', background: '#2563eb', color: 'white', cursor: 'pointer', fontSize: 22, lineHeight: 1 }}
+              >
+                +
+              </button>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 14 }}>
@@ -258,14 +312,23 @@ export default function App() {
             </div>
           </div>
         ))}
+
+        <button onClick={savePolicy} style={{ marginTop: 16, padding: '10px 16px', borderRadius: 8, border: 'none', background: '#2563eb', color: 'white', cursor: 'pointer' }}>
+          Save course groups
+        </button>
       </section>
 
       <section style={{ background: '#fff', border: '1px solid #dbe2ea', borderRadius: 12, padding: 20 }}>
-        <h2>Knowledge sources</h2>
-        <ul>
-          <li>course-materials</li>
-          <li>assignment-guidance</li>
-        </ul>
+        <h2>Canvas course content</h2>
+        <p>Upload a Canvas course export (.imscc) to add its pages and assignment instructions to this course&apos;s knowledge base.</p>
+        <label style={{ display: 'block', marginBottom: 12 }}>
+          Course name
+          <input value={courseSubject} onChange={(event) => setCourseSubject(event.target.value)} maxLength="200" style={{ display: 'block', marginTop: 6, width: '100%', padding: 8 }} />
+        </label>
+        <input type="file" accept=".imscc,application/zip" onChange={(event) => setImsccFile(event.target.files?.[0] || null)} />
+        <button onClick={importImscc} disabled={!imsccFile} style={{ display: 'block', marginTop: 12, padding: '10px 16px', borderRadius: 8, border: 'none', background: '#2563eb', color: 'white', cursor: 'pointer' }}>
+          Import Canvas export
+        </button>
         <p>{summary}</p>
         <p>{status}</p>
       </section>

@@ -3,6 +3,7 @@ obj/
 .vs/
 .env
 node_modules/
+.azd-deploy/
 .DS_Store
 _site/
 .tmp/

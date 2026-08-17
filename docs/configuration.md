@@ -15,9 +15,10 @@ The hosted agent's manifest ([azure.yaml](https://github.com/dbruun/edu-cohort-h
 | `FOUNDRY_PROJECT_ENDPOINT` | Foundry project endpoint (auto-injected in the hosted container) | `https://<account>.services.ai.azure.com/api/projects/<project>` |
 | `AZURE_AI_MODEL_DEPLOYMENT_NAME` | Model deployment the agent invokes | `gpt-5.4-mini` |
 | `TOOLBOX_NAME` | Name of the Foundry Toolbox the agent loads for course knowledge | `course-knowledge` |
-| `PEDAGOGY_POLICY_URI` | Path to the pedagogy policy JSON (baked into the image) | `./Pedagogy/pedagogy-policy.json` |
+| `PEDAGOGY_POLICY_URI` | Local policy path or professor portal policy blob URL | `https://<account>.blob.core.windows.net/policies/<professor-id>.json` |
+| `COURSE_ID` | Course ID used to select a configured course group | `CS101` |
 
-The `scripts/deploy.*` scripts set `AZURE_AI_MODEL_DEPLOYMENT_NAME`, `PEDAGOGY_POLICY_URI`, and the subscription/location into the `azd` environment before deploy — see [scripts/README.md](https://github.com/dbruun/edu-cohort-homework/blob/main/scripts/README.md).
+The `scripts/deploy.*` scripts set `AZURE_AI_MODEL_DEPLOYMENT_NAME`, `PEDAGOGY_POLICY_URI`, `COURSE_ID`, and the subscription/location into the `azd` environment before deploy. Pass the configured course ID as the eighth positional argument and the portal policy blob URL as the ninth to `deploy.sh`, or use `-CourseId` and `-PedagogyPolicyUri` with `deploy.ps1`. The agent managed identity needs **Storage Blob Data Reader** on the portal's `policies` container — see [scripts/README.md](https://github.com/dbruun/edu-cohort-homework/blob/main/scripts/README.md).
 
 > **Legacy note:** Older docs referenced a `TOOLBOX_ENDPOINT` URL variable. That belonged to an earlier self-hosted prototype; the hosted Foundry agent now loads its toolbox by name (`TOOLBOX_NAME`), so `TOOLBOX_ENDPOINT` is no longer used.
 
@@ -73,7 +74,7 @@ Within a professor's pedagogy, **course groups** let one set of limits apply to 
 
 ### How the policy is applied
 
-The pedagogy policy is composed into the hosted agent's instructions at startup in [src/HomeworkAgent/Program.cs](https://github.com/dbruun/edu-cohort-homework/blob/main/src/HomeworkAgent/Program.cs) (`PromptComposer.Compose` over the policy loaded by `PedagogyPolicy.LoadAsync`). Because it is read when the container starts, **changing the policy takes effect on the next deploy/restart** (`azd deploy`). A live per-request read from external storage is not enabled in this environment — see the architecture doc for why.
+The pedagogy policy is composed into the hosted agent's instructions at startup in [src/HomeworkAgent/Program.cs](https://github.com/dbruun/edu-cohort-homework/blob/main/src/HomeworkAgent/Program.cs). Set `PEDAGOGY_POLICY_URI` to the professor portal's policy blob and `COURSE_ID` to one of its configured course IDs: the agent authenticates to the blob with its managed identity, resolves the matching course group's limits, and then builds its instructions. Because the policy is read when the container starts, **changing the policy takes effect on the next deploy/restart** (`azd deploy`). A live per-request read from external storage is not enabled in this environment — see the architecture doc for why.
 
 ## Knowledge sources
 

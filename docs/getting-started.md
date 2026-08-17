@@ -22,7 +22,7 @@ You'll go through four steps:
 
 | Step | You do | Where |
 | --- | --- | --- |
-| 1. Deploy infrastructure | Run one deploy script | Terminal |
+| 1. Deploy infrastructure and portal | Run `azd up` through the lab wrapper | Terminal |
 | 2. Deploy knowledge data | Run one setup script | Terminal |
 | 3. Create the agent | Click through the portal | Foundry portal |
 | 4. Link the agent to knowledge | Click through the portal | Foundry portal |
@@ -70,13 +70,15 @@ $env:LAB = "eduhw01"   # your environment name — reuse it in every step
 
 ## Step 1 — Deploy the infrastructure
 
-This provisions the **slim lab stack**: a Foundry (Azure AI Services) account and
+This provisions the **lab stack**: a Foundry (Azure AI Services) account and
 project, two model deployments (`gpt-5.4` for the tutor, `gpt-5.4-mini` for
-knowledge-base reasoning), and an **Azure AI Search** service — plus the RBAC and
-project connection that make portal grounding work later.
+knowledge-base reasoning), an **Azure AI Search** service, and a Linux App Service
+with private Blob storage for the professor portal — plus the RBAC and project
+connection that make grounding and course administration work later.
 
-The deploy script creates a **new azd environment** for you, sets the
-subscription/region, and runs `azd provision`:
+The deploy script creates a **new azd environment**, sets the
+subscription/region, and runs `azd up` to provision the resources and deploy the
+professor portal:
 
 ```powershell
 ./lab/deploy.ps1 -EnvironmentName $env:LAB
@@ -107,6 +109,8 @@ project endpoint : https://aif-eduhw01.services.ai.azure.com/api/projects/homewo
 | Model deployment | `gpt-5.4` | The tutor's chat model |
 | Model deployment | `gpt-5.4-mini` | Knowledge-base query planning / answer synthesis |
 | Azure AI Search | `srch-<env>` | Stores + retrieves course material |
+| Linux App Service | `app-professor-<env>` | Hosts the professor portal and API |
+| Storage account | generated `st...` name | Stores one private policy blob per professor |
 | RBAC + connection | — | Lets the agent read the search index and the search service call the model |
 
 ### Verify
@@ -131,20 +135,12 @@ source** over it, and a **knowledge base** (the thing the agent will query), the
 loads seed course material — a small set of dummy **microbiology** documents so
 you have something to ground on out of the box.
 
-```powershell
-./scripts/setup-knowledge-base.ps1 -EnvironmentName $env:LAB
-```
-
-<details>
-<summary>Prefer Python?</summary>
-
 ```bash
-python scripts/setup-knowledge-base.py --environment-name eduhw01
+python scripts/setup-knowledge-base.py --environment-name $env:LAB
 ```
 
-The Python version uses only the standard library and Azure CLI; no pip install
+The loader uses only the Python standard library and Azure CLI; no pip install
 is required.
-</details>
 
 The script auto-discovers the search service and Foundry account in `rg-<env>`,
 so you don't pass endpoints. It's idempotent — safe to re-run.
@@ -165,11 +161,26 @@ Edit [scripts/seed-data/microbiology.json](https://github.com/dbruun/edu-cohort-
 — each entry is `{ "id", "title", "content", "subject", "url" }` — or point at your
 own file and re-run:
 
-```powershell
-./scripts/setup-knowledge-base.ps1 -EnvironmentName $env:LAB -SeedDataPath ./my-course.json
+```bash
+python scripts/setup-knowledge-base.py --environment-name $env:LAB \
+  --seed-data-path ./my-course.json
 ```
 
 Every answer the tutor later gives is retrieved from, and cites, these documents.
+
+### Import a Canvas course export
+
+Export the course from Canvas as an **IMSCC** package, then load it with the
+Python setup script:
+
+```bash
+python scripts/setup-knowledge-base.py --environment-name eduhw01 \
+  --imscc-path ./my-course-export.imscc --subject "Biology 101"
+```
+
+The importer reads the package manifest and adds its HTML pages, text files, and
+XML course-work resources (including assignment instructions) to the course
+knowledge base. The original IMSCC file stays local; it is not extracted.
 
 ### Verify
 
@@ -205,11 +216,6 @@ Because you **haven't attached the knowledge base yet**, the agent has nothing
 approved to retrieve from. Following its instructions, it should say the course
 material doesn't cover the topic (or refuse to cite). **This is expected** — you're
 about to fix it in Step 4, and the contrast is the point.
-
-> **Fallback (if you can't use the portal):** you can create the same agent from a
-> script — see [scripts/create-foundry-agent.py](https://github.com/dbruun/edu-cohort-homework/blob/main/scripts/create-foundry-agent.py).
-> Set `PROJECT_ENDPOINT` to the endpoint from Step 1 and run it. But do Step 4's
-> linking in the portal to get the full experience.
 
 ---
 
@@ -249,6 +255,56 @@ watch it decline rather than make something up.
 > `course-knowledge-base`, not an empty index.
 
 You now have a working, grounded homework tutor. 🎓
+
+---
+
+## Step 5 — Deploy the professor portal
+
+The professor portal is a React application and Node API hosted together on the
+Linux App Service from Step 1. Its system-assigned identity writes policies to
+Blob Storage, uploads IMSCC-derived documents to Azure AI Search, and creates
+embeddings through Foundry without account keys.
+
+For a customer tenant, configure the existing tenant-only Entra registration
+before provisioning. Add this callback URI to the registration, replacing the
+environment token as needed:
+
+```text
+https://app-professor-<environment-without-dashes>.azurewebsites.net/.auth/login/aad/callback
+```
+
+Store an application credential for that registration in an existing
+RBAC-enabled Key Vault, then provision the full stack. Bicep owns the App
+Service, settings, managed identity, RBAC, Key Vault reference, and Easy Auth:
+
+```powershell
+./lab/deploy.ps1 -EnvironmentName eduhw10 `
+  -PortalAuthClientId '<application-id>' `
+  -PortalAuthKeyVaultResourceGroup '<key-vault-resource-group>' `
+  -PortalAuthKeyVaultName '<key-vault-name>' `
+  -PortalAuthClientSecretName '<secret-name>'
+```
+
+The existing registration and Key Vault secret remain customer-owned. Bicep
+stores only a Key Vault reference in App Service and grants the portal managed
+identity `Key Vault Secrets User`; no client secret is written to source or
+passed through application deployment. The same `azd up` command builds a
+self-contained portal package and deploys it to the Bicep-managed App Service.
+
+Open the URL printed by the deploy command. An unauthenticated browser is redirected to
+Microsoft sign-in. For this lab, every signed-in user in the selected tenant is
+treated as a professor; production deployments should use an explicit app role
+or group assignment.
+
+Verify both workflows:
+
+1. Change a pedagogy control, save, refresh, and confirm the setting persists.
+2. Upload a small Canvas `.imscc` export and confirm the portal reports the
+  number of imported documents.
+
+> The App Service B1 plan has an ongoing cost until the resource group is
+> deleted. The synchronous IMSCC endpoint is suitable for lab-sized exports;
+> large production courses should use an asynchronous import job.
 
 ---
 

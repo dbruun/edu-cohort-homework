@@ -38,6 +38,8 @@ metadata:
 #               value: ${AZURE_AI_MODEL_DEPLOYMENT_NAME}
 #             - name: PEDAGOGY_POLICY_URI
 #               value: ${PEDAGOGY_POLICY_URI}
+#             - name: COURSE_ID
+#               value: ${COURSE_ID}
 #             - name: TOOLBOX_NAME
 #               value: ${TOOLBOX_NAME}
 #         kind: hosted
