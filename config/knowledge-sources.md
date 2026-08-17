@@ -6,7 +6,7 @@ source, and index are created (and seeded) by a script.
 
 ## What the infrastructure provisions
 
-`infra/resources.bicep` creates:
+`lab/infra/resources.bicep` creates:
 
 - an **Azure AI Search** service (`srch-<token>`) — **Basic** SKU by default
   (`searchSku` parameter). Basic is fine for a pilot/cohort. **Upgrade to
@@ -21,11 +21,11 @@ source, and index are created (and seeded) by a script.
 
 ## Bootstrap the knowledge base (one command)
 
-After `azd provision`, seed the index and create the knowledge base + knowledge
+After `azd up`, seed the index and create the knowledge base + knowledge
 source with dummy microbiology data:
 
-```powershell
-./scripts/setup-knowledge-base.ps1 -EnvironmentName <your-azd-env>
+```bash
+python scripts/setup-knowledge-base.py --environment-name <your-azd-env>
 ```
 
 This creates the `course-materials` index, uploads
@@ -37,9 +37,9 @@ idempotent — re-run it any time you change the seed data.
 
 To replace the dummy data or add more knowledge without redeploying the agent:
 
-1. Edit `scripts/seed-data/microbiology.json` (or pass `-SeedDataPath` to your
+1. Edit `scripts/seed-data/microbiology.json` (or pass `--seed-data-path` to your
    own file) using the same `id / title / content / subject / url` shape.
-2. Re-run `scripts/setup-knowledge-base.ps1` to re-upload.
+2. Re-run `scripts/setup-knowledge-base.py` to re-upload.
 3. For larger or non-JSON corpora, create a dedicated Azure AI Search index and
    add it as an additional knowledge source, then reference it from the
    knowledge base and `toolbox/toolbox.yaml`.

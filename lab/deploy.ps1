@@ -7,8 +7,8 @@
 
 .DESCRIPTION
   Creates (or selects) a dedicated azd environment, sets the subscription/region,
-  and runs `azd provision` against lab/infra (subscription-scoped Bicep that
-  creates the resource group `rg-<token>`). Prints the outputs you need next.
+  and runs `azd up` to provision lab/infra and deploy the professor portal.
+  Prints the outputs you need next.
 
   Requires: Azure Developer CLI (azd) + Azure CLI, logged in (`azd auth login`
   and `az login`), and permission to create resource groups AND role assignments
@@ -24,8 +24,28 @@
 .PARAMETER SearchSku
   Azure AI Search SKU. Default 'basic' (fine for the lab).
 
+.PARAMETER PortalAuthClientId
+  Application ID of an existing tenant-only Entra app registration. When set,
+  all PortalAuthKeyVault* parameters are required and Bicep configures Easy Auth.
+
+.PARAMETER PortalAuthKeyVaultResourceGroup
+  Resource group containing the existing RBAC-enabled Key Vault.
+
+.PARAMETER PortalAuthKeyVaultName
+  Existing Key Vault containing the Entra application credential.
+
+.PARAMETER PortalAuthClientSecretName
+  Key Vault secret name containing the Entra application credential.
+
 .EXAMPLE
   ./lab/deploy.ps1 -EnvironmentName eduhw01
+
+.EXAMPLE
+  ./lab/deploy.ps1 -EnvironmentName eduhw10 `
+    -PortalAuthClientId '<application-id>' `
+    -PortalAuthKeyVaultResourceGroup '<key-vault-resource-group>' `
+    -PortalAuthKeyVaultName '<key-vault-name>' `
+    -PortalAuthClientSecretName '<secret-name>'
 #>
 [CmdletBinding()]
 param(
@@ -33,10 +53,20 @@ param(
   [string]$EnvironmentName,
   [string]$Location = 'northcentralus',
   [ValidateSet('basic', 'standard', 'standard2', 'standard3')]
-  [string]$SearchSku = 'basic'
+  [string]$SearchSku = 'basic',
+  [string]$PortalAuthClientId = '',
+  [string]$PortalAuthKeyVaultResourceGroup = '',
+  [string]$PortalAuthKeyVaultName = '',
+  [string]$PortalAuthClientSecretName = ''
 )
 
 $ErrorActionPreference = 'Stop'
+
+$authValues = @($PortalAuthClientId, $PortalAuthKeyVaultResourceGroup, $PortalAuthKeyVaultName, $PortalAuthClientSecretName)
+$configuredAuthValues = @($authValues | Where-Object { $_ })
+if ($configuredAuthValues.Count -ne 0 -and $configuredAuthValues.Count -ne $authValues.Count) {
+  throw 'PortalAuthClientId, PortalAuthKeyVaultResourceGroup, PortalAuthKeyVaultName, and PortalAuthClientSecretName must all be supplied together.'
+}
 
 Push-Location $PSScriptRoot
 try {
@@ -49,14 +79,21 @@ try {
 
   $subscriptionId = az account show --query id -o tsv
   if (-not $subscriptionId) { throw "Could not read the current subscription. Run 'az login' and 'az account set'." }
+  $tenantId = az account show --query tenantId -o tsv
+  if (-not $tenantId) { throw "Could not read the current tenant. Run 'az login' and 'az account set'." }
   Write-Host "==> Using subscription $subscriptionId in $Location (search=$SearchSku)"
   azd env set AZURE_SUBSCRIPTION_ID $subscriptionId | Out-Null
+  azd env set AZURE_TENANT_ID $tenantId | Out-Null
   azd env set AZURE_LOCATION $Location | Out-Null
   azd env set SEARCH_SKU $SearchSku | Out-Null
+  azd env set PORTAL_AUTH_CLIENT_ID $PortalAuthClientId | Out-Null
+  azd env set PORTAL_AUTH_KEY_VAULT_RESOURCE_GROUP $PortalAuthKeyVaultResourceGroup | Out-Null
+  azd env set PORTAL_AUTH_KEY_VAULT_NAME $PortalAuthKeyVaultName | Out-Null
+  azd env set PORTAL_AUTH_CLIENT_SECRET_NAME $PortalAuthClientSecretName | Out-Null
 
-  Write-Host "==> Provisioning Foundry + models + Azure AI Search (a few minutes)..." -ForegroundColor Cyan
-  azd provision --no-prompt
-  if ($LASTEXITCODE -ne 0) { throw "azd provision failed. See the output above." }
+  Write-Host "==> Provisioning the lab and deploying the professor portal (a few minutes)..." -ForegroundColor Cyan
+  azd up --no-prompt
+  if ($LASTEXITCODE -ne 0) { throw "azd up failed. See the output above." }
 
   function Get-AzdValue([string]$name) { (azd env get-value $name 2>$null) }
 
@@ -74,7 +111,7 @@ try {
   Write-Host "  policy storage    : $(Get-AzdValue POLICY_STORAGE_ACCOUNT)"
   Write-Host ""
   Write-Host "Next: seed the knowledge base ->" -ForegroundColor Cyan
-  Write-Host "  ./scripts/setup-knowledge-base.ps1 -EnvironmentName $EnvironmentName"
+  Write-Host "  python ../scripts/setup-knowledge-base.py --environment-name $EnvironmentName"
 }
 finally {
   Pop-Location

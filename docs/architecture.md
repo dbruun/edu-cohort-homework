@@ -159,15 +159,15 @@ sequenceDiagram
 ## Deployment topology
 
 **Phase 1 lab:** [lab/deploy.ps1](https://github.com/dbruun/edu-cohort-homework/blob/main/lab/deploy.ps1) or
-[lab/deploy.sh](https://github.com/dbruun/edu-cohort-homework/blob/main/lab/deploy.sh) provisions the Foundry account and project,
-the two model deployments, Azure AI Search, RBAC, and the Foundry search
-connection. The participant creates the tutor in the portal and tests it in the
-Playground.
+[lab/deploy.sh](https://github.com/dbruun/edu-cohort-homework/blob/main/lab/deploy.sh) runs `azd up` to provision the Foundry account and project,
+the model deployments, Azure AI Search, App Service, RBAC, and the Foundry search
+connection, then deploys the professor portal. The participant creates the tutor
+in the Foundry portal and tests it in the Playground.
 
 **Later phases:** the hosted agent source, AG-UI bridge, LTI tool, student UI,
-professor portal, and data-integration components remain in the repository as
-starting points. Their container infrastructure was intentionally removed and
-will be added back as those phases become the active path.
+and data-integration components remain in the repository as starting points.
+Their container infrastructure was intentionally removed and will be added back
+as those phases become the active path.
 
 ## Design principles
 

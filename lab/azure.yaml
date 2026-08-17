@@ -1,13 +1,22 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
 
-# Self-contained azd project for the HANDS-ON LAB (Phase 1: grounded homework
-# agent). It provisions the slim infrastructure only (Foundry + models + Azure AI
-# Search) — there are no azd services, because the agent is created in the Foundry
-# portal. Kept separate from the repo-root azure.yaml (the full accelerator) so
-# the lab has its own azd environment.
+# Self-contained azd project for the hands-on lab. Infrastructure is provisioned
+# by Bicep and the professor portal is packaged and deployed by azd.
 name: edu-homework-lab
 metadata:
     template: edu-homework-lab@0.1.0
 infra:
     provider: bicep
     path: infra
+hooks:
+    prepackage:
+        run: scripts/package-portal.mjs
+        kind: js
+services:
+    professor-portal:
+        project: ../ui
+        host: appservice
+        language: js
+        resourceGroup: ${AZURE_RESOURCE_GROUP}
+        resourceName: ${PORTAL_APP_NAME}
+        dist: .azd-deploy

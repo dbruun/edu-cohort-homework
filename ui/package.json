@@ -7,6 +7,7 @@
   },
   "scripts": {
     "build": "node --check server.js",
+    "build:app": "npm --prefix app ci --ignore-scripts && npm --prefix app run build && node --check server.js",
     "start": "node server.js",
     "test": "node --test api/test/*.test.js"
   },

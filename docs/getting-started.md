@@ -22,11 +22,10 @@ You'll go through four steps:
 
 | Step | You do | Where |
 | --- | --- | --- |
-| 1. Deploy infrastructure | Run one deploy script | Terminal |
+| 1. Deploy infrastructure and portal | Run `azd up` through the lab wrapper | Terminal |
 | 2. Deploy knowledge data | Run one setup script | Terminal |
 | 3. Create the agent | Click through the portal | Foundry portal |
 | 4. Link the agent to knowledge | Click through the portal | Foundry portal |
-| 5. Deploy the professor portal | Run one deploy script | App Service |
 
 > **LTI / LMS launch is out of scope for this lab.** In production, students launch
 > the tutor from your LMS (Canvas, Blackboard, Moodle…) over **LTI 1.3**, and the
@@ -77,8 +76,9 @@ knowledge-base reasoning), an **Azure AI Search** service, and a Linux App Servi
 with private Blob storage for the professor portal — plus the RBAC and project
 connection that make grounding and course administration work later.
 
-The deploy script creates a **new azd environment** for you, sets the
-subscription/region, and runs `azd provision`:
+The deploy script creates a **new azd environment**, sets the
+subscription/region, and runs `azd up` to provision the resources and deploy the
+professor portal:
 
 ```powershell
 ./lab/deploy.ps1 -EnvironmentName $env:LAB
@@ -135,20 +135,12 @@ source** over it, and a **knowledge base** (the thing the agent will query), the
 loads seed course material — a small set of dummy **microbiology** documents so
 you have something to ground on out of the box.
 
-```powershell
-./scripts/setup-knowledge-base.ps1 -EnvironmentName $env:LAB
-```
-
-<details>
-<summary>Prefer Python?</summary>
-
 ```bash
-python scripts/setup-knowledge-base.py --environment-name eduhw01
+python scripts/setup-knowledge-base.py --environment-name $env:LAB
 ```
 
-The Python version uses only the standard library and Azure CLI; no pip install
+The loader uses only the Python standard library and Azure CLI; no pip install
 is required.
-</details>
 
 The script auto-discovers the search service and Foundry account in `rg-<env>`,
 so you don't pass endpoints. It's idempotent — safe to re-run.
@@ -169,8 +161,9 @@ Edit [scripts/seed-data/microbiology.json](https://github.com/dbruun/edu-cohort-
 — each entry is `{ "id", "title", "content", "subject", "url" }` — or point at your
 own file and re-run:
 
-```powershell
-./scripts/setup-knowledge-base.ps1 -EnvironmentName $env:LAB -SeedDataPath ./my-course.json
+```bash
+python scripts/setup-knowledge-base.py --environment-name $env:LAB \
+  --seed-data-path ./my-course.json
 ```
 
 Every answer the tutor later gives is retrieved from, and cites, these documents.
@@ -224,11 +217,6 @@ approved to retrieve from. Following its instructions, it should say the course
 material doesn't cover the topic (or refuse to cite). **This is expected** — you're
 about to fix it in Step 4, and the contrast is the point.
 
-> **Fallback (if you can't use the portal):** you can create the same agent from a
-> script — see [scripts/create-foundry-agent.py](https://github.com/dbruun/edu-cohort-homework/blob/main/scripts/create-foundry-agent.py).
-> Set `PROJECT_ENDPOINT` to the endpoint from Step 1 and run it. But do Step 4's
-> linking in the portal to get the full experience.
-
 ---
 
 ## Step 4 — Link the agent to the knowledge
@@ -277,17 +265,33 @@ Linux App Service from Step 1. Its system-assigned identity writes policies to
 Blob Storage, uploads IMSCC-derived documents to Azure AI Search, and creates
 embeddings through Foundry without account keys.
 
-```powershell
-./scripts/deploy-professor-portal.ps1 -EnvironmentName $env:LAB
+For a customer tenant, configure the existing tenant-only Entra registration
+before provisioning. Add this callback URI to the registration, replacing the
+environment token as needed:
+
+```text
+https://app-professor-<environment-without-dashes>.azurewebsites.net/.auth/login/aad/callback
 ```
 
-The first run creates a tenant-only Microsoft Entra app registration, stores its
-generated credential in App Service settings, deploys the portal package, and
-enables App Service Authentication. Creating app registrations may require an
-Entra Application Administrator if your tenant prevents users from registering
-applications.
+Store an application credential for that registration in an existing
+RBAC-enabled Key Vault, then provision the full stack. Bicep owns the App
+Service, settings, managed identity, RBAC, Key Vault reference, and Easy Auth:
 
-Open the URL printed by the script. An unauthenticated browser is redirected to
+```powershell
+./lab/deploy.ps1 -EnvironmentName eduhw10 `
+  -PortalAuthClientId '<application-id>' `
+  -PortalAuthKeyVaultResourceGroup '<key-vault-resource-group>' `
+  -PortalAuthKeyVaultName '<key-vault-name>' `
+  -PortalAuthClientSecretName '<secret-name>'
+```
+
+The existing registration and Key Vault secret remain customer-owned. Bicep
+stores only a Key Vault reference in App Service and grants the portal managed
+identity `Key Vault Secrets User`; no client secret is written to source or
+passed through application deployment. The same `azd up` command builds a
+self-contained portal package and deploys it to the Bicep-managed App Service.
+
+Open the URL printed by the deploy command. An unauthenticated browser is redirected to
 Microsoft sign-in. For this lab, every signed-in user in the selected tenant is
 treated as a professor; production deployments should use an explicit app role
 or group assignment.

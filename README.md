@@ -5,9 +5,9 @@ Foundry, grounding it in approved course material with Azure AI Search, and
 evolving it toward LMS delivery and professor-owned pedagogy.
 
 The main path in this repository is the **Phase 1 lab**: deploy a slim Foundry +
-Azure AI Search stack, seed a course knowledge base, create the tutor in the
-Foundry portal, and verify grounded answers with citations. The lab intentionally
-does not deploy containers, an LTI tool, or the professor portal.
+Azure AI Search stack and professor portal, seed a course knowledge base, create
+the tutor in the Foundry portal, and verify grounded answers with citations. The
+lab intentionally does not deploy containers or an LTI tool.
 
 ## Target architecture
 
@@ -23,7 +23,7 @@ The guided lab takes about **2-3 hours** and has four steps:
 
 | Step | Outcome | Where |
 | --- | --- | --- |
-| 1. Deploy infrastructure | Foundry project, two model deployments, Azure AI Search, RBAC, and project connection | Terminal |
+| 1. Deploy the lab | Foundry project, models, Azure AI Search, professor portal, RBAC, and project connection | Terminal |
 | 2. Seed course knowledge | Search index, knowledge source, knowledge base, and sample microbiology content | Terminal |
 | 3. Create the tutor | `homework-tutor` agent using the provided instructions | Foundry portal |
 | 4. Add knowledge | Grounded, cited responses in the Foundry Playground | Foundry portal |
@@ -43,23 +43,18 @@ From the repository root, choose a short environment name and run:
 ./lab/deploy.sh eduhw01 northcentralus basic
 ```
 
-The lab provisions only:
+The lab provisions and deploys:
 
 - a Microsoft Foundry account and `homework` project
 - `gpt-5.4` and `gpt-5.4-mini` model deployments
 - an Azure AI Search service
+- the professor portal on Linux Azure App Service
 - the RBAC assignments and Foundry project connection needed for grounding
 
 The infrastructure lives in [lab/infra](lab/infra). It deliberately excludes
 ACR, Container Apps, MongoDB, the hosted agent container, and the LTI tool.
 
 ### 2. Seed the knowledge base
-
-```powershell
-./scripts/setup-knowledge-base.ps1 -EnvironmentName eduhw01
-```
-
-Or use the cross-platform Python version (no pip packages required):
 
 ```bash
 python scripts/setup-knowledge-base.py --environment-name eduhw01
@@ -94,7 +89,7 @@ than requiring the entire platform up front.
 
 | Phase | Focus | Repository starting points |
 | --- | --- | --- |
-| 1 | Agent grounded in academic data | [lab](lab), [scripts/setup-knowledge-base.ps1](scripts/setup-knowledge-base.ps1) |
+| 1 | Agent grounded in academic data | [lab](lab), [scripts/setup-knowledge-base.py](scripts/setup-knowledge-base.py) |
 | 2 | LMS data integration | [config/knowledge-sources.md](config/knowledge-sources.md), [toolbox](toolbox) |
 | 3 | Professor-owned pedagogy | [src/HomeworkAgent/Pedagogy](src/HomeworkAgent/Pedagogy), [ui/app](ui/app) |
 | 4 | LTI 1.3 launch and role routing | [lti-tool](lti-tool), [docs/lti-integration.md](docs/lti-integration.md) |

@@ -8,7 +8,7 @@
 //   - No Log Analytics / App Insights — not needed for the hands-on flow.
 //
 // The index / knowledge source / knowledge base are DATA-PLANE objects created
-// by scripts/setup-knowledge-base.ps1 after this deploys.
+// by scripts/setup-knowledge-base.py after this deploys.
 
 @description('Location for all resources')
 param location string
@@ -21,6 +21,15 @@ param tags object
 
 @description('SKU for Azure AI Search')
 param searchSku string = 'basic'
+
+param portalAuthClientId string = ''
+param portalAuthKeyVaultResourceGroup string = ''
+param portalAuthKeyVaultName string = ''
+param portalAuthClientSecretName string = ''
+param portalAuthTenantId string = tenant().tenantId
+
+var portalAuthEnabled = !empty(portalAuthClientId)
+var portalAuthSecretSettingName = 'MICROSOFT_PROVIDER_AUTHENTICATION_SECRET'
 
 // --- Foundry (Azure AI Services) account + project ------------------------
 resource foundry 'Microsoft.CognitiveServices/accounts@2026-05-15-preview' = {
@@ -187,13 +196,12 @@ resource deployerSearchDataRole 'Microsoft.Authorization/roleAssignments@2022-04
   }
 }
 
-resource searchOpenAIRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(foundry.id, search.id, openAIUserRoleId)
-  scope: foundry
-  properties: {
+module searchOpenAIRole './foundry-role.bicep' = {
+  name: 'search-openai-role'
+  params: {
+    accountName: foundry.name
     principalId: search.identity.principalId
     roleDefinitionId: openAIUserRoleId
-    principalType: 'ServicePrincipal'
   }
 }
 
@@ -204,26 +212,24 @@ var searchIndexDataReaderRoleId = subscriptionResourceId('Microsoft.Authorizatio
 // ProjectManagedIdentity auth), so the project identity needs data-plane read
 // on the search service. Pre-granting it here means the portal "attach the
 // knowledge base" step just works — no RBAC troubleshooting during the lab.
-resource projectSearchRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(search.id, foundryProject.id, searchIndexDataReaderRoleId)
-  scope: search
-  properties: {
+module projectSearchRole './search-role.bicep' = {
+  name: 'project-search-role'
+  params: {
+    searchServiceName: search.name
     principalId: foundryProject.identity.principalId
     roleDefinitionId: searchIndexDataReaderRoleId
-    principalType: 'ServicePrincipal'
   }
 }
 
 // If an attendee instead attaches the search index via the account-level AAD
 // connection (azure_ai_search tool), that path authenticates as the AI Services
 // ACCOUNT identity — grant it read too so either portal path works.
-resource accountSearchRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(search.id, foundry.id, searchIndexDataReaderRoleId)
-  scope: search
-  properties: {
+module accountSearchRole './search-role.bicep' = {
+  name: 'account-search-role'
+  params: {
+    searchServiceName: search.name
     principalId: foundry.identity.principalId
     roleDefinitionId: searchIndexDataReaderRoleId
-    principalType: 'ServicePrincipal'
   }
 }
 
@@ -257,6 +263,7 @@ resource policyStorage 'Microsoft.Storage/storageAccounts@2023-05-01' = {
   properties: {
     allowBlobPublicAccess: false
     minimumTlsVersion: 'TLS1_2'
+    publicNetworkAccess: 'Enabled'
     supportsHttpsTrafficOnly: true
   }
 }
@@ -302,10 +309,11 @@ resource portal 'Microsoft.Web/sites@2024-04-01' = {
     publicNetworkAccess: 'Enabled'
     siteConfig: {
       alwaysOn: true
+      appCommandLine: 'npm start'
       ftpsState: 'Disabled'
       linuxFxVersion: 'NODE|22-lts'
       minTlsVersion: '1.2'
-      appSettings: [
+      appSettings: concat([
         {
           name: 'POLICY_STORAGE_ACCOUNT'
           value: policyStorage.name
@@ -330,40 +338,90 @@ resource portal 'Microsoft.Web/sites@2024-04-01' = {
           name: 'SCM_DO_BUILD_DURING_DEPLOYMENT'
           value: 'true'
         }
-      ]
+      ], portalAuthEnabled ? [
+        {
+          name: portalAuthSecretSettingName
+          value: '@Microsoft.KeyVault(VaultName=${portalAuthKeyVaultName};SecretName=${portalAuthClientSecretName})'
+        }
+      ] : [])
     }
+  }
+}
+
+resource portalAuth 'Microsoft.Web/sites/config@2024-04-01' = if (portalAuthEnabled) {
+  parent: portal
+  name: 'authsettingsV2'
+  properties: {
+    platform: {
+      enabled: true
+      runtimeVersion: '~1'
+    }
+    globalValidation: {
+      requireAuthentication: true
+      unauthenticatedClientAction: 'RedirectToLoginPage'
+      redirectToProvider: 'azureactivedirectory'
+    }
+    identityProviders: {
+      azureActiveDirectory: {
+        enabled: true
+        registration: {
+          openIdIssuer: '${environment().authentication.loginEndpoint}${portalAuthTenantId}/v2.0'
+          clientId: portalAuthClientId
+          clientSecretSettingName: portalAuthSecretSettingName
+        }
+        validation: {
+          allowedAudiences: [portalAuthClientId]
+        }
+      }
+    }
+    login: {
+      tokenStore: {
+        enabled: true
+      }
+    }
+    httpSettings: {
+      requireHttps: true
+      routes: {
+        apiPrefix: '/.auth'
+      }
+    }
+  }
+}
+
+module portalKeyVaultRole './portal-key-vault-role.bicep' = if (portalAuthEnabled) {
+  scope: resourceGroup(portalAuthKeyVaultResourceGroup)
+  params: {
+    keyVaultName: portalAuthKeyVaultName
+    principalId: portal.identity.principalId
   }
 }
 
 var storageBlobDataContributorRoleId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')
 
-resource portalStorageRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(policyStorage.id, portal.id, storageBlobDataContributorRoleId)
-  scope: policyStorage
-  properties: {
+module portalStorageRole './storage-role.bicep' = {
+  name: 'portal-storage-role'
+  params: {
+    storageAccountName: policyStorage.name
     principalId: portal.identity.principalId
     roleDefinitionId: storageBlobDataContributorRoleId
-    principalType: 'ServicePrincipal'
   }
 }
 
-resource portalSearchDataRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(search.id, portal.id, searchIndexDataContributorRoleId)
-  scope: search
-  properties: {
+module portalSearchDataRole './search-role.bicep' = {
+  name: 'portal-search-role'
+  params: {
+    searchServiceName: search.name
     principalId: portal.identity.principalId
     roleDefinitionId: searchIndexDataContributorRoleId
-    principalType: 'ServicePrincipal'
   }
 }
 
-resource portalOpenAIRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(foundry.id, portal.id, openAIUserRoleId)
-  scope: foundry
-  properties: {
+module portalOpenAIRole './foundry-role.bicep' = {
+  name: 'portal-openai-role'
+  params: {
+    accountName: foundry.name
     principalId: portal.identity.principalId
     roleDefinitionId: openAIUserRoleId
-    principalType: 'ServicePrincipal'
   }
 }
 

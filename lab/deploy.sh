@@ -5,8 +5,7 @@
 # no hosted agent, LTI tool, or ACR.
 #
 # Creates/selects a dedicated azd environment, sets subscription/region, and runs
-# `azd provision` against lab/infra (subscription-scoped Bicep that creates
-# rg-<token>).
+# `azd up` to provision lab/infra and deploy the professor portal.
 #
 # Requires: azd + Azure CLI, logged in (`azd auth login`, `az login`), and
 # permission to create resource groups AND role assignments at the subscription
@@ -32,8 +31,8 @@ azd env set AZURE_SUBSCRIPTION_ID "$SUBSCRIPTION_ID" >/dev/null
 azd env set AZURE_LOCATION "$LOCATION" >/dev/null
 azd env set SEARCH_SKU "$SEARCH_SKU" >/dev/null
 
-echo "==> Provisioning Foundry + models + Azure AI Search (a few minutes)..."
-azd provision --no-prompt
+echo "==> Provisioning the lab and deploying the professor portal (a few minutes)..."
+azd up --no-prompt
 
 get() { azd env get-value "$1" 2>/dev/null; }
 
@@ -51,4 +50,4 @@ echo "  professor portal  : $(get PORTAL_URL)"
 echo "  policy storage    : $(get POLICY_STORAGE_ACCOUNT)"
 echo ""
 echo "Next: seed the knowledge base ->"
-echo "  ./scripts/setup-knowledge-base.ps1 -EnvironmentName $ENV_NAME"
+echo "  python ../scripts/setup-knowledge-base.py --environment-name $ENV_NAME"

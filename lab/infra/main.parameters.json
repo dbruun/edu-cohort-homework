@@ -10,6 +10,21 @@
     },
     "searchSku": {
       "value": "${SEARCH_SKU=basic}"
+    },
+    "portalAuthClientId": {
+      "value": "${PORTAL_AUTH_CLIENT_ID=}"
+    },
+    "portalAuthKeyVaultResourceGroup": {
+      "value": "${PORTAL_AUTH_KEY_VAULT_RESOURCE_GROUP=}"
+    },
+    "portalAuthKeyVaultName": {
+      "value": "${PORTAL_AUTH_KEY_VAULT_NAME=}"
+    },
+    "portalAuthClientSecretName": {
+      "value": "${PORTAL_AUTH_CLIENT_SECRET_NAME=}"
+    },
+    "portalAuthTenantId": {
+      "value": "${AZURE_TENANT_ID}"
     }
   }
 }
