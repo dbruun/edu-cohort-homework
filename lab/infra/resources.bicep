@@ -1,11 +1,11 @@
-// Lab resources: Foundry account + project + 3 model deployments, Azure AI
-// Search, and an App Service professor portal with private policy storage.
+// Lab resources: Foundry account + project + 3 model deployments, Application
+// Insights, Azure AI Search, and an App Service professor portal with private
+// policy storage.
 //
 // What is intentionally NOT here (vs. the full accelerator in infra/):
 //   - No Container Apps environment, hosted C# agent, or ACR — the agent is
 //     created in the Foundry portal during the lab.
 //   - No LTI tool / Mongo sidecar — LTI is out of scope for the lab.
-//   - No Log Analytics / App Insights — not needed for the hands-on flow.
 //
 // The index / knowledge source / knowledge base are DATA-PLANE objects created
 // by scripts/setup-knowledge-base.py after this deploys.
@@ -22,14 +22,23 @@ param tags object
 @description('SKU for Azure AI Search')
 param searchSku string = 'basic'
 
+@description('Overrides the generated App Service name. Set this when the Entra redirect URI must be registered before deployment, since the generated name contains an unpredictable hash.')
+param portalAppName string = ''
+
 param portalAuthClientId string = ''
 param portalAuthKeyVaultResourceGroup string = ''
 param portalAuthKeyVaultName string = ''
 param portalAuthClientSecretName string = ''
+@secure()
+param portalAuthClientSecret string = ''
 param portalAuthTenantId string = tenant().tenantId
 
 var portalAuthEnabled = !empty(portalAuthClientId)
+var portalAuthUsesKeyVault = portalAuthEnabled && empty(portalAuthClientSecret)
 var portalAuthSecretSettingName = 'MICROSOFT_PROVIDER_AUTHENTICATION_SECRET'
+var portalResourceSuffix = substring(uniqueString(resourceGroup().id), 0, 6)
+var portalSiteName = empty(portalAppName) ? 'app-professor-${resourceToken}-${portalResourceSuffix}' : portalAppName
+var portalPlanName = empty(portalAppName) ? 'plan-professor-${resourceToken}-${portalResourceSuffix}' : 'plan-${portalAppName}'
 
 // --- Foundry (Azure AI Services) account + project ------------------------
 resource foundry 'Microsoft.CognitiveServices/accounts@2026-05-15-preview' = {
@@ -63,6 +72,62 @@ resource foundryProject 'Microsoft.CognitiveServices/accounts/projects@2026-05-1
   properties: {
     displayName: 'Homework Tutor'
     description: 'EDU homework tutor lab project.'
+  }
+}
+
+// --- Foundry monitoring --------------------------------------------------
+resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
+  name: 'logs-${resourceToken}'
+  location: location
+  tags: tags
+  properties: {
+    retentionInDays: 30
+    sku: {
+      name: 'PerGB2018'
+    }
+  }
+}
+
+resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
+  name: 'appi-${resourceToken}'
+  location: location
+  tags: tags
+  kind: 'web'
+  properties: {
+    Application_Type: 'web'
+    WorkspaceResourceId: logAnalytics.id
+  }
+}
+
+// The Foundry project writes agent traces to this Application Insights
+// resource and uses its managed identity to read those traces for evaluations.
+resource appInsightsConnection 'Microsoft.CognitiveServices/accounts/projects/connections@2026-05-15-preview' = {
+  parent: foundryProject
+  name: appInsights.name
+  properties: {
+    category: 'AppInsights'
+    target: appInsights.id
+    authType: 'ApiKey'
+    isSharedToAll: true
+    credentials: {
+      key: appInsights.properties.ConnectionString
+    }
+    metadata: {
+      ApiType: 'Azure'
+      ResourceId: appInsights.id
+    }
+  }
+}
+
+var logAnalyticsReaderRoleId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '73c42c96-874c-492b-b04d-ab87d138a893')
+
+resource projectLogAnalyticsReaderRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(appInsights.id, foundryProject.id, logAnalyticsReaderRoleId)
+  scope: appInsights
+  properties: {
+    principalId: foundryProject.identity.principalId
+    principalType: 'ServicePrincipal'
+    roleDefinitionId: logAnalyticsReaderRoleId
   }
 }
 
@@ -281,8 +346,17 @@ resource policyContainer 'Microsoft.Storage/storageAccounts/blobServices/contain
   }
 }
 
+// Raw .imscc uploads are archived here for durability; no indexer runs over it.
+resource courseContentContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-05-01' = {
+  parent: policyBlobService
+  name: 'course-content'
+  properties: {
+    publicAccess: 'None'
+  }
+}
+
 resource portalPlan 'Microsoft.Web/serverfarms@2024-04-01' = {
-  name: 'plan-professor-${resourceToken}'
+  name: portalPlanName
   location: location
   tags: tags
   kind: 'linux'
@@ -296,7 +370,7 @@ resource portalPlan 'Microsoft.Web/serverfarms@2024-04-01' = {
 }
 
 resource portal 'Microsoft.Web/sites@2024-04-01' = {
-  name: 'app-professor-${resourceToken}'
+  name: portalSiteName
   location: location
   tags: tags
   kind: 'app,linux'
@@ -324,7 +398,15 @@ resource portal 'Microsoft.Web/sites@2024-04-01' = {
         }
         {
           name: 'SEARCH_INDEX_NAME'
-          value: 'course-materials'
+          value: 'course-content-index'
+        }
+        {
+          name: 'COURSE_CONTENT_CONTAINER'
+          value: 'course-content'
+        }
+        {
+          name: 'POLICY_INDEXER_NAME'
+          value: 'pedagogy-policy-idxr'
         }
         {
           name: 'OPENAI_ENDPOINT'
@@ -341,7 +423,7 @@ resource portal 'Microsoft.Web/sites@2024-04-01' = {
       ], portalAuthEnabled ? [
         {
           name: portalAuthSecretSettingName
-          value: '@Microsoft.KeyVault(VaultName=${portalAuthKeyVaultName};SecretName=${portalAuthClientSecretName})'
+          value: portalAuthUsesKeyVault ? '@Microsoft.KeyVault(VaultName=${portalAuthKeyVaultName};SecretName=${portalAuthClientSecretName})' : portalAuthClientSecret
         }
       ] : [])
     }
@@ -388,7 +470,7 @@ resource portalAuth 'Microsoft.Web/sites/config@2024-04-01' = if (portalAuthEnab
   }
 }
 
-module portalKeyVaultRole './portal-key-vault-role.bicep' = if (portalAuthEnabled) {
+module portalKeyVaultRole './portal-key-vault-role.bicep' = if (portalAuthUsesKeyVault) {
   scope: resourceGroup(portalAuthKeyVaultResourceGroup)
   params: {
     keyVaultName: portalAuthKeyVaultName
@@ -397,6 +479,27 @@ module portalKeyVaultRole './portal-key-vault-role.bicep' = if (portalAuthEnable
 }
 
 var storageBlobDataContributorRoleId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')
+var storageBlobDataReaderRoleId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '2a2b9908-6ea1-4ae2-8e65-a410df84e7d1')
+
+// The policy blob indexer reads the 'policies' container as the search service identity.
+module searchStorageReadRole './storage-role.bicep' = {
+  name: 'search-storage-read-role'
+  params: {
+    storageAccountName: policyStorage.name
+    principalId: search.identity.principalId
+    roleDefinitionId: storageBlobDataReaderRoleId
+  }
+}
+
+// The portal creates the course-content index on upload and runs the policy indexer.
+module portalSearchServiceRole './search-role.bicep' = {
+  name: 'portal-search-service-role'
+  params: {
+    searchServiceName: search.name
+    principalId: portal.identity.principalId
+    roleDefinitionId: searchServiceContributorRoleId
+  }
+}
 
 module portalStorageRole './storage-role.bicep' = {
   name: 'portal-storage-role'
@@ -428,6 +531,9 @@ module portalOpenAIRole './foundry-role.bicep' = {
 output foundryAccountName string = foundry.name
 output foundryProjectName string = foundryProject.name
 output foundryProjectEndpoint string = 'https://${foundry.name}.services.ai.azure.com/api/projects/${foundryProject.name}'
+output applicationInsightsName string = appInsights.name
+output applicationInsightsResourceId string = appInsights.id
+output applicationInsightsConnectionString string = appInsights.properties.ConnectionString
 output searchServiceName string = search.name
 output searchEndpoint string = searchEndpoint
 output chatDeploymentName string = chatModelDeployment.name

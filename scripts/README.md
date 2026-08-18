@@ -2,8 +2,9 @@
 
 Azure Resource Manager infrastructure has one source of truth:
 [`../lab/infra/main.bicep`](../lab/infra/main.bicep). Run it through
-`lab/deploy.ps1` on Windows or `lab/deploy.sh` on macOS/Linux. Those wrappers run
-`azd up`, which provisions the infrastructure and deploys the professor portal.
+[`../lab/deploy.ps1`](../lab/deploy.ps1), which works on Windows, macOS, and
+Linux under PowerShell 7+. It runs `azd up`, which provisions the infrastructure
+and deploys the professor portal.
 
 The scripts retained here perform operations that ARM/Bicep does not manage:
 
@@ -13,15 +14,15 @@ The scripts retained here perform operations that ARM/Bicep does not manage:
 
 ## Knowledge base
 
-```bash
+```powershell
 python scripts/setup-knowledge-base.py --environment-name <environment>
 ```
 
 The loader uses only the Python standard library and Azure CLI. It is
 idempotent and can also import a Canvas export:
 
-```bash
-python scripts/setup-knowledge-base.py --environment-name <environment> \
+```powershell
+python scripts/setup-knowledge-base.py --environment-name <environment> `
   --imscc-path ./course-export.imscc --subject "Course name"
 ```
 

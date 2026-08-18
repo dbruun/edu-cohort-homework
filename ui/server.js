@@ -4,7 +4,7 @@ const path = require('node:path');
 const { professorFromHeaders } = require('./api/auth');
 const { importDocuments } = require('./api/documents');
 const { loadImsccDocuments } = require('./api/imscc');
-const { readPolicy, writePolicy } = require('./api/policy');
+const { readPolicy, writePolicy, runPolicyIndexer } = require('./api/policy');
 
 const port = Number(process.env.PORT || 8080);
 const appDirectory = path.join(__dirname, 'app', 'dist');
@@ -36,7 +36,11 @@ async function handleApi(request, response, pathname) {
   }
   if (pathname === '/api/policy' && request.method === 'PUT') {
     const body = JSON.parse((await readBody(request, 1024 * 1024)).toString('utf8'));
-    return sendJson(response, 200, await writePolicy(professor, body));
+    const saved = await writePolicy(professor, body);
+    // A failed reindex must not fail the save, but the professor has to know
+    // the tutor is still answering from the previous policy.
+    const indexer = await runPolicyIndexer();
+    return sendJson(response, 200, { ...saved, indexerTriggered: indexer.triggered, indexerReason: indexer.reason });
   }
   if (pathname === '/api/imscc-import' && request.method === 'POST') {
     const subject = request.headers['x-course-subject']?.trim();

@@ -26,6 +26,9 @@ param location string = deployment().location
 ])
 param searchSku string = 'basic'
 
+@description('Overrides the generated App Service name so the Easy Auth redirect URI can be registered before deployment. Required when attendees cannot edit the Entra app registration themselves.')
+param portalAppName string = ''
+
 @description('Application (client) ID of the existing tenant-only Entra app registration used by professor portal Easy Auth. Leave empty to disable Easy Auth configuration.')
 param portalAuthClientId string = ''
 
@@ -37,6 +40,10 @@ param portalAuthKeyVaultName string = ''
 
 @description('Name of the Key Vault secret containing the Entra client secret.')
 param portalAuthClientSecretName string = ''
+
+@description('Entra client secret value. Supply this OR the Key Vault parameters; Key Vault is preferred.')
+@secure()
+param portalAuthClientSecret string = ''
 
 @description('Tenant ID used by the professor portal Entra issuer.')
 param portalAuthTenantId string = tenant().tenantId
@@ -61,10 +68,12 @@ module resources 'resources.bicep' = {
     resourceToken: resourceToken
     tags: tags
     searchSku: searchSku
+    portalAppName: portalAppName
     portalAuthClientId: portalAuthClientId
     portalAuthKeyVaultResourceGroup: portalAuthKeyVaultResourceGroup
     portalAuthKeyVaultName: portalAuthKeyVaultName
     portalAuthClientSecretName: portalAuthClientSecretName
+    portalAuthClientSecret: portalAuthClientSecret
     portalAuthTenantId: portalAuthTenantId
   }
 }
@@ -75,6 +84,9 @@ output AZURE_RESOURCE_GROUP string = rg.name
 output FOUNDRY_ACCOUNT_NAME string = resources.outputs.foundryAccountName
 output FOUNDRY_PROJECT_NAME string = resources.outputs.foundryProjectName
 output FOUNDRY_PROJECT_ENDPOINT string = resources.outputs.foundryProjectEndpoint
+output APPLICATIONINSIGHTS_NAME string = resources.outputs.applicationInsightsName
+output APPLICATIONINSIGHTS_RESOURCE_ID string = resources.outputs.applicationInsightsResourceId
+output APPLICATIONINSIGHTS_CONNECTION_STRING string = resources.outputs.applicationInsightsConnectionString
 output SEARCH_SERVICE_NAME string = resources.outputs.searchServiceName
 output SEARCH_ENDPOINT string = resources.outputs.searchEndpoint
 output CHAT_DEPLOYMENT_NAME string = resources.outputs.chatDeploymentName

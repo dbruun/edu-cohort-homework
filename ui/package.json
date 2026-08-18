@@ -6,7 +6,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "build": "node --check server.js",
+    "build": "node --check server.js && node ../lab/scripts/package-portal.mjs",
     "build:app": "npm --prefix app ci --ignore-scripts && npm --prefix app run build && node --check server.js",
     "start": "node server.js",
     "test": "node --test api/test/*.test.js"

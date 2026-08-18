@@ -24499,10 +24499,8 @@ var defaultPolicy = {
   maxStepsRevealed: 3,
   allowDirectAnswers: false,
   citationsRequired: true,
-  subjectOverrides: {
-    math: "guided",
-    science: "hint_only"
-  },
+  // The portal has no editor for per-subject overrides, so it never carries them.
+  subjectOverrides: {},
   courseGroups: [
     {
       name: "Group 1 - Intro CS",
@@ -24539,7 +24537,7 @@ function App() {
         const response = await fetch("/api/policy");
         if (response.ok) {
           const data = await response.json();
-          setPolicy({ ...defaultPolicy, ...data, subjectOverrides: { ...defaultPolicy.subjectOverrides, ...data.subjectOverrides || {} } });
+          setPolicy({ ...defaultPolicy, ...data, subjectOverrides: {} });
           setStatus("Policy loaded from the API.");
           return;
         }
@@ -24596,20 +24594,21 @@ function App() {
     );
   };
   const savePolicy = async () => {
+    setStatus("Saving policy...");
     try {
       const response = await fetch("/api/policy", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(policy)
       });
+      const savedPolicy = await response.json().catch(() => ({}));
       if (!response.ok) {
-        throw new Error("Request failed");
+        throw new Error(savedPolicy.error || `HTTP ${response.status}`);
       }
-      const savedPolicy = await response.json();
-      setPolicy({ ...defaultPolicy, ...savedPolicy, subjectOverrides: { ...defaultPolicy.subjectOverrides, ...savedPolicy.subjectOverrides || {} } });
-      setStatus("Policy saved to the API and ready for the agent.");
-    } catch {
-      setStatus("Could not reach the API. The policy is still staged locally in the UI.");
+      setPolicy({ ...defaultPolicy, ...savedPolicy, subjectOverrides: {} });
+      setStatus(savedPolicy.indexerTriggered ? "Policy saved and reindexed. Allow 60 seconds for data to refresh." : `Policy saved, but reindexing did not start (${savedPolicy.indexerReason || "reason unknown"}). The tutor is still answering from the previous policy.`);
+    } catch (error) {
+      setStatus(`Save failed - nothing was stored. ${error.message}`);
     }
   };
   const importImscc = async () => {
@@ -24627,14 +24626,15 @@ function App() {
         },
         body: imsccFile
       });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || "Import failed");
-      setStatus(`Imported ${result.imported} course document(s).`);
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || `HTTP ${response.status}`);
+      setStatus(`Imported ${result.imported} course document(s) into the course knowledge base.`);
       setImsccFile(null);
     } catch (error) {
-      setStatus(error.message || "Could not import the Canvas export.");
+      setStatus(`Import failed - no course content was added. ${error.message}`);
     }
   };
+  const statusLine = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { color: "#5b6b85", fontSize: 14 }, children: status });
   return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("main", { style: { fontFamily: "Segoe UI, sans-serif", maxWidth: 900, margin: "0 auto", padding: 24 }, children: [
     /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", { children: "Professor Portal" }),
     /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { children: "Adjust how much support the tutor offers to students without redeploying the agent." }),
@@ -24676,7 +24676,10 @@ function App() {
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", { type: "checkbox", checked: policy.citationsRequired, onChange: (event) => updateField("citationsRequired", event.target.checked) }),
         "Require citations"
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: savePolicy, style: { marginTop: 20, padding: "10px 16px", borderRadius: 8, border: "none", background: "#2563eb", color: "white", cursor: "pointer" }, children: "Save policy" })
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 12, marginTop: 20, flexWrap: "wrap" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: savePolicy, style: { padding: "10px 16px", borderRadius: 8, border: "none", background: "#2563eb", color: "white", cursor: "pointer" }, children: "Save policy" }),
+        statusLine
+      ] })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", { style: { background: "#f6f8fb", borderRadius: 12, padding: 20, marginBottom: 20 }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between" }, children: [
@@ -24768,7 +24771,10 @@ function App() {
           ] })
         ] })
       ] }, index)),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: savePolicy, style: { marginTop: 16, padding: "10px 16px", borderRadius: 8, border: "none", background: "#2563eb", color: "white", cursor: "pointer" }, children: "Save course groups" })
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 12, marginTop: 16, flexWrap: "wrap" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: savePolicy, style: { padding: "10px 16px", borderRadius: 8, border: "none", background: "#2563eb", color: "white", cursor: "pointer" }, children: "Save course groups" }),
+        statusLine
+      ] })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", { style: { background: "#fff", border: "1px solid #dbe2ea", borderRadius: 12, padding: 20 }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", { children: "Canvas course content" }),
@@ -24778,9 +24784,11 @@ function App() {
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", { value: courseSubject, onChange: (event) => setCourseSubject(event.target.value), maxLength: "200", style: { display: "block", marginTop: 6, width: "100%", padding: 8 } })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", { type: "file", accept: ".imscc,application/zip", onChange: (event) => setImsccFile(event.target.files?.[0] || null) }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: importImscc, disabled: !imsccFile, style: { display: "block", marginTop: 12, padding: "10px 16px", borderRadius: 8, border: "none", background: "#2563eb", color: "white", cursor: "pointer" }, children: "Import Canvas export" }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { children: summary }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { children: status })
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 12, marginTop: 12, flexWrap: "wrap" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: importImscc, disabled: !imsccFile, style: { padding: "10px 16px", borderRadius: 8, border: "none", background: "#2563eb", color: "white", cursor: "pointer" }, children: "Import Canvas export" }),
+        statusLine
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { children: summary })
     ] })
   ] });
 }

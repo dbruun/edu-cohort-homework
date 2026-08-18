@@ -21,21 +21,28 @@ async function importDocuments(documents) {
       body: JSON.stringify({ input: documents.map((document) => `${document.title}\n${document.subject}\n\n${document.content}`), dimensions: 1536 })
     }
   );
-  if (!embeddingsResponse.ok) throw new Error('Unable to create document embeddings.');
+  if (!embeddingsResponse.ok) {
+    throw new Error(`Embedding request failed (HTTP ${embeddingsResponse.status}): ${(await embeddingsResponse.text()).slice(0, 300)}`);
+  }
   const embeddings = (await embeddingsResponse.json()).data.sort((a, b) => a.index - b.index);
-  const index = process.env.SEARCH_INDEX_NAME || 'course-materials';
+  const indexName = process.env.SEARCH_INDEX_NAME || 'course-content-index';
   const uploadResponse = await fetch(
-    `${searchEndpoint.replace(/\/$/, '')}/indexes/${encodeURIComponent(index)}/docs/index?api-version=2026-04-01`,
+    `${searchEndpoint.replace(/\/$/, '')}/indexes/${encodeURIComponent(indexName)}/docs/index?api-version=2026-04-01`,
     {
       method: 'POST',
       headers: {
         authorization: 'Bearer ' + searchToken.token,
         'content-type': 'application/json'
       },
-      body: JSON.stringify({ value: documents.map((document, index) => ({ '@search.action': 'mergeOrUpload', ...document, contentVector: embeddings[index].embedding })) })
+      body: JSON.stringify({ value: documents.map((document, position) => ({ '@search.action': 'mergeOrUpload', ...document, contentVector: embeddings[position].embedding })) })
     }
   );
-  if (!uploadResponse.ok) throw new Error('Unable to add course content to Azure AI Search.');
+  // A missing index reports 404 here. The index is owned by
+  // scripts/setup-knowledge-bases.ps1, so say that rather than guessing.
+  if (!uploadResponse.ok) {
+    throw new Error(`Search upload to index '${indexName}' failed (HTTP ${uploadResponse.status}): ${(await uploadResponse.text()).slice(0, 300)}`);
+  }
+  return documents.length;
 }
 
 module.exports = { importDocuments };

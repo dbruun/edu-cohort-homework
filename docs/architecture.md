@@ -158,8 +158,8 @@ sequenceDiagram
 
 ## Deployment topology
 
-**Phase 1 lab:** [lab/deploy.ps1](https://github.com/dbruun/edu-cohort-homework/blob/main/lab/deploy.ps1) or
-[lab/deploy.sh](https://github.com/dbruun/edu-cohort-homework/blob/main/lab/deploy.sh) runs `azd up` to provision the Foundry account and project,
+**Phase 1 lab:** [lab/deploy.ps1](https://github.com/dbruun/edu-cohort-homework/blob/main/lab/deploy.ps1)
+runs `azd up` to provision the Foundry account and project,
 the model deployments, Azure AI Search, App Service, RBAC, and the Foundry search
 connection, then deploys the professor portal. The participant creates the tutor
 in the Foundry portal and tests it in the Playground.

@@ -50,7 +50,7 @@ The LTI **roles claim** lines up with the student/professor split this accelerat
 | `#Instructor`, `#TeachingAssistant`, `#ContentDeveloper` | Professor portal ([ui/app/src/App.jsx](https://github.com/dbruun/edu-cohort-homework/blob/main/ui/app/src/App.jsx)) |
 | Unknown / other | Deny, or read-only student view |
 
-The LTI **`context_id`** (course) becomes the key for pedagogy policy. Today the policy is a single deploy-time document ([src/HomeworkAgent/Pedagogy/pedagogy-policy.json](https://github.com/dbruun/edu-cohort-homework/blob/main/src/HomeworkAgent/Pedagogy/pedagogy-policy.json)); LTI lets it become **per-course** (`policy[deployment_id + context_id]`) and read **live** on each chat — which is exactly the "live policy read" extension [architecture.md](architecture.md) marks as planned. LTI is what finally makes that extension worth building.
+The LTI **`context_id`** (course) becomes the key for pedagogy policy. Today the policy is a single deploy-time document ([src/HomeworkAgent/Pedagogy/pedagogy-policy.json](https://github.com/dbruun/edu-cohort-homework/blob/main/src/HomeworkAgent/Pedagogy/pedagogy-policy.json)); LTI lets it become **per-course** (`policy[deployment_id + context_id]`) and read **live** on each chat, extending the flow shown in the [architecture diagram](architecture-diagram.html). LTI is what finally makes that extension worth building.
 
 ## Proposed components
 

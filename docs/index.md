@@ -40,7 +40,6 @@ path is intentionally incremental.
 
 ## Continue exploring
 
-- Review the [architecture overview](architecture.md) for the target system and current lab boundary.
-- Learn how the later agent and pedagogy implementation is [configured](configuration.md).
+- Review the [architecture overview](architecture-diagram.html) for the target system and current lab boundary.
+- Learn how the agent and pedagogy implementation is [configured](getting-started.md).
 - Explore [LTI integration](lti-integration.md) for the LMS delivery phase.
-- Use the [troubleshooting guide](troubleshooting.md) for lab deployment and grounding issues.

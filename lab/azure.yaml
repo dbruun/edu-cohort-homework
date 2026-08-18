@@ -8,10 +8,6 @@ metadata:
 infra:
     provider: bicep
     path: infra
-hooks:
-    prepackage:
-        run: scripts/package-portal.mjs
-        kind: js
 services:
     professor-portal:
         project: ../ui
@@ -19,4 +15,6 @@ services:
         language: js
         resourceGroup: ${AZURE_RESOURCE_GROUP}
         resourceName: ${PORTAL_APP_NAME}
+        # azd uploads this staging folder, not ../ui. It is rebuilt by the
+        # "package" npm script in ui/package.json, which azd runs before zipping.
         dist: .azd-deploy

@@ -18,7 +18,7 @@ The hosted agent's manifest ([azure.yaml](https://github.com/dbruun/edu-cohort-h
 | `PEDAGOGY_POLICY_URI` | Local policy path or professor portal policy blob URL | `https://<account>.blob.core.windows.net/policies/<professor-id>.json` |
 | `COURSE_ID` | Course ID used to select a configured course group | `CS101` |
 
-The `scripts/deploy.*` scripts set `AZURE_AI_MODEL_DEPLOYMENT_NAME`, `PEDAGOGY_POLICY_URI`, `COURSE_ID`, and the subscription/location into the `azd` environment before deploy. Pass the configured course ID as the eighth positional argument and the portal policy blob URL as the ninth to `deploy.sh`, or use `-CourseId` and `-PedagogyPolicyUri` with `deploy.ps1`. The agent managed identity needs **Storage Blob Data Reader** on the portal's `policies` container — see [scripts/README.md](https://github.com/dbruun/edu-cohort-homework/blob/main/scripts/README.md).
+The `lab/deploy.ps1` script sets `AZURE_AI_MODEL_DEPLOYMENT_NAME`, `PEDAGOGY_POLICY_URI`, `COURSE_ID`, and the subscription/location into the `azd` environment before deploy. Use `-CourseId` and `-PedagogyPolicyUri` to set the configured course ID and the portal policy blob URL. The agent managed identity needs **Storage Blob Data Reader** on the portal's `policies` container — see [scripts/README.md](https://github.com/dbruun/edu-cohort-homework/blob/main/scripts/README.md).
 
 > **Legacy note:** Older docs referenced a `TOOLBOX_ENDPOINT` URL variable. That belonged to an earlier self-hosted prototype; the hosted Foundry agent now loads its toolbox by name (`TOOLBOX_NAME`), so `TOOLBOX_ENDPOINT` is no longer used.
 
