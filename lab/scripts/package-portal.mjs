@@ -1,4 +1,4 @@
-import { access, cp, mkdir, rm } from 'node:fs/promises';
+import { access, cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -30,9 +30,15 @@ await rm(deploymentRoot, { force: true, recursive: true });
 await mkdir(join(deploymentRoot, 'api'), { recursive: true });
 await mkdir(join(deploymentRoot, 'app'), { recursive: true });
 
-for (const file of ['package.json', 'package-lock.json', 'server.js']) {
+for (const file of ['package-lock.json', 'server.js']) {
   await cp(join(uiRoot, file), join(deploymentRoot, file));
 }
+
+// App Service runs `npm run build` server-side, where this repo's paths do not
+// exist, so the deployed manifest keeps only the scripts the host needs.
+const manifest = JSON.parse(await readFile(join(uiRoot, 'package.json'), 'utf8'));
+manifest.scripts = { start: manifest.scripts.start };
+await writeFile(join(deploymentRoot, 'package.json'), `${JSON.stringify(manifest, null, 2)}\n`);
 
 for (const file of ['auth.js', 'documents.js', 'imscc.js', 'policy.js']) {
   await cp(join(uiRoot, 'api', file), join(deploymentRoot, 'api', file));

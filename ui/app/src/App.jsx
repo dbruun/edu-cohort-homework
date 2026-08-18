@@ -7,10 +7,8 @@ const defaultPolicy = {
   maxStepsRevealed: 3,
   allowDirectAnswers: false,
   citationsRequired: true,
-  subjectOverrides: {
-    math: 'guided',
-    science: 'hint_only'
-  },
+  // The portal has no editor for per-subject overrides, so it never carries them.
+  subjectOverrides: {},
   courseGroups: [
     {
       name: 'Group 1 - Intro CS',
@@ -50,7 +48,7 @@ export default function App() {
         const response = await fetch('/api/policy');
         if (response.ok) {
           const data = await response.json();
-          setPolicy({ ...defaultPolicy, ...data, subjectOverrides: { ...defaultPolicy.subjectOverrides, ...(data.subjectOverrides || {}) } });
+          setPolicy({ ...defaultPolicy, ...data, subjectOverrides: {} });
           setStatus('Policy loaded from the API.');
           return;
         }
@@ -125,6 +123,7 @@ export default function App() {
   };
 
   const savePolicy = async () => {
+    setStatus('Saving policy...');
     try {
       const response = await fetch('/api/policy', {
         method: 'PUT',
@@ -132,15 +131,18 @@ export default function App() {
         body: JSON.stringify(policy)
       });
 
+      const savedPolicy = await response.json().catch(() => ({}));
       if (!response.ok) {
-        throw new Error('Request failed');
+        throw new Error(savedPolicy.error || `HTTP ${response.status}`);
       }
 
-      const savedPolicy = await response.json();
-      setPolicy({ ...defaultPolicy, ...savedPolicy, subjectOverrides: { ...defaultPolicy.subjectOverrides, ...(savedPolicy.subjectOverrides || {}) } });
-      setStatus('Policy saved to the API and ready for the agent.');
-    } catch {
-      setStatus('Could not reach the API. The policy is still staged locally in the UI.');
+      setPolicy({ ...defaultPolicy, ...savedPolicy, subjectOverrides: {} });
+      // Saving stores the policy; the tutor only sees it once the indexer runs.
+      setStatus(savedPolicy.indexerTriggered
+        ? 'Policy saved and reindexed. Allow 60 seconds for data to refresh.'
+        : `Policy saved, but reindexing did not start (${savedPolicy.indexerReason || 'reason unknown'}). The tutor is still answering from the previous policy.`);
+    } catch (error) {
+      setStatus(`Save failed - nothing was stored. ${error.message}`);
     }
   };
 
@@ -159,14 +161,17 @@ export default function App() {
         },
         body: imsccFile
       });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Import failed');
-      setStatus(`Imported ${result.imported} course document(s).`);
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || `HTTP ${response.status}`);
+      setStatus(`Imported ${result.imported} course document(s) into the course knowledge base.`);
       setImsccFile(null);
     } catch (error) {
-      setStatus(error.message || 'Could not import the Canvas export.');
+      setStatus(`Import failed - no course content was added. ${error.message}`);
     }
   };
+
+  // One shared status, rendered beside whichever button the professor just used.
+  const statusLine = <span style={{ color: '#5b6b85', fontSize: 14 }}>{status}</span>;
 
   return (
     <main style={{ fontFamily: 'Segoe UI, sans-serif', maxWidth: 900, margin: '0 auto', padding: 24 }}>
@@ -216,9 +221,12 @@ export default function App() {
           Require citations
         </label>
 
-        <button onClick={savePolicy} style={{ marginTop: 20, padding: '10px 16px', borderRadius: 8, border: 'none', background: '#2563eb', color: 'white', cursor: 'pointer' }}>
-          Save policy
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 20, flexWrap: 'wrap' }}>
+          <button onClick={savePolicy} style={{ padding: '10px 16px', borderRadius: 8, border: 'none', background: '#2563eb', color: 'white', cursor: 'pointer' }}>
+            Save policy
+          </button>
+          {statusLine}
+        </div>
       </section>
 
       <section style={{ background: '#f6f8fb', borderRadius: 12, padding: 20, marginBottom: 20 }}>
@@ -313,9 +321,12 @@ export default function App() {
           </div>
         ))}
 
-        <button onClick={savePolicy} style={{ marginTop: 16, padding: '10px 16px', borderRadius: 8, border: 'none', background: '#2563eb', color: 'white', cursor: 'pointer' }}>
-          Save course groups
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 16, flexWrap: 'wrap' }}>
+          <button onClick={savePolicy} style={{ padding: '10px 16px', borderRadius: 8, border: 'none', background: '#2563eb', color: 'white', cursor: 'pointer' }}>
+            Save course groups
+          </button>
+          {statusLine}
+        </div>
       </section>
 
       <section style={{ background: '#fff', border: '1px solid #dbe2ea', borderRadius: 12, padding: 20 }}>
@@ -326,11 +337,13 @@ export default function App() {
           <input value={courseSubject} onChange={(event) => setCourseSubject(event.target.value)} maxLength="200" style={{ display: 'block', marginTop: 6, width: '100%', padding: 8 }} />
         </label>
         <input type="file" accept=".imscc,application/zip" onChange={(event) => setImsccFile(event.target.files?.[0] || null)} />
-        <button onClick={importImscc} disabled={!imsccFile} style={{ display: 'block', marginTop: 12, padding: '10px 16px', borderRadius: 8, border: 'none', background: '#2563eb', color: 'white', cursor: 'pointer' }}>
-          Import Canvas export
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 12, flexWrap: 'wrap' }}>
+          <button onClick={importImscc} disabled={!imsccFile} style={{ padding: '10px 16px', borderRadius: 8, border: 'none', background: '#2563eb', color: 'white', cursor: 'pointer' }}>
+            Import Canvas export
+          </button>
+          {statusLine}
+        </div>
         <p>{summary}</p>
-        <p>{status}</p>
       </section>
     </main>
   );

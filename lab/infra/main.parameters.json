@@ -11,6 +11,9 @@
     "searchSku": {
       "value": "${SEARCH_SKU=basic}"
     },
+    "portalAppName": {
+      "value": "${PORTAL_APP_NAME_OVERRIDE=}"
+    },
     "portalAuthClientId": {
       "value": "${PORTAL_AUTH_CLIENT_ID=}"
     },
@@ -22,6 +25,9 @@
     },
     "portalAuthClientSecretName": {
       "value": "${PORTAL_AUTH_CLIENT_SECRET_NAME=}"
+    },
+    "portalAuthClientSecret": {
+      "value": "${PORTAL_AUTH_CLIENT_SECRET=}"
     },
     "portalAuthTenantId": {
       "value": "${AZURE_TENANT_ID}"

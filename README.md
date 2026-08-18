@@ -33,15 +33,25 @@ prerequisites, portal steps, verification, cleanup, and troubleshooting.
 
 ### 1. Deploy the lab infrastructure
 
+First create a single-tenant **Entra app registration** and a client secret — the
+professor portal requires sign-in and has no anonymous mode. Leave its redirect
+URI empty for now; you add it after this step, once the hostname exists.
+
 From the repository root, choose a short environment name and run:
 
 ```powershell
-./lab/deploy.ps1 -EnvironmentName eduhw01
+$secret = Read-Host 'Entra client secret' -MaskInput
+
+./lab/deploy.ps1 -EnvironmentName eduhw01 `
+  -PortalAuthClientId '<application-id>' `
+  -PortalAuthClientSecret $secret
 ```
 
-```bash
-./lab/deploy.sh eduhw01 northcentralus basic
-```
+Then add `<professor-portal-url>/.auth/login/aad/callback` to the registration,
+using the portal URL the script prints. The App Service name carries a stable
+hash, so don't guess the hostname. On the same **Authentication** blade, tick
+**ID tokens (used for implicit and hybrid flows)** — Easy Auth uses the hybrid
+flow and sign-in fails with `AADSTS700054` without it.
 
 The lab provisions and deploys:
 
@@ -56,7 +66,7 @@ ACR, Container Apps, MongoDB, the hosted agent container, and the LTI tool.
 
 ### 2. Seed the knowledge base
 
-```bash
+```powershell
 python scripts/setup-knowledge-base.py --environment-name eduhw01
 ```
 
@@ -113,8 +123,7 @@ the current lab deployment.
 ## Documentation
 
 - [Getting started](docs/getting-started.md) - the main lab walkthrough
-- [Architecture](docs/architecture.md) - components, data flow, and design principles
+- [Architecture](docs/architecture-diagram.html) - components and data flow
 - [LTI integration](docs/lti-integration.md) - the later LMS delivery phase
-- [Configuration](docs/configuration.md) - pedagogy and knowledge settings
-- [Troubleshooting](docs/troubleshooting.md) - common deployment and runtime issues
+- [Configuration](docs/getting-started.md) - deployment, pedagogy, and knowledge settings
 - [Published documentation](https://dbruun.github.io/edu-cohort-homework/)

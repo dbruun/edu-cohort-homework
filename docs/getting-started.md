@@ -53,8 +53,21 @@ Before you start, make sure you have:
   ```
 - **Azure Developer CLI (azd) 1.28+** — `azd auth login`. Step 1 provisions the
   infrastructure through a dedicated azd environment.
-- **PowerShell 7+ or Python 3.10+** for the knowledge setup script. A bash
-  equivalent is also provided for infrastructure deployment.
+- **PowerShell 7.1+** — used for infrastructure deployment and the knowledge
+  setup script. It runs on Windows, macOS, and Linux, so the commands are the
+  same everywhere. (7.1 is the floor because the deploy step uses
+  `Read-Host -MaskInput` to keep the client secret off screen.)
+- **An Entra app registration** for the professor portal. The portal requires
+  sign-in — it has no anonymous mode — so create this **before** you deploy:
+
+  1. Entra portal → **App registrations** → **New registration**.
+  2. Name it (e.g. `edu-homework-portal`), choose **Single tenant**, and leave
+     **Redirect URI** empty. You add it after Step 1, once you know the hostname.
+  3. From **Overview**, copy the **Application (client) ID**.
+  4. **Certificates & secrets** → **New client secret** → copy the **Value**
+     immediately. It is shown once and can never be retrieved again.
+
+  Keep both values handy — Step 1 needs them.
 - **This repository**, cloned locally, with your terminal in the repo root.
 
 Pick a short **environment name** (letters/numbers, e.g. `eduhw01`). It becomes
@@ -81,16 +94,21 @@ subscription/region, and runs `azd up` to provision the resources and deploy the
 professor portal:
 
 ```powershell
-./lab/deploy.ps1 -EnvironmentName $env:LAB
+$clientId = '<application-id>'
+$secret = Read-Host 'Entra client secret' -MaskInput
+
+./lab/deploy.ps1 -EnvironmentName $env:LAB `
+  -PortalAuthClientId $clientId `
+  -PortalAuthClientSecret $secret
 ```
 
-<details>
-<summary>Prefer bash?</summary>
+`Read-Host -MaskInput` keeps the secret out of your shell history and off the
+screen. The script stores it in the local azd environment (git-ignored) and as
+an App Service setting.
 
-```bash
-./lab/deploy.sh eduhw01
-```
-</details>
+> **Don't skip the auth parameters.** Without them Easy Auth is not configured,
+> and the portal deploys but returns `Authentication is required.` on every API
+> call. The Foundry and search steps still work; only the portal breaks.
 
 It provisions a subscription-scoped deployment that creates `rg-<env>` and
 everything inside it. Give it a few minutes. When it finishes it prints the values
@@ -109,7 +127,7 @@ project endpoint : https://aif-eduhw01.services.ai.azure.com/api/projects/homewo
 | Model deployment | `gpt-5.4` | The tutor's chat model |
 | Model deployment | `gpt-5.4-mini` | Knowledge-base query planning / answer synthesis |
 | Azure AI Search | `srch-<env>` | Stores + retrieves course material |
-| Linux App Service | `app-professor-<env>` | Hosts the professor portal and API |
+| Linux App Service | `app-professor-<env>-<hash>` | Hosts the professor portal and API; the stable hash avoids global name collisions |
 | Storage account | generated `st...` name | Stores one private policy blob per professor |
 | RBAC + connection | — | Lets the agent read the search index and the search service call the model |
 
@@ -135,7 +153,7 @@ source** over it, and a **knowledge base** (the thing the agent will query), the
 loads seed course material — a small set of dummy **microbiology** documents so
 you have something to ground on out of the box.
 
-```bash
+```powershell
 python scripts/setup-knowledge-base.py --environment-name $env:LAB
 ```
 
@@ -161,8 +179,8 @@ Edit [scripts/seed-data/microbiology.json](https://github.com/dbruun/edu-cohort-
 — each entry is `{ "id", "title", "content", "subject", "url" }` — or point at your
 own file and re-run:
 
-```bash
-python scripts/setup-knowledge-base.py --environment-name $env:LAB \
+```powershell
+python scripts/setup-knowledge-base.py --environment-name $env:LAB `
   --seed-data-path ./my-course.json
 ```
 
@@ -173,8 +191,8 @@ Every answer the tutor later gives is retrieved from, and cites, these documents
 Export the course from Canvas as an **IMSCC** package, then load it with the
 Python setup script:
 
-```bash
-python scripts/setup-knowledge-base.py --environment-name eduhw01 \
+```powershell
+python scripts/setup-knowledge-base.py --environment-name $env:LAB `
   --imscc-path ./my-course-export.imscc --subject "Biology 101"
 ```
 
@@ -265,31 +283,72 @@ Linux App Service from Step 1. Its system-assigned identity writes policies to
 Blob Storage, uploads IMSCC-derived documents to Azure AI Search, and creates
 embeddings through Foundry without account keys.
 
-For a customer tenant, configure the existing tenant-only Entra registration
-before provisioning. Add this callback URI to the registration, replacing the
-environment token as needed:
+The portal was already provisioned and deployed by `azd up` in Step 1 — Bicep
+owns the App Service, settings, managed identity, RBAC, and Easy Auth. This step
+finishes the sign-in wiring and verifies the two workflows.
+
+### 5a. Register the redirect URI
+
+This is the one step that **cannot** be done before deploying: the App Service
+name includes a stable hash, so the hostname isn't known until Step 1 finishes.
+Do not construct it from the environment name.
+
+Take the `professor portal` URL printed by the deploy command and append the
+Easy Auth callback path:
 
 ```text
-https://app-professor-<environment-without-dashes>.azurewebsites.net/.auth/login/aad/callback
+<professor-portal-url>/.auth/login/aad/callback
 ```
 
-Store an application credential for that registration in an existing
-RBAC-enabled Key Vault, then provision the full stack. Bicep owns the App
-Service, settings, managed identity, RBAC, Key Vault reference, and Easy Auth:
+Add that exact URI to your registration under **Authentication** → **Add a
+platform** → **Web**. Sign-in fails with `AADSTS50011` until you do.
+
+### 5a-2. Enable ID token issuance
+
+On the same **Authentication** blade, under **Implicit grant and hybrid flows**,
+tick **ID tokens (used for implicit and hybrid flows)** and save.
+
+This is required and off by default. App Service Easy Auth uses the OpenID
+Connect **hybrid flow** — its sign-in request sends
+`response_type=code+id_token`. Without this setting the registration refuses to
+issue the `id_token` half and sign-in fails with:
+
+```text
+AADSTS700054: response_type 'id_token' is not enabled for the application
+```
+
+The checkbox only appears once a **Web** platform exists, so do it right after
+adding the redirect URI above.
+
+### 5b. Where the client secret lives
+
+Two supported paths — pick one, not both:
+
+| Path | Use when | Parameters |
+| --- | --- | --- |
+| **Direct secret** (lab default) | No RBAC-enabled Key Vault available | `-PortalAuthClientSecret` |
+| **Key Vault reference** (preferred for production) | The customer already owns an RBAC-enabled Key Vault | `-PortalAuthKeyVaultResourceGroup`, `-PortalAuthKeyVaultName`, `-PortalAuthClientSecretName` |
+
+With the Key Vault path, Bicep stores only a reference in App Service and grants
+the portal managed identity `Key Vault Secrets User`; the secret never enters
+source control or the deployment payload:
 
 ```powershell
-./lab/deploy.ps1 -EnvironmentName eduhw10 `
+./lab/deploy.ps1 -EnvironmentName $env:LAB `
   -PortalAuthClientId '<application-id>' `
   -PortalAuthKeyVaultResourceGroup '<key-vault-resource-group>' `
   -PortalAuthKeyVaultName '<key-vault-name>' `
   -PortalAuthClientSecretName '<secret-name>'
 ```
 
-The existing registration and Key Vault secret remain customer-owned. Bicep
-stores only a Key Vault reference in App Service and grants the portal managed
-identity `Key Vault Secrets User`; no client secret is written to source or
-passed through application deployment. The same `azd up` command builds a
-self-contained portal package and deploys it to the Bicep-managed App Service.
+Either way the registration stays customer-owned, and all portal calls to
+Storage, Search, and Foundry use the App Service **managed identity** — the
+signed-in user's identity is never propagated to backend services.
+
+> **Re-running the deploy?** Bicep replaces the whole App Service app-settings
+> collection, so any setting applied imperatively with `az webapp config
+> appsettings set` is silently dropped on the next deploy. Always pass the auth
+> parameters to `deploy.ps1` rather than patching settings afterwards.
 
 Open the URL printed by the deploy command. An unauthenticated browser is redirected to
 Microsoft sign-in. For this lab, every signed-in user in the selected tenant is
