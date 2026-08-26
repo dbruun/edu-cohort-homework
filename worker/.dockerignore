@@ -1,0 +1,11 @@
+# The image installs dependencies with `npm ci`, so a local node_modules is
+# both unnecessary and large enough to slow every remote build.
+node_modules
+
+# Tests are not part of the runtime image.
+test
+
+npm-debug.log
+*.tgz
+.git
+.env

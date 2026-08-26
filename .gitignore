@@ -8,6 +8,42 @@ node_modules/
 _site/
 .tmp/
 
+# Installers used as filler when building large test cartridges. They are
+# hundreds of megabytes and belong nowhere near the history.
+*.exe
+
+# Deployment and script output. Captured while working, never worth committing:
+# it is machine-specific and tends to carry resource names and identifiers.
+*.log
+
+# Local environment overrides. The tracked .env.example files are the templates;
+# anything derived from them holds real endpoints and occasionally credentials.
+.env.*
+!.env.example
+
+# Test and build output
+coverage/
+.pytest_cache/
+__pycache__/
+*.pyc
+
+# Build and deployment output, ignored by name wherever it appears rather than
+# per project, so a new package or service cannot reintroduce one by being added
+# before its path is listed here. The portal bundle is the case that bit us: the
+# committed copy was never the one that shipped, since the deploy packaging
+# script rebuilds it from ui/app/src. Run `npm run build` in ui/app before
+# serving the portal locally.
+dist/
+build/
+out/
+
+# Keys and certificates. Named test keys are listed separately below; this is the
+# blanket rule so a new one cannot be committed by forgetting to add a pattern.
+*.pem
+*.pfx
+*.p12
+*.key
+
 # lti-ri platform private key (test-only, do not commit)
 .lti-ri-key.pem
 

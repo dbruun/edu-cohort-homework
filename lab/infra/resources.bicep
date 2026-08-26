@@ -25,16 +25,30 @@ param searchSku string = 'basic'
 @description('Overrides the generated App Service name. Set this when the Entra redirect URI must be registered before deployment, since the generated name contains an unpredictable hash.')
 param portalAppName string = ''
 
-param portalAuthClientId string = ''
-param portalAuthKeyVaultResourceGroup string = ''
-param portalAuthKeyVaultName string = ''
-param portalAuthClientSecretName string = ''
-@secure()
-param portalAuthClientSecret string = ''
+@description('Location for the portal App Service plan and site, which may differ from the rest of the stack when the primary region is short of Basic tier capacity.')
+param portalLocation string = location
+
+@minLength(36)
+param portalAuthClientId string
+@minLength(1)
+param portalAuthKeyVaultResourceGroup string
+@minLength(3)
+param portalAuthKeyVaultName string
+@minLength(1)
+param portalAuthClientSecretName string
 param portalAuthTenantId string = tenant().tenantId
 
-var portalAuthEnabled = !empty(portalAuthClientId)
-var portalAuthUsesKeyVault = portalAuthEnabled && empty(portalAuthClientSecret)
+@description('Container image for the IMSCC extraction job. Empty runs a public placeholder until the worker image has been built and pushed to the provisioned registry.')
+param extractionImage string = ''
+
+@description('Name of an Event Grid system topic that already exists for the storage account. Only one is allowed per account, and Defender for Storage creates one for malware scanning. Empty creates a new topic.')
+param storageSystemTopicName string = ''
+
+// Easy Auth is not optional. The portal derives every professor identity from
+// the headers App Service injects, so a deployment that skipped this resource
+// would hand each caller whatever identity they claimed. The client secret is
+// only ever referenced from Key Vault: storing it as a literal app setting
+// exposes it to every principal that can read site configuration.
 var portalAuthSecretSettingName = 'MICROSOFT_PROVIDER_AUTHENTICATION_SECRET'
 var portalResourceSuffix = substring(uniqueString(resourceGroup().id), 0, 6)
 var portalSiteName = empty(portalAppName) ? 'app-professor-${resourceToken}-${portalResourceSuffix}' : portalAppName
@@ -336,6 +350,29 @@ resource policyStorage 'Microsoft.Storage/storageAccounts@2023-05-01' = {
 resource policyBlobService 'Microsoft.Storage/storageAccounts/blobServices@2023-05-01' = {
   parent: policyStorage
   name: 'default'
+  properties: {
+    cors: {
+      corsRules: [
+        {
+          allowedHeaders: [
+            '*'
+          ]
+          allowedMethods: [
+            'OPTIONS'
+            'PUT'
+          ]
+          allowedOrigins: [
+            'https://${portalSiteName}.azurewebsites.net'
+          ]
+          exposedHeaders: [
+            'ETag'
+            'x-ms-request-id'
+          ]
+          maxAgeInSeconds: 3600
+        }
+      ]
+    }
+  }
 }
 
 resource policyContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-05-01' = {
@@ -355,9 +392,103 @@ resource courseContentContainer 'Microsoft.Storage/storageAccounts/blobServices/
   }
 }
 
+resource rawImsccContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-05-01' = {
+  parent: policyBlobService
+  name: 'raw-imscc'
+  properties: {
+    publicAccess: 'None'
+  }
+}
+
+// Normalized document batches and completion manifests produced by the
+// extraction worker, read by the indexing function.
+resource processedCourseContentContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-05-01' = {
+  parent: policyBlobService
+  name: 'processed-course-content'
+  properties: {
+    publicAccess: 'None'
+  }
+}
+
+// Quarantined archives and failure reports, retained longer so an operator can
+// investigate a rejected import.
+resource failedImportsContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-05-01' = {
+  parent: policyBlobService
+  name: 'failed-imports'
+  properties: {
+    publicAccess: 'None'
+  }
+}
+
+resource policyTableService 'Microsoft.Storage/storageAccounts/tableServices@2023-05-01' = {
+  parent: policyStorage
+  name: 'default'
+}
+
+resource imsccImportsTable 'Microsoft.Storage/storageAccounts/tableServices/tables@2023-05-01' = {
+  parent: policyTableService
+  name: 'ImsccImports'
+}
+
+resource policyStorageManagement 'Microsoft.Storage/storageAccounts/managementPolicies@2023-05-01' = {
+  parent: policyStorage
+  name: 'default'
+  properties: {
+    policy: {
+      rules: [
+        {
+          name: 'expire-raw-imscc'
+          enabled: true
+          type: 'Lifecycle'
+          definition: {
+            actions: {
+              baseBlob: {
+                delete: {
+                  daysAfterModificationGreaterThan: 30
+                }
+              }
+            }
+            filters: {
+              blobTypes: [
+                'blockBlob'
+              ]
+              prefixMatch: [
+                '${rawImsccContainer.name}/'
+                '${processedCourseContentContainer.name}/'
+              ]
+            }
+          }
+        }
+        {
+          name: 'expire-failed-imports'
+          enabled: true
+          type: 'Lifecycle'
+          definition: {
+            actions: {
+              baseBlob: {
+                delete: {
+                  daysAfterModificationGreaterThan: 90
+                }
+              }
+            }
+            filters: {
+              blobTypes: [
+                'blockBlob'
+              ]
+              prefixMatch: [
+                '${failedImportsContainer.name}/'
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}
+
 resource portalPlan 'Microsoft.Web/serverfarms@2024-04-01' = {
   name: portalPlanName
-  location: location
+  location: portalLocation
   tags: tags
   kind: 'linux'
   sku: {
@@ -371,7 +502,7 @@ resource portalPlan 'Microsoft.Web/serverfarms@2024-04-01' = {
 
 resource portal 'Microsoft.Web/sites@2024-04-01' = {
   name: portalSiteName
-  location: location
+  location: portalLocation
   tags: tags
   kind: 'app,linux'
   identity: {
@@ -405,6 +536,18 @@ resource portal 'Microsoft.Web/sites@2024-04-01' = {
           value: 'course-content'
         }
         {
+          name: 'RAW_IMSCC_CONTAINER'
+          value: rawImsccContainer.name
+        }
+        {
+          name: 'IMSCC_IMPORT_TABLE'
+          value: imsccImportsTable.name
+        }
+        {
+          name: 'IMSCC_UPLOAD_SAS_MINUTES'
+          value: '240'
+        }
+        {
           name: 'POLICY_INDEXER_NAME'
           value: 'pedagogy-policy-idxr'
         }
@@ -420,17 +563,21 @@ resource portal 'Microsoft.Web/sites@2024-04-01' = {
           name: 'SCM_DO_BUILD_DURING_DEPLOYMENT'
           value: 'true'
         }
-      ], portalAuthEnabled ? [
+        {
+          name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+          value: appInsights.properties.ConnectionString
+        }
+      ], [
         {
           name: portalAuthSecretSettingName
-          value: portalAuthUsesKeyVault ? '@Microsoft.KeyVault(VaultName=${portalAuthKeyVaultName};SecretName=${portalAuthClientSecretName})' : portalAuthClientSecret
+          value: '@Microsoft.KeyVault(VaultName=${portalAuthKeyVaultName};SecretName=${portalAuthClientSecretName})'
         }
-      ] : [])
+      ])
     }
   }
 }
 
-resource portalAuth 'Microsoft.Web/sites/config@2024-04-01' = if (portalAuthEnabled) {
+resource portalAuth 'Microsoft.Web/sites/config@2024-04-01' = {
   parent: portal
   name: 'authsettingsV2'
   properties: {
@@ -470,7 +617,72 @@ resource portalAuth 'Microsoft.Web/sites/config@2024-04-01' = if (portalAuthEnab
   }
 }
 
-module portalKeyVaultRole './portal-key-vault-role.bicep' = if (portalAuthUsesKeyVault) {
+// A failure inside the portal is otherwise invisible. App Service defaults
+// application logging to off, so the server-side detail behind a generic
+// message like "the upload session could not be created" is written to a
+// console nobody is capturing and then discarded. That turns a one-line
+// diagnosis into an outage of unknown cause, so logging ships on by default.
+//
+// This is the durable half: diagnostic settings persist, whereas the file
+// system application log level below is reset by the platform after 12 hours.
+// AppServiceConsoleLogs carries container stdout and stderr, which is where
+// the portal's own console output goes.
+resource portalDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+  scope: portal
+  name: 'send-to-log-analytics'
+  properties: {
+    workspaceId: logAnalytics.id
+    logs: [
+      {
+        category: 'AppServiceConsoleLogs'
+        enabled: true
+      }
+      {
+        category: 'AppServiceAppLogs'
+        enabled: true
+      }
+      {
+        category: 'AppServiceHTTPLogs'
+        enabled: true
+      }
+      {
+        category: 'AppServicePlatformLogs'
+        enabled: true
+      }
+    ]
+  }
+}
+
+// The streaming half, for 'az webapp log tail' during an incident. The platform
+// expires the file system application log level after 12 hours to bound disk
+// use, so this is a convenience that decays: the diagnostic settings above are
+// what a later investigation should rely on.
+resource portalLogs 'Microsoft.Web/sites/config@2024-04-01' = {
+  parent: portal
+  name: 'logs'
+  properties: {
+    applicationLogs: {
+      fileSystem: {
+        level: 'Information'
+      }
+    }
+    httpLogs: {
+      fileSystem: {
+        enabled: true
+        retentionInDays: 7
+        retentionInMb: 35
+      }
+    }
+    detailedErrorMessages: {
+      enabled: true
+    }
+    failedRequestsTracing: {
+      enabled: true
+    }
+  }
+}
+
+module portalKeyVaultRole './portal-key-vault-role.bicep' = {
   scope: resourceGroup(portalAuthKeyVaultResourceGroup)
   params: {
     keyVaultName: portalAuthKeyVaultName
@@ -480,6 +692,7 @@ module portalKeyVaultRole './portal-key-vault-role.bicep' = if (portalAuthUsesKe
 
 var storageBlobDataContributorRoleId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')
 var storageBlobDataReaderRoleId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '2a2b9908-6ea1-4ae2-8e65-a410df84e7d1')
+var storageTableDataContributorRoleId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3')
 
 // The policy blob indexer reads the 'policies' container as the search service identity.
 module searchStorageReadRole './storage-role.bicep' = {
@@ -510,6 +723,15 @@ module portalStorageRole './storage-role.bicep' = {
   }
 }
 
+module portalTableRole './storage-role.bicep' = {
+  name: 'portal-table-role'
+  params: {
+    storageAccountName: policyStorage.name
+    principalId: portal.identity.principalId
+    roleDefinitionId: storageTableDataContributorRoleId
+  }
+}
+
 module portalSearchDataRole './search-role.bicep' = {
   name: 'portal-search-role'
   params: {
@@ -528,6 +750,30 @@ module portalOpenAIRole './foundry-role.bicep' = {
   }
 }
 
+// --- Asynchronous IMSCC import pipeline -----------------------------------
+module importPipeline './import-pipeline.bicep' = {
+  name: 'import-pipeline'
+  params: {
+    location: location
+    resourceToken: resourceToken
+    tags: tags
+    storageAccountName: policyStorage.name
+    logAnalyticsWorkspaceName: logAnalytics.name
+    applicationInsightsConnectionString: appInsights.properties.ConnectionString
+    rawContainerName: rawImsccContainer.name
+    processedContainerName: processedCourseContentContainer.name
+    failedContainerName: failedImportsContainer.name
+    importTableName: imsccImportsTable.name
+    extractionImage: extractionImage
+    storageSystemTopicName: storageSystemTopicName
+    searchEndpoint: searchEndpoint
+    searchServiceName: search.name
+    foundryAccountName: foundry.name
+    openAiEndpoint: 'https://${foundry.name}.openai.azure.com'
+    embeddingDeployment: embeddingDeployment.name
+  }
+}
+
 output foundryAccountName string = foundry.name
 output foundryProjectName string = foundryProject.name
 output foundryProjectEndpoint string = 'https://${foundry.name}.services.ai.azure.com/api/projects/${foundryProject.name}'
@@ -542,3 +788,11 @@ output embeddingDeploymentName string = embeddingDeployment.name
 output portalAppName string = portal.name
 output portalUrl string = 'https://${portal.properties.defaultHostName}'
 output policyStorageAccountName string = policyStorage.name
+output serviceBusNamespaceName string = importPipeline.outputs.serviceBusNamespaceName
+output importQueueName string = importPipeline.outputs.importQueueName
+output containerRegistryName string = importPipeline.outputs.containerRegistryName
+output containerRegistryLoginServer string = importPipeline.outputs.containerRegistryLoginServer
+output extractionJobName string = importPipeline.outputs.extractionJobName
+output extractionJobImage string = importPipeline.outputs.extractionJobImage
+output extractionContainerName string = importPipeline.outputs.extractionContainerName
+output dispatcherFunctionName string = importPipeline.outputs.dispatcherFunctionName

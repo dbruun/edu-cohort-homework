@@ -48,7 +48,12 @@ param(
   [string]$EmbeddingDeployment = 'text-embedding-3-small',
   [string]$EmbeddingModelName = 'text-embedding-3-small',
   [int]$EmbeddingDimensions = 1536,
-  [string]$ApiVersion = '2026-04-01'
+  [string]$ApiVersion = '2026-04-01',
+  # Deletes the course-content index before recreating it. Field changes such as
+  # making an existing field filterable cannot be applied in place, and the
+  # imported documents are reproducible from their archives, so a reset is the
+  # supported way to move an already-deployed environment onto a new schema.
+  [switch]$ResetCourseIndex
 )
 
 $ErrorActionPreference = 'Stop'
@@ -87,8 +92,34 @@ function Invoke-Search {
 }
 
 # --- 1. Course-content index ---------------------------------------------
-# Field names and the vector dimension must match ui/api/documents.js exactly,
-# or the portal's IMSCC upload fails against this index.
+# Field names and the vector dimension must match ui/api/documents.js and the
+# asynchronous indexer in functions/src/indexing.js exactly, or an import fails
+# against this index. Azure AI Search rejects documents carrying fields the
+# index does not define, so every field the worker emits has to appear here.
+if ($ResetCourseIndex) {
+  # Deletion has to run in dependency order. A knowledge base references a
+  # knowledge source, which references the index, and Search refuses to delete
+  # anything still referenced. All three are recreated further down.
+  $courseDependents = @(
+    @{ Label = "knowledge base '$CourseBaseName'"; Path = "/knowledgebases('$CourseBaseName')" },
+    @{ Label = "knowledge source '$CourseSourceName'"; Path = "/knowledgesources('$CourseSourceName')" },
+    @{ Label = "index '$CourseIndexName'"; Path = "/indexes('$CourseIndexName')" }
+  )
+
+  foreach ($target in $courseDependents) {
+    Write-Host "==> Deleting $($target.Label) before recreating it..."
+    try {
+      Invoke-Search -Method 'Delete' -Path $target.Path | Out-Null
+      Write-Host '    deleted.'
+    }
+    catch {
+      # A missing resource is the desired end state, so only report anything else.
+      if ($_.Exception.Response.StatusCode.value__ -ne 404) { throw }
+      Write-Host '    did not exist.'
+    }
+  }
+}
+
 Write-Host "==> Creating/updating index '$CourseIndexName'..."
 $courseIndex = @{
   name   = $CourseIndexName
@@ -98,6 +129,22 @@ $courseIndex = @{
     @{ name = 'content'; type = 'Edm.String'; searchable = $true; retrievable = $true; analyzer = 'en.microsoft' }
     @{ name = 'subject'; type = 'Edm.String'; searchable = $true; filterable = $true; facetable = $true; retrievable = $true }
     @{ name = 'url'; type = 'Edm.String'; retrievable = $true }
+    # Import provenance. These are filterable so that retrieval can be scoped to
+    # one professor or one import once the agent's retrieval path can pass a
+    # filter; today nothing applies one.
+    @{ name = 'professorId'; type = 'Edm.String'; filterable = $true; facetable = $true; retrievable = $true }
+    @{ name = 'importId'; type = 'Edm.String'; filterable = $true; retrievable = $true }
+    @{ name = 'courseName'; type = 'Edm.String'; searchable = $true; filterable = $true; facetable = $true; retrievable = $true }
+    @{ name = 'sourcePath'; type = 'Edm.String'; filterable = $true; retrievable = $true }
+    @{ name = 'resourceIdentifier'; type = 'Edm.String'; filterable = $true; retrievable = $true }
+    @{ name = 'chunkNumber'; type = 'Edm.Int32'; filterable = $true; sortable = $true; retrievable = $true }
+    @{ name = 'chunkCount'; type = 'Edm.Int32'; filterable = $true; retrievable = $true }
+    @{ name = 'contentHash'; type = 'Edm.String'; filterable = $true; retrievable = $true }
+    @{ name = 'importedAt'; type = 'Edm.String'; filterable = $true; sortable = $true; retrievable = $true }
+    # A document only reaches this index after its whole import was embedded and
+    # verified, so this is true for everything written by the indexer. It exists
+    # so a filter can be switched on later without reindexing.
+    @{ name = 'isActive'; type = 'Edm.Boolean'; filterable = $true; retrievable = $true }
     @{
       name                = 'contentVector'
       type                = 'Collection(Edm.Single)'

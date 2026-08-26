@@ -6,5 +6,12 @@ const outDir = join(process.cwd(), 'dist');
 mkdirSync(outDir, { recursive: true });
 cpSync('index.html', join(outDir, 'index.html'));
 cpSync('../staticwebapp.config.json', join(outDir, 'staticwebapp.config.json'));
-await build({ bundle: true, entryPoints: ['src/main.jsx'], format: 'esm', outfile: join(outDir, 'app.js'), jsx: 'automatic' });
+await build({
+  bundle: true,
+  entryPoints: ['src/main.jsx'],
+  format: 'esm',
+  minify: true,
+  outfile: join(outDir, 'app.js'),
+  jsx: 'automatic'
+});
 console.log('Portal build completed.');

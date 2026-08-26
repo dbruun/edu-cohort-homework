@@ -18,3 +18,41 @@ services:
         # azd uploads this staging folder, not ../ui. It is rebuilt by the
         # "package" npm script in ui/package.json, which azd runs before zipping.
         dist: .azd-deploy
+    import-dispatcher:
+        project: ../functions
+        host: function
+        language: js
+        resourceGroup: ${AZURE_RESOURCE_GROUP}
+        resourceName: ${DISPATCHER_FUNCTION_NAME}
+        # Flex Consumption builds the package remotely, so node_modules is left
+        # out of the zip and restored on the server. azd rejects this setting on
+        # any other plan type, which is why the dedicated plan had to ship its
+        # dependencies instead.
+        remoteBuild: true
+        dist: .azd-deploy
+    extraction-worker:
+        project: ../worker
+        # Container App Jobs are deployed by the containerapp target: azd
+        # detects Microsoft.App/jobs on the resource and updates the job's image
+        # rather than an app's revision.
+        host: containerapp
+        language: docker
+        resourceGroup: ${AZURE_RESOURCE_GROUP}
+        resourceName: ${EXTRACTION_JOB_NAME}
+        docker:
+            path: ./Dockerfile
+            context: .
+            # Built by an ACR task from the uploaded context, so no local Docker
+            # daemon is required to deploy this stack.
+            remoteBuild: true
+hooks:
+    # The dispatcher keeps its own copy of the worker image, because starting the
+    # job with a per-import override replaces the container definition instead of
+    # merging into it. Provisioning can only write the placeholder there, since
+    # the real image does not exist until the worker is deployed, so the copy is
+    # corrected once deploying has finished. Registered at the project level
+    # rather than on the service because azd rejects service hook scripts that
+    # live outside the project directory.
+    postdeploy:
+        shell: pwsh
+        run: scripts/sync-extraction-image.ps1
