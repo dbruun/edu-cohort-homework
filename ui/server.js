@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { professorFromHeaders } = require('./api/auth');
 const { importDocuments } = require('./api/documents');
+const { cancelImport, createImport, listImports, readImport } = require('./api/imports');
 const { loadImsccDocuments } = require('./api/imscc');
 const { readPolicy, writePolicy, runPolicyIndexer } = require('./api/policy');
 
@@ -28,6 +29,22 @@ async function readBody(request, limit) {
 
 async function handleApi(request, response, pathname) {
   const professor = professorFromHeaders(request.headers);
+  if (pathname === '/api/imscc-imports' && request.method === 'POST') {
+    const body = JSON.parse((await readBody(request, 1024 * 1024)).toString('utf8'));
+    return sendJson(response, 201, await createImport(professor, body));
+  }
+  if (pathname === '/api/imscc-imports' && request.method === 'GET') {
+    const url = new URL(request.url, 'http://localhost');
+    return sendJson(response, 200, { imports: await listImports(professor, { limit: url.searchParams.get('limit') }) });
+  }
+  const importMatch = pathname.match(/^\/api\/imscc-imports\/([^/]+)$/);
+  if (importMatch && request.method === 'GET') {
+    return sendJson(response, 200, await readImport(professor, importMatch[1]));
+  }
+  const cancelMatch = pathname.match(/^\/api\/imscc-imports\/([^/]+)\/cancel$/);
+  if (cancelMatch && request.method === 'POST') {
+    return sendJson(response, 200, await cancelImport(professor, cancelMatch[1]));
+  }
   if (pathname === '/api/me' && request.method === 'GET') {
     return sendJson(response, 200, professor);
   }
@@ -74,7 +91,8 @@ const server = http.createServer(async (request, response) => {
     if (pathname.startsWith('/api/')) await handleApi(request, response, pathname);
     else serveApp(response, pathname);
   } catch (error) {
-    const status = /required|Authentication/.test(error.message) ? 401 : /too large/.test(error.message) ? 413 : 400;
+    const status = error.httpStatus ||
+      (/required|Authentication/.test(error.message) ? 401 : /too large/.test(error.message) ? 413 : 400);
     sendJson(response, status, { error: error.message });
   }
 });

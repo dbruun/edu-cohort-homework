@@ -55,8 +55,8 @@ Before you start, make sure you have:
   infrastructure through a dedicated azd environment.
 - **PowerShell 7.1+** — used for infrastructure deployment and the knowledge
   setup script. It runs on Windows, macOS, and Linux, so the commands are the
-  same everywhere. (7.1 is the floor because the deploy step uses
-  `Read-Host -MaskInput` to keep the client secret off screen.)
+  same everywhere. (7.1 is the floor because the deploy step prompts for the
+  client secret without echoing it.)
 - **An Entra app registration** for the professor portal. The portal requires
   sign-in — it has no anonymous mode — so create this **before** you deploy:
 
@@ -94,17 +94,21 @@ subscription/region, and runs `azd up` to provision the resources and deploy the
 professor portal:
 
 ```powershell
-$clientId = '<application-id>'
-$secret = Read-Host 'Entra client secret' -MaskInput
-
 ./lab/deploy.ps1 -EnvironmentName $env:LAB `
-  -PortalAuthClientId $clientId `
-  -PortalAuthClientSecret $secret
+  -PortalAuthClientId '<application-id>' `
+  -PortalAuthKeyVaultResourceGroup "rg-$($env:LAB)-auth" `
+  -PortalAuthKeyVaultName '<globally-unique-vault-name>'
 ```
 
-`Read-Host -MaskInput` keeps the secret out of your shell history and off the
-screen. The script stores it in the local azd environment (git-ignored) and as
-an App Service setting.
+The script creates the Key Vault if it is missing, then prompts for the client
+secret and writes it straight to the vault. The value is never echoed, never
+passed as an argument, and never written to the azd environment or an App
+Service setting: the site holds only a `@Microsoft.KeyVault(...)` reference and
+reads the secret at runtime through its managed identity.
+
+Re-running the script leaves an existing secret untouched, so it is safe to use
+for redeployments. To rotate the credential, update the secret in the vault
+directly — no redeployment is needed.
 
 > **Don't skip the auth parameters.** Without them Easy Auth is not configured,
 > and the portal deploys but returns `Authentication is required.` on every API
@@ -126,9 +130,13 @@ project endpoint : https://aif-eduhw01.services.ai.azure.com/api/projects/homewo
 | Foundry project | `homework` | Where your agent lives |
 | Model deployment | `gpt-5.4` | The tutor's chat model |
 | Model deployment | `gpt-5.4-mini` | Knowledge-base query planning / answer synthesis |
+| Model deployment | `text-embedding-3-small` | Vectorises imported course content |
 | Azure AI Search | `srch-<env>` | Stores + retrieves course material |
 | Linux App Service | `app-professor-<env>-<hash>` | Hosts the professor portal and API; the stable hash avoids global name collisions |
-| Storage account | generated `st...` name | Stores one private policy blob per professor |
+| Storage account | generated `st...` name | Policy blobs, uploaded course exports, and the import status table |
+| Service Bus + Event Grid | `sb-<env>` | Turns an upload into queued extraction work |
+| Function app | generated name | Dispatches queued imports to the extraction job |
+| Container registry + Container Apps job | generated names | Runs the extraction worker that unpacks and indexes a course export |
 | RBAC + connection | — | Lets the agent read the search index and the search service call the model |
 
 ### Verify
@@ -143,6 +151,68 @@ project endpoint : https://aif-eduhw01.services.ai.azure.com/api/projects/homewo
 > deploy is idempotent. **Failed on role assignment?** Your account lacks
 > permission to grant RBAC; ask for Owner / User Access Administrator on the
 > subscription.
+
+> **Failed on the portal's App Service plan with "No available instances to
+> satisfy this request"?** That region is out of Basic tier capacity. The portal
+> only reaches the other resources over HTTPS, so it can live somewhere else —
+> move just it rather than relocating the whole stack:
+>
+> ```powershell
+> cd lab; azd env set PORTAL_LOCATION westus2; azd up
+> ```
+
+> **Failed with a 403 uploading the dispatcher's deployment package?** Check that
+> the storage account still has `publicNetworkAccess` enabled. Flex Consumption
+> uploads its zip to a blob container over the public endpoint, so a governance
+> policy that disables public network access on new storage accounts will break
+> the deploy even though every managed identity holds the right RBAC.
+>
+> In an MCAPS-governed subscription this is not a one-off: the account is created
+> with `publicNetworkAccess: Disabled` even though the Bicep asks for `Enabled`,
+> and the activity log records no second write — the governance policy rewrites
+> the request in flight. Expect it on **every** greenfield deploy until an
+> exemption is in place. Re-enable it and re-run:
+>
+> ```powershell
+> az storage account update -n <account> -g <group> --public-network-access Enabled
+> cd lab; azd up
+> ```
+
+> **Failed with "Managed identity for event subscription does not have
+> authorization to deliver to the endpoint"?** The Event Grid subscription was
+> created before its role assignment had propagated. Nothing is wrong with the
+> template — re-run `azd up` and it succeeds.
+
+### Step 1b — The extraction worker
+
+Nothing to do here: the extraction worker is an azd service, so `azd up`
+provisions the Container Apps job, builds the worker image inside Azure Container
+Registry (no local Docker required), pushes it, and points the job at it.
+
+The job is still *provisioned* against a public placeholder image, because the
+registry the real image lives in is created by that same deployment. `azd deploy`
+replaces it in the same `azd up` run. The practical consequence is that
+`azd provision` on its own leaves the job on the placeholder — where an uploaded
+course export is accepted and then sits in **processing** forever rather than
+failing in a way you would notice. Always finish with a deploy:
+
+```powershell
+cd lab; azd deploy extraction-worker   # or just: azd up
+```
+
+The dispatcher keeps its own copy of that image reference, because starting the
+job with a per-import override *replaces* the container definition instead of
+merging into it — so the dispatcher has to restate the image on every start.
+A `postdeploy` hook (`lab/scripts/sync-extraction-image.ps1`, registered in
+`lab/azure.yaml`) copies the freshly pushed image onto the dispatcher and records
+it as `EXTRACTION_IMAGE`, so a later `azd provision` does not silently revert the
+dispatcher to the placeholder. The hook runs `pwsh`, so **PowerShell 7 is
+required** — Windows PowerShell 5.1 is not enough. To repair an environment by
+hand:
+
+```powershell
+cd lab; azd hooks run postdeploy
+```
 
 ---
 
@@ -322,26 +392,33 @@ adding the redirect URI above.
 
 ### 5b. Where the client secret lives
 
-Two supported paths — pick one, not both:
+Key Vault, always. There is no option to store the secret as an App Service
+setting: a literal value there is readable by every principal that can read site
+configuration, which is a wider audience than should ever see an OAuth
+credential.
 
-| Path | Use when | Parameters |
-| --- | --- | --- |
-| **Direct secret** (lab default) | No RBAC-enabled Key Vault available | `-PortalAuthClientSecret` |
-| **Key Vault reference** (preferred for production) | The customer already owns an RBAC-enabled Key Vault | `-PortalAuthKeyVaultResourceGroup`, `-PortalAuthKeyVaultName`, `-PortalAuthClientSecretName` |
-
-With the Key Vault path, Bicep stores only a reference in App Service and grants
-the portal managed identity `Key Vault Secrets User`; the secret never enters
-source control or the deployment payload:
+The deploy script creates the vault when it is missing, prompts for the secret,
+and writes it to the vault. Bicep then stores only a
+`@Microsoft.KeyVault(VaultName=...;SecretName=...)` reference in App Service and
+grants the portal managed identity `Key Vault Secrets User`, so the secret never
+enters source control, the deployment payload, or the site configuration:
 
 ```powershell
 ./lab/deploy.ps1 -EnvironmentName $env:LAB `
   -PortalAuthClientId '<application-id>' `
   -PortalAuthKeyVaultResourceGroup '<key-vault-resource-group>' `
-  -PortalAuthKeyVaultName '<key-vault-name>' `
-  -PortalAuthClientSecretName '<secret-name>'
+  -PortalAuthKeyVaultName '<key-vault-name>'
 ```
 
-Either way the registration stays customer-owned, and all portal calls to
+`-PortalAuthClientSecretName` is optional and defaults to
+`portal-auth-client-secret`.
+
+The vault is created with RBAC authorization, soft delete (90 days), and purge
+protection. If your environment applies a policy that disables public network
+access on new vaults, the script warns you: App Service cannot resolve the
+reference until the vault is reachable.
+
+The registration stays customer-owned, and all portal calls to
 Storage, Search, and Foundry use the App Service **managed identity** — the
 signed-in user's identity is never propagated to backend services.
 

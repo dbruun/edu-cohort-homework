@@ -1,0 +1,19 @@
+{
+  "name": "edu-imscc-import-functions",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Event-driven dispatch from committed IMSCC blobs to the Container Apps extraction job.",
+  "main": "src/functions/*.js",
+  "scripts": {
+    "start": "func start",
+    "build": "node ../lab/scripts/package-functions.mjs",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "@azure/data-tables": "^13.3.2",
+    "@azure/functions": "^4.6.0",
+    "@azure/identity": "^4.13.1",
+    "@azure/service-bus": "^7.9.5",
+    "@azure/storage-blob": "^12.33.0"
+  }
+}

@@ -72,9 +72,9 @@ try { $null = Invoke-RestMethod -Method Post -Uri "https://login.microsoftonline
 catch { $_.ErrorDetails.Message }
 ```
 
-The secret lands in the local azd environment in plaintext
-(`lab/.azure/<env>/.env`). Fine for a throwaway lab — rotate it or delete the
-registration afterwards.
+The secret is written to Key Vault by the deploy script in B1 and is never
+stored in the azd environment or as an App Service setting. Rotate it, or delete
+the registration, after a throwaway lab.
 
 ---
 
@@ -86,8 +86,13 @@ registration afterwards.
 ./lab/deploy.ps1 -EnvironmentName <environment-name> `
   -PortalAppName '<portal-app-name>' `
   -PortalAuthClientId '<client-id>' `
-  -PortalAuthClientSecret '<secret>'
+  -PortalAuthKeyVaultResourceGroup '<key-vault-resource-group>' `
+  -PortalAuthKeyVaultName '<globally-unique-vault-name>'
 ```
+
+The script creates the Key Vault if needed and prompts once for the client
+secret, writing it straight to the vault. Have the secret from A4 ready to
+paste; it is not echoed.
 
 `-PortalAppName` is what pins the hostname to the pre-registered redirect URI.
 Omit it and Bicep falls back to a hashed name whose URI is *not* registered.

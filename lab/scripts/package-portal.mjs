@@ -40,7 +40,7 @@ const manifest = JSON.parse(await readFile(join(uiRoot, 'package.json'), 'utf8')
 manifest.scripts = { start: manifest.scripts.start };
 await writeFile(join(deploymentRoot, 'package.json'), `${JSON.stringify(manifest, null, 2)}\n`);
 
-for (const file of ['auth.js', 'documents.js', 'imscc.js', 'policy.js']) {
+for (const file of ['auth.js', 'documents.js', 'imports.js', 'imscc.js', 'policy.js']) {
   await cp(join(uiRoot, 'api', file), join(deploymentRoot, 'api', file));
 }
 
