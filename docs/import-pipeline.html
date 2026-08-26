@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>IMSCC Import Pipeline</title>
+<script>
+  (() => {
+    const param = new URLSearchParams(window.location.search).get("clawpilotTheme");
+    const theme =
+      param || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    document.documentElement.setAttribute("data-theme", theme);
+  })();
+</script>
+<style>
+:root {
+  color-scheme: light;
+  --cp-bg: #f7f4ef;
+  --cp-bg-elevated: #fcfbf8;
+  --cp-surface: #ffffff;
+  --cp-surface-soft: #f5f5f5;
+  --cp-border: #dedede;
+  --cp-border-strong: #919191;
+  --cp-text: #242424;
+  --cp-text-muted: #5c5c5c;
+  --cp-text-soft: #6f6f6f;
+  --cp-accent: #b11f4b;
+  --cp-accent-hover: #9a1a41;
+  --cp-accent-soft: rgba(177, 31, 75, 0.08);
+  --cp-accent-fg: #ffffff;
+  --cp-success: #16a34a;
+  --cp-danger: #dc2626;
+  --cp-warning: #f59e0b;
+  --cp-link: #0078d4;
+  --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
+  --cp-overlay: rgba(255, 255, 255, 0.8);
+  --cp-panel: rgba(255, 255, 255, 0.86);
+  --cp-panel-strong: rgba(255, 255, 255, 0.96);
+  --cp-sheen: rgba(255, 255, 255, 0.55);
+  --cp-highlight: rgba(177, 31, 75, 0.12);
+}
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --cp-bg: #3d3b3a;
+  --cp-bg-elevated: #343231;
+  --cp-surface: #292929;
+  --cp-surface-soft: #2e2e2e;
+  --cp-border: #474747;
+  --cp-border-strong: #5f5f5f;
+  --cp-text: #dedede;
+  --cp-text-muted: #919191;
+  --cp-text-soft: #b0b0b0;
+  --cp-accent: #fd8ea1;
+  --cp-accent-hover: #fb7b91;
+  --cp-accent-soft: rgba(253, 142, 161, 0.14);
+  --cp-accent-fg: #1a1a1a;
+  --cp-success: #4ade80;
+  --cp-danger: #f87171;
+  --cp-warning: #fbbf24;
+  --cp-link: #4da6ff;
+  --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+  --cp-overlay: rgba(41, 41, 41, 0.88);
+  --cp-panel: rgba(41, 41, 41, 0.72);
+  --cp-panel-strong: rgba(41, 41, 41, 0.96);
+  --cp-sheen: rgba(255, 255, 255, 0.04);
+  --cp-highlight: rgba(253, 142, 161, 0.12);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 40px 24px;
+  background: var(--cp-bg);
+  color: var(--cp-text);
+  font-family: "Segoe UI", Aptos, Calibri, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.wrap { max-width: 1100px; margin: 0 auto; }
+
+h1 { font-size: 1.4rem; font-weight: 600; margin: 0 0 4px; letter-spacing: -0.01em; }
+.sub { margin: 0 0 24px; color: var(--cp-text-muted); font-size: 0.92rem; }
+
+.card {
+  background: var(--cp-surface);
+  border: 1px solid var(--cp-border);
+  border-radius: 16px;
+  box-shadow: 0 0 2px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.14);
+  padding: 24px;
+}
+
+svg { width: 100%; height: auto; display: block; }
+
+.box   { fill: var(--cp-surface); stroke: var(--cp-border-strong); stroke-width: 1.25; }
+.box-a { fill: var(--cp-accent-soft); stroke: var(--cp-accent); stroke-width: 1.5; }
+.box-d { fill: var(--cp-surface); stroke: var(--cp-border-strong); stroke-width: 1.25; stroke-dasharray: 5 4; }
+
+.title { fill: var(--cp-text); font-size: 14px; font-weight: 600; }
+.kind  { fill: var(--cp-text-soft); font-size: 10px; font-weight: 600; letter-spacing: .09em; }
+.desc  { fill: var(--cp-text-muted); font-size: 11.5px; }
+
+.flow   { stroke: var(--cp-border-strong); stroke-width: 1.75; fill: none; marker-end: url(#ah); }
+.flow-a { stroke: var(--cp-accent); stroke-width: 2; fill: none; marker-end: url(#ah-a); }
+.flow-s { stroke: var(--cp-text-muted); stroke-width: 1.25; fill: none; stroke-dasharray: 4 4; marker-end: url(#ah-s); }
+.edge   { fill: var(--cp-text-soft); font-size: 11px; }
+.edge-a { fill: var(--cp-accent); font-size: 11px; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>IMSCC Import Pipeline</h1>
+<p class="sub">A course export, from the professor's browser to a searchable index.</p>
+
+<div class="card">
+<svg viewBox="0 0 1140 580" role="img" aria-label="IMSCC import pipeline diagram">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--cp-border-strong)" />
+    </marker>
+    <marker id="ah-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--cp-accent)" />
+    </marker>
+    <marker id="ah-s" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--cp-text-muted)" />
+    </marker>
+  </defs>
+
+  <!-- row 1 -->
+  <rect class="box" x="50" y="70" width="200" height="86" rx="10" />
+  <text class="kind"  x="68" y="94">BROWSER</text>
+  <text class="title" x="68" y="116">Professor</text>
+  <text class="desc"  x="68" y="138">Picks a .imscc file</text>
+
+  <rect class="box" x="320" y="70" width="200" height="86" rx="10" />
+  <text class="kind"  x="338" y="94">APP SERVICE</text>
+  <text class="title" x="338" y="116">Portal</text>
+  <text class="desc"  x="338" y="138">Hands back an upload URL</text>
+
+  <rect class="box-a" x="590" y="70" width="200" height="86" rx="10" />
+  <text class="kind"  x="608" y="94">BLOB STORAGE</text>
+  <text class="title" x="608" y="116">Raw upload</text>
+  <text class="desc"  x="608" y="138">Browser writes here direct</text>
+
+  <rect class="box" x="860" y="70" width="200" height="86" rx="10" />
+  <text class="kind"  x="878" y="94">FUNCTIONS</text>
+  <text class="title" x="878" y="116">Dispatcher</text>
+  <text class="desc"  x="878" y="138">Wakes on the finished blob</text>
+
+  <path class="flow" d="M250,113 L314,113" />
+  <path class="flow-a" d="M520,113 L584,113" />
+  <path class="flow" d="M790,113 L854,113" />
+
+  <!-- wrap -->
+  <path class="flow" d="M960,156 L960,196 L150,196 L150,246" />
+
+  <!-- row 2 -->
+  <rect class="box-a" x="50" y="246" width="200" height="86" rx="10" />
+  <text class="kind"  x="68" y="270">CONTAINER APPS JOB</text>
+  <text class="title" x="68" y="292">Extractor</text>
+  <text class="desc"  x="68" y="314">Unzips and sorts the course</text>
+
+  <rect class="box" x="320" y="246" width="200" height="86" rx="10" />
+  <text class="kind"  x="338" y="270">BLOB STORAGE</text>
+  <text class="title" x="338" y="292">Extracted content</text>
+  <text class="desc"  x="338" y="314">Just the teaching material</text>
+
+  <rect class="box" x="590" y="246" width="200" height="86" rx="10" />
+  <text class="kind"  x="608" y="270">FUNCTIONS</text>
+  <text class="title" x="608" y="292">Indexer</text>
+  <text class="desc"  x="608" y="314">Embeds it, batch by batch</text>
+
+  <rect class="box" x="860" y="246" width="200" height="86" rx="10" />
+  <text class="kind"  x="878" y="270">AI SEARCH</text>
+  <text class="title" x="878" y="292">Knowledge base</text>
+  <text class="desc"  x="878" y="314">What the tutor answers from</text>
+
+  <path class="flow-a" d="M250,289 L314,289" />
+  <path class="flow" d="M520,289 L584,289" />
+  <path class="flow-a" d="M790,289 L854,289" />
+
+  <!-- state spine -->
+  <path class="flow-s" d="M150,332 L150,392" />
+  <path class="flow-s" d="M420,332 L420,392" />
+  <path class="flow-s" d="M690,332 L690,392" />
+  <path class="flow-s" d="M960,332 L960,392" />
+  <path d="M150,392 L960,392" stroke="var(--cp-text-muted)" stroke-width="1.25" fill="none" stroke-dasharray="4 4" />
+  <path class="flow-s" d="M555,392 L555,436" />
+
+  <rect class="box-d" x="405" y="436" width="300" height="86" rx="10" />
+  <text class="kind"  x="423" y="460">TABLE STORAGE</text>
+  <text class="title" x="423" y="482">Import record</text>
+  <text class="desc"  x="423" y="504">One row per import — every stage updates it</text>
+
+  <rect class="box" x="775" y="436" width="285" height="86" rx="10" />
+  <text class="kind"  x="793" y="460">FUNCTIONS · TIMER</text>
+  <text class="title" x="793" y="482">Watchdog</text>
+  <text class="desc"  x="793" y="504">Fails anything that stopped moving</text>
+
+  <path class="flow-s" d="M775,479 L711,479" />
+
+  <text class="edge-a" x="608" y="176">upload bypasses the portal</text>
+  <text class="edge"   x="180" y="186">a committed blob starts the work</text>
+</svg>
+</div>
+
+</div>
+</body>
+</html>
