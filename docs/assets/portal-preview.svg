@@ -23,8 +23,6 @@
   <rect x="52" y="292" width="656" height="30" rx="6" fill="#ffffff" stroke="#cbd5e1"/>
   <text x="64" y="312" font-size="13" fill="#0f172a">Guided</text>
   <polygon points="690,303 700,303 695,310" fill="#64748b"/>
-  <rect x="52" y="336" width="16" height="16" rx="3" fill="#ffffff" stroke="#cbd5e1"/>
-  <text x="78" y="349" font-size="13" fill="#334155">Allow direct answers</text>
   <rect x="240" y="336" width="16" height="16" rx="3" fill="#2563eb"/>
   <text x="252" y="348" font-size="12" fill="#ffffff" font-weight="700">✓</text>
   <text x="266" y="349" font-size="13" fill="#334155">Require citations</text>
@@ -66,8 +64,6 @@
   <text x="388" y="606" font-size="12" fill="#334155">Maximum steps revealed: 1</text>
   <rect x="388" y="620" width="304" height="4" rx="2" fill="#cbd5e1"/>
   <circle cx="392" cy="622" r="7" fill="#2563eb"/>
-  <rect x="68" y="652" width="15" height="15" rx="3" fill="#ffffff" stroke="#cbd5e1"/>
-  <text x="92" y="664" font-size="12" fill="#334155">Allow direct answers</text>
   <rect x="240" y="652" width="15" height="15" rx="3" fill="#2563eb"/>
   <text x="264" y="664" font-size="12" fill="#334155">Require citations</text>
 </svg>

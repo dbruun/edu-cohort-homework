@@ -149,7 +149,7 @@ Verify what actually landed rather than trusting the form:
 $t = az account get-access-token --resource https://search.azure.com --query accessToken -o tsv
 $h = @{ Authorization = "Bearer $t"; 'Content-Type' = 'application/json' }
 $b = @{ search = '*' } | ConvertTo-Json
-(Invoke-RestMethod -Method POST -Uri "https://<search-service>.search.windows.net/indexes/pedagogy-policy-index/docs/search?api-version=2024-07-01" -Headers $h -Body $b).value | Select-Object professorName, helpLevel, maxStepsRevealed, allowDirectAnswers, policyText
+(Invoke-RestMethod -Method POST -Uri "https://<search-service>.search.windows.net/indexes/pedagogy-policy-index/docs/search?api-version=2024-07-01" -Headers $h -Body $b).value | Select-Object professorName, helpLevel, maxStepsRevealed, policyText
 ```
 
 ### B5. Create the agent and test policy-then-content ordering
@@ -198,6 +198,3 @@ retrieval calls, policy first.
 - Storage tag survival across redeploy is predicted but not yet observed
 - The professor portal has no editor for per-subject overrides, and no longer
   sends them; the policy model still supports them
-- `allowDirectAnswers` and `helpLevel` can express contradictory settings
-  (e.g. `hint_only` + direct answers allowed) and nothing ranks them — left
-  deliberately open as a cohort design discussion

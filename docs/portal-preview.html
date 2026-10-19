@@ -57,7 +57,6 @@
     <label>Maximum steps revealed: <span id="defSteps">3</span></label>
     <input type="range" min="0" max="6" value="3" style="width:100%" oninput="document.getElementById('defSteps').textContent=this.value" />
     <div class="checks">
-      <label><input type="checkbox" /> Allow direct answers</label>
       <label><input type="checkbox" checked /> Require citations</label>
       <button class="btn save" style="margin-left:auto">Save policy</button>
     </div>
@@ -82,7 +81,6 @@ const state = [{
   ],
   helpLevel: "Hint only",
   maxStepsRevealed: 1,
-  allowDirectAnswers: false,
   citationsRequired: true
 }];
 
@@ -116,13 +114,12 @@ function render() {
         </div>
       </div>
       <div class="checks">
-        <label><input type="checkbox" ${g.allowDirectAnswers?"checked":""} onchange="state[${gi}].allowDirectAnswers=this.checked" /> Allow direct answers</label>
         <label><input type="checkbox" ${g.citationsRequired?"checked":""} onchange="state[${gi}].citationsRequired=this.checked" /> Require citations</label>
       </div>`;
     host.appendChild(el);
   });
 }
-function addGroup(){ state.push({name:"New group",courses:[],helpLevel:"Guided",maxStepsRevealed:2,allowDirectAnswers:false,citationsRequired:true}); render(); }
+function addGroup(){ state.push({name:"New group",courses:[],helpLevel:"Guided",maxStepsRevealed:2,citationsRequired:true}); render(); }
 function removeGroup(i){ state.splice(i,1); render(); }
 function addCourse(gi){
   const id=document.getElementById("cid"+gi).value.trim();

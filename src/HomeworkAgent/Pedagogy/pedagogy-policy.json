@@ -3,11 +3,10 @@
   "professorName": "Dr. Adams",
   "helpLevel": "guided",
   "maxStepsRevealed": 3,
-  "allowDirectAnswers": false,
   "citationsRequired": true,
   "subjectOverrides": {
     "math": "guided",
-    "science": "hint_only"
+    "science": "guided"
   },
   "courseGroups": [
     {
@@ -16,9 +15,8 @@
         { "id": "CS101", "description": "Introduction to Programming" },
         { "id": "CS102", "description": "Data Structures and Algorithms" }
       ],
-      "helpLevel": "hint_only",
+      "helpLevel": "guided",
       "maxStepsRevealed": 1,
-      "allowDirectAnswers": false,
       "citationsRequired": true
     }
   ],

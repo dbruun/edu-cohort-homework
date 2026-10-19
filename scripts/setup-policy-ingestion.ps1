@@ -94,6 +94,7 @@ $index = @{
     @{ name = 'policyText'; type = 'Edm.String'; searchable = $true; retrievable = $true; analyzer = 'en.microsoft' }
     @{ name = 'helpLevel'; type = 'Edm.String'; searchable = $true; filterable = $true; facetable = $true; retrievable = $true }
     @{ name = 'maxStepsRevealed'; type = 'Edm.Int32'; filterable = $true; retrievable = $true }
+    # Retired, unused compatibility field: Search cannot remove existing fields in place.
     @{ name = 'allowDirectAnswers'; type = 'Edm.Boolean'; filterable = $true; retrievable = $true }
     @{ name = 'citationsRequired'; type = 'Edm.Boolean'; filterable = $true; retrievable = $true }
   )

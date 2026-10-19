@@ -59,7 +59,7 @@ A professor sets the pedagogy policy in the portal. A student asks a question; t
 | Phase 1 lab infrastructure | Provisions Foundry, models, Azure AI Search, RBAC, and the project connection | [lab/infra/main.bicep](https://github.com/dbruun/edu-cohort-homework/blob/main/lab/infra/main.bicep) |
 | Lab tutor instructions | Defines the guarded tutor participants create in the Foundry portal | [lab/agent-instructions.md](https://github.com/dbruun/edu-cohort-homework/blob/main/lab/agent-instructions.md) |
 | Hosted tutor source (later phase) | .NET Agent Framework implementation for a hosted runtime | [src/HomeworkAgent/Program.cs](https://github.com/dbruun/edu-cohort-homework/blob/main/src/HomeworkAgent/Program.cs) |
-| Professor Portal UI (later phase) | Lets professors tune help level, steps, direct answers, and citations | [ui/app/src/App.jsx](https://github.com/dbruun/edu-cohort-homework/blob/main/ui/app/src/App.jsx) |
+| Professor Portal UI (later phase) | Lets professors tune help level, steps, and citations | [ui/app/src/App.jsx](https://github.com/dbruun/edu-cohort-homework/blob/main/ui/app/src/App.jsx) |
 | Portal Policy API (later phase) | Reads and writes the pedagogy policy | [ui/api/index.js](https://github.com/dbruun/edu-cohort-homework/blob/main/ui/api/index.js) |
 | Foundry Toolbox (later phase) | Curated boundary to course knowledge | [toolbox/toolbox.yaml](https://github.com/dbruun/edu-cohort-homework/blob/main/toolbox/toolbox.yaml) |
 
@@ -75,7 +75,7 @@ Keeping these separate is what lets professors change tutoring behavior and know
 
 The portal is where the "professor-owned pedagogy" promise lives:
 
-- a **React UI** ([ui/app/src/App.jsx](https://github.com/dbruun/edu-cohort-homework/blob/main/ui/app/src/App.jsx)) with controls for professor identity, help style, maximum steps revealed, direct-answer toggle, citation requirement, and **course groups**, and
+- a **React UI** ([ui/app/src/App.jsx](https://github.com/dbruun/edu-cohort-homework/blob/main/ui/app/src/App.jsx)) with controls for professor identity, help style, maximum steps revealed, citation requirement, and **course groups**, and
 - a **policy API** ([ui/api/index.js](https://github.com/dbruun/edu-cohort-homework/blob/main/ui/api/index.js)) that reads the current policy on load and writes edits back via `GET`/`POST /api/policy`.
 
 The UI and API round-trip the same pedagogy policy document the tutor consumes, so a professor's edits flow into the tutor's behavior. Here is the portal, showing the professor identity and a course group:
@@ -89,9 +89,8 @@ The UI and API round-trip the same pedagogy policy document the tutor consumes, 
 The policy is a small, declarative JSON document:
 
 - **professorId / professorName** — the professor who owns this pedagogy
-- **helpLevel** — `hint_only`, `guided`, `worked_example`, or `full_solution`
+- **helpLevel** — `guided`, `worked_example`, or `full_solution`; determines whether the original final answer is supplied
 - **maxStepsRevealed** — how much of a solution the tutor may expose at once
-- **allowDirectAnswers** — whether a direct solution is ever permitted
 - **citationsRequired** — whether responses must cite sources
 - **subjectOverrides** — per-subject adjustments layered on the defaults
 - **courseGroups** — named groups of courses (each with an ID and description) that share one set of limits

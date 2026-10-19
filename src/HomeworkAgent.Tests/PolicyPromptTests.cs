@@ -13,7 +13,7 @@ public class PolicyPromptTests
         var prompt = PromptComposer.Compose(systemPrompt, policy);
 
         Assert.Contains("guided", prompt, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("allowDirectAnswers", prompt, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("allowDirectAnswers", prompt, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("citationsRequired", prompt, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("I can help guide you", prompt, StringComparison.OrdinalIgnoreCase);
     }
@@ -25,7 +25,6 @@ public class PolicyPromptTests
         {
             HelpLevel = "hint_only",
             MaxStepsRevealed = 1,
-            AllowDirectAnswers = false,
             CitationsRequired = true,
             SubjectOverrides = new Dictionary<string, string>
             {
@@ -51,7 +50,6 @@ public class PolicyPromptTests
         {
             HelpLevel = "worked_example",
             MaxStepsRevealed = 4,
-            AllowDirectAnswers = false,
             CitationsRequired = false
         };
 
@@ -77,7 +75,6 @@ public class PolicyPromptTests
         {
             HelpLevel = "guided",
             MaxStepsRevealed = 3,
-            AllowDirectAnswers = false,
             CitationsRequired = true,
             CourseGroups = new List<CourseGroup>
             {
@@ -90,7 +87,6 @@ public class PolicyPromptTests
                         new() { Id = "CS102", Description = "Data Structures" }
                     },
                     HelpLevel = "hint_only",
-                    AllowDirectAnswers = false,
                     MaxStepsRevealed = 1
                 }
             }
@@ -111,7 +107,6 @@ public class PolicyPromptTests
         {
             HelpLevel = "full_solution",
             MaxStepsRevealed = 8,
-            AllowDirectAnswers = true,
             CitationsRequired = false,
             CourseGroups = new List<CourseGroup>
             {
@@ -121,7 +116,6 @@ public class PolicyPromptTests
                     Courses = new List<Course> { new() { Id = "CS101" } },
                     HelpLevel = "hint_only",
                     MaxStepsRevealed = 1,
-                    AllowDirectAnswers = false,
                     CitationsRequired = true
                 }
             }
@@ -131,7 +125,7 @@ public class PolicyPromptTests
 
         Assert.Contains("\"HelpLevel\": \"hint_only\"", prompt);
         Assert.Contains("\"MaxStepsRevealed\": 1", prompt);
-        Assert.Contains("\"AllowDirectAnswers\": false", prompt);
+        Assert.DoesNotContain("AllowDirectAnswers", prompt);
         Assert.Contains("\"CitationsRequired\": true", prompt);
     }
 
@@ -190,7 +184,7 @@ public class PolicyPromptTests
                         {
                             Name = "History",
                             Courses = new List<Course> { new() { Id = "HIST200", Description = "Modern History" } },
-                            AllowDirectAnswers = true
+                            HelpLevel = "full_solution"
                         }
                     }
                 }
@@ -204,7 +198,6 @@ public class PolicyPromptTests
 
         var hist = catalog.ResolveForCourse("HIST200");
         Assert.Equal("Dr. Baker", hist.ProfessorName);
-        Assert.Equal("worked_example", hist.HelpLevel);
-        Assert.True(hist.AllowDirectAnswers);
+        Assert.Equal("full_solution", hist.HelpLevel);
     }
 }

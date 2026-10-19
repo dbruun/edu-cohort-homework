@@ -8,7 +8,6 @@ public sealed class PedagogyPolicy
     public string ProfessorName { get; init; } = string.Empty;
     public string HelpLevel { get; init; } = "guided";
     public int MaxStepsRevealed { get; init; } = 3;
-    public bool AllowDirectAnswers { get; init; } = false;
     public bool CitationsRequired { get; init; } = true;
     public Dictionary<string, string> SubjectOverrides { get; init; } = new();
     public List<CourseGroup> CourseGroups { get; init; } = new();
@@ -44,7 +43,6 @@ public sealed class PedagogyPolicy
             ProfessorName = ProfessorName,
             HelpLevel = group.HelpLevel ?? HelpLevel,
             MaxStepsRevealed = group.MaxStepsRevealed ?? MaxStepsRevealed,
-            AllowDirectAnswers = group.AllowDirectAnswers ?? AllowDirectAnswers,
             CitationsRequired = group.CitationsRequired ?? CitationsRequired,
             SubjectOverrides = SubjectOverrides,
             CourseGroups = CourseGroups,
@@ -99,7 +97,6 @@ public sealed class CourseGroup
     public List<Course> Courses { get; init; } = new();
     public string? HelpLevel { get; init; }
     public int? MaxStepsRevealed { get; init; }
-    public bool? AllowDirectAnswers { get; init; }
     public bool? CitationsRequired { get; init; }
 }
 

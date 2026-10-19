@@ -28,7 +28,6 @@ const defaultPolicy = {
   professorName: '',
   helpLevel: 'guided',
   maxStepsRevealed: 3,
-  allowDirectAnswers: false,
   citationsRequired: true,
   // The portal has no editor for per-subject overrides, so it never carries them.
   subjectOverrides: {},
@@ -39,9 +38,8 @@ const defaultPolicy = {
         { id: 'CS101', description: 'Introduction to Programming' },
         { id: 'CS102', description: 'Data Structures and Algorithms' }
       ],
-      helpLevel: 'hint_only',
+      helpLevel: 'guided',
       maxStepsRevealed: 1,
-      allowDirectAnswers: false,
       citationsRequired: true
     }
   ]
@@ -209,7 +207,7 @@ export default function App() {
   }, []);
 
   const summary = useMemo(() => {
-    return `Help level: ${policy.helpLevel}; steps: ${policy.maxStepsRevealed}; direct answers: ${policy.allowDirectAnswers ? 'allowed' : 'blocked'}`;
+    return `Help level: ${policy.helpLevel}; steps: ${policy.maxStepsRevealed}`;
   }, [policy]);
 
   const updateField = (field, value) => {
@@ -225,7 +223,7 @@ export default function App() {
   const addGroup = () => {
     updateGroups([
       ...courseGroups,
-      { name: `Group ${courseGroups.length + 1}`, courses: [], helpLevel: 'guided', maxStepsRevealed: 3, allowDirectAnswers: false, citationsRequired: true }
+      { name: `Group ${courseGroups.length + 1}`, courses: [], helpLevel: 'guided', maxStepsRevealed: 3, citationsRequired: true }
     ]);
   };
 
@@ -412,7 +410,6 @@ export default function App() {
         <label>
           Help style
           <select value={policy.helpLevel} onChange={(event) => updateField('helpLevel', event.target.value)} style={{ display: 'block', marginTop: 8, width: '100%', padding: 8 }}>
-            <option value="hint_only">Hint only</option>
             <option value="guided">Guided</option>
             <option value="worked_example">Worked example</option>
             <option value="full_solution">Full solution</option>
@@ -423,11 +420,6 @@ export default function App() {
           Maximum steps revealed
           <input type="range" min="1" max="8" value={policy.maxStepsRevealed} onChange={(event) => updateField('maxStepsRevealed', Number(event.target.value))} style={{ display: 'block', width: '100%', marginTop: 8 }} />
           <span>{policy.maxStepsRevealed}</span>
-        </label>
-
-        <label style={{ display: 'block', marginTop: 16 }}>
-          <input type="checkbox" checked={policy.allowDirectAnswers} onChange={(event) => updateField('allowDirectAnswers', event.target.checked)} />
-          Allow direct answers
         </label>
 
         <label style={{ display: 'block', marginTop: 16 }}>
@@ -509,7 +501,6 @@ export default function App() {
               <label style={{ fontSize: 14 }}>
                 Help style
                 <select value={group.helpLevel} onChange={(event) => updateGroupField(index, 'helpLevel', event.target.value)} style={{ display: 'block', marginTop: 6, width: '100%', padding: 8 }}>
-                  <option value="hint_only">Hint only</option>
                   <option value="guided">Guided</option>
                   <option value="worked_example">Worked example</option>
                   <option value="full_solution">Full solution</option>
@@ -523,10 +514,6 @@ export default function App() {
             </div>
 
             <div style={{ display: 'flex', gap: 20, marginTop: 12 }}>
-              <label style={{ fontSize: 14 }}>
-                <input type="checkbox" checked={group.allowDirectAnswers} onChange={(event) => updateGroupField(index, 'allowDirectAnswers', event.target.checked)} />{' '}
-                Allow direct answers
-              </label>
               <label style={{ fontSize: 14 }}>
                 <input type="checkbox" checked={group.citationsRequired} onChange={(event) => updateGroupField(index, 'citationsRequired', event.target.checked)} />{' '}
                 Require citations
