@@ -1,0 +1,24 @@
+{
+  "name": "coursepilot",
+  "version": "0.1.0",
+  "private": true,
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node server.js",
+    "build": "node --check server.js && node --check agent.js && node build.mjs && node package.mjs",
+    "pretest": "node build.mjs",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "@ag-ui/core": "^1.0.2",
+    "@azure/identity": "^4.14.0",
+    "@azure/storage-blob": "^12.33.0",
+    "dompurify": "^3.3.0",
+    "katex": "^0.16.22",
+    "markdown-it": "^14.1.0",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.8"
+  }
+}

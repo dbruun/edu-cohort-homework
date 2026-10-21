@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Homework Tutor - Architecture</title>
+<script>
+  (() => {
+    const param = new URLSearchParams(window.location.search).get("clawpilotTheme");
+    const theme =
+      param || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    document.documentElement.setAttribute("data-theme", theme);
+  })();
+</script>
+<style>
+  :root {
+    color-scheme: light;
+    --cp-bg: #f7f4ef;
+    --cp-bg-elevated: #fcfbf8;
+    --cp-surface: #ffffff;
+    --cp-surface-soft: #f5f5f5;
+    --cp-border: #dedede;
+    --cp-border-strong: #919191;
+    --cp-text: #242424;
+    --cp-text-muted: #5c5c5c;
+    --cp-text-soft: #6f6f6f;
+    --cp-accent: #b11f4b;
+    --cp-accent-hover: #9a1a41;
+    --cp-accent-soft: rgba(177, 31, 75, 0.08);
+    --cp-accent-fg: #ffffff;
+    --cp-success: #16a34a;
+    --cp-danger: #dc2626;
+    --cp-warning: #f59e0b;
+    --cp-link: #0078d4;
+    --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
+    --cp-overlay: rgba(255, 255, 255, 0.8);
+    --cp-panel: rgba(255, 255, 255, 0.86);
+    --cp-panel-strong: rgba(255, 255, 255, 0.96);
+    --cp-sheen: rgba(255, 255, 255, 0.55);
+    --cp-highlight: rgba(177, 31, 75, 0.12);
+  }
+  html[data-theme="dark"] {
+    color-scheme: dark;
+    --cp-bg: #3d3b3a;
+    --cp-bg-elevated: #343231;
+    --cp-surface: #292929;
+    --cp-surface-soft: #2e2e2e;
+    --cp-border: #474747;
+    --cp-border-strong: #5f5f5f;
+    --cp-text: #dedede;
+    --cp-text-muted: #919191;
+    --cp-text-soft: #b0b0b0;
+    --cp-accent: #fd8ea1;
+    --cp-accent-hover: #fb7b91;
+    --cp-accent-soft: rgba(253, 142, 161, 0.14);
+    --cp-accent-fg: #1a1a1a;
+    --cp-success: #4ade80;
+    --cp-danger: #f87171;
+    --cp-warning: #fbbf24;
+    --cp-link: #4da6ff;
+    --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+    --cp-overlay: rgba(41, 41, 41, 0.88);
+    --cp-panel: rgba(41, 41, 41, 0.72);
+    --cp-panel-strong: rgba(41, 41, 41, 0.96);
+    --cp-sheen: rgba(255, 255, 255, 0.04);
+    --cp-highlight: rgba(253, 142, 161, 0.12);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--cp-bg);
+    color: var(--cp-text);
+    font-family: "Segoe UI", Aptos, Calibri, -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  main { max-width: 1280px; margin: 0 auto; padding: 40px 24px 24px; }
+  h1 { margin: 0 0 24px; font-size: 28px; text-align: center; }
+  .diagram {
+    padding: 16px;
+    border: 1px solid var(--cp-border);
+    border-radius: 16px;
+    background: var(--cp-surface);
+    overflow-x: auto;
+  }
+  svg { display: block; width: 100%; min-width: 760px; height: auto; }
+  .node { fill: var(--cp-surface-soft); stroke: var(--cp-border-strong); stroke-width: 2; }
+  .core { fill: var(--cp-accent-soft); stroke: var(--cp-accent); }
+  .label { fill: var(--cp-text); font-size: 20px; font-weight: 600; text-anchor: middle; }
+  .detail { fill: var(--cp-text-muted); font-size: 15px; text-anchor: middle; }
+  .edge { fill: none; stroke: var(--cp-text-soft); stroke-width: 2; marker-end: url(#arrow); }
+  .pedagogy { stroke-dasharray: 1 7; stroke-linecap: round; }
+  .arrowhead { fill: var(--cp-text-soft); }
+</style>
+</head>
+<body>
+  <main>
+    <h1>Homework Tutor - Architecture</h1>
+    <div class="diagram">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1160 560" role="img" aria-labelledby="diagram-title diagram-description">
+        <title id="diagram-title">Homework Tutor target architecture</title>
+        <desc id="diagram-description">Student chat can run as a standalone app or be launched from the LMS through LTI 1.3. Student chat calls the Foundry tutor directly. The tutor retrieves knowledge from Azure AI Search. Periodic Course Sync and Professor Upload of LMS content both write to Azure Blob Storage, then ingestion loads that content into Azure AI Search. The professor portal provides Professor Upload and writes pedagogy data to Azure AI Search.</desc>
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+            <path class="arrowhead" d="M0 0 L10 5 L0 10 Z" />
+          </marker>
+        </defs>
+
+        <path class="edge" d="M240 90 H300" />
+        <path class="edge" d="M480 90 H560" />
+        <path class="edge" d="M740 90 H920" />
+        <path class="edge" d="M1020 140 V310" />
+        <path class="edge" d="M240 290 H300" />
+        <path class="edge" d="M480 290 H540 V340 H600" />
+        <path class="edge" d="M500 430 H540 V380 H600" />
+        <path class="edge" d="M800 360 H920" />
+        <path class="edge pedagogy" d="M140 340 V510 H1020 V410" />
+        <text x="830" y="76" class="detail">ask</text>
+        <text x="1076" y="228" class="detail">retrieve</text>
+        <text x="860" y="346" class="detail">ingest</text>
+        <text x="570" y="496" class="detail">pedagogy data</text>
+
+        <rect class="node" x="40" y="40" width="200" height="100" rx="10" />
+        <text x="140" y="83" class="label">LMS</text>
+        <text x="140" y="111" class="detail">Canvas / Blackboard</text>
+
+        <rect class="node" x="300" y="40" width="180" height="100" rx="10" />
+        <text x="390" y="83" class="label">LTI launch</text>
+        <text x="390" y="111" class="detail">LTI 1.3</text>
+
+        <rect class="node" x="560" y="40" width="180" height="100" rx="10" />
+        <text x="650" y="83" class="label">Student chat</text>
+        <text x="650" y="111" class="detail">Standalone app</text>
+
+        <rect class="node core" x="920" y="40" width="200" height="100" rx="10" />
+        <text x="1020" y="83" class="label">Foundry tutor</text>
+        <text x="1020" y="111" class="detail">Agent + model</text>
+
+        <rect class="node" x="40" y="240" width="200" height="100" rx="10" />
+        <text x="140" y="296" class="label">Professor portal</text>
+
+        <rect class="node" x="300" y="240" width="180" height="100" rx="10" />
+        <text x="390" y="283" class="label">Professor Upload</text>
+        <text x="390" y="311" class="detail">LMS content</text>
+
+        <rect class="node" x="280" y="380" width="220" height="100" rx="10" />
+        <text x="390" y="423" class="label">Periodic Course Sync</text>
+        <text x="390" y="451" class="detail">LMS content</text>
+
+        <rect class="node" x="600" y="310" width="200" height="100" rx="10" />
+        <text x="700" y="353" class="label">Blob Storage</text>
+        <text x="700" y="381" class="detail">Course files</text>
+
+        <rect class="node core" x="920" y="310" width="200" height="100" rx="10" />
+        <text x="1020" y="353" class="label">Azure AI Search</text>
+        <text x="1020" y="381" class="detail">Knowledge + pedagogy</text>
+      </svg>
+    </div>
+  </main>
+</body>
+</html>

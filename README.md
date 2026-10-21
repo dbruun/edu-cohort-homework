@@ -4,6 +4,16 @@ A hands-on accelerator for building a student homework tutor on Microsoft
 Foundry, grounding it in approved course material with Azure AI Search, and
 evolving it toward LMS delivery and professor-owned pedagogy.
 
+> **Not ready for production.** This accelerator is intended for learning and
+> demonstrations. Before production use, it needs security testing, threat
+> modeling, and remediation of identified issues, including verification of
+> authentication across all deployment paths, course-level authorization and
+> data isolation, and prompt-injection defenses. EasyAuth alone does not provide
+> enrollment checks or course-level access control. Use synthetic or explicitly
+> approved non-sensitive demo data; do not use real student records, confidential
+> course materials, or production credentials until these controls have been
+> implemented and independently validated.
+
 The main path in this repository is the **Phase 1 lab**: deploy a slim Foundry +
 Azure AI Search stack and professor portal, seed a course knowledge base, create
 the tutor in the Foundry portal, and verify grounded answers with citations. The
@@ -181,6 +191,12 @@ the current lab deployment.
 - [foundry-tutor](foundry-tutor) - standalone hello-world Agent Framework sample, independent of the lab
 - [scaling-to-multi-agents](scaling-to-multi-agents) - optional multi-agent evolution
 - [docs](docs) - GitHub Pages documentation
+
+The pedagogy guide's "Custom help style" dialog is currently UI-only: "Save help style" closes the
+dialog without persisting a category or changing tutor behavior. Custom category
+storage and application are not implemented yet. When implemented, categories
+would be stored in the professor's pedagogy policy, and the agent instructions
+would need to be prepared to read and apply them.
 
 ## Documentation
 

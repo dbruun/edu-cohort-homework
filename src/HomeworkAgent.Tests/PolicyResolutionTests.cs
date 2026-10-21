@@ -36,7 +36,7 @@ public class PromptComposerTests
     [Fact]
     public void ComposeIncludesSystemPromptAndPolicyHeader()
     {
-        var policy = new PedagogyPolicy { HelpLevel = "worked_example", MaxStepsRevealed = 2 };
+        var policy = new PedagogyPolicy { HelpLevel = "worked_example" };
 
         var prompt = PromptComposer.Compose("BASE SYSTEM PROMPT", policy);
 
@@ -48,7 +48,7 @@ public class PromptComposerTests
     [Fact]
     public void ComposeEmbedsValidJsonForThePolicy()
     {
-        var policy = new PedagogyPolicy { HelpLevel = "hint_only", MaxStepsRevealed = 1 };
+        var policy = new PedagogyPolicy { HelpLevel = "hint_only" };
 
         var prompt = PromptComposer.Compose("SYS", policy);
         var jsonStart = prompt.IndexOf('{');
@@ -58,7 +58,7 @@ public class PromptComposerTests
 
         Assert.NotNull(roundTripped);
         Assert.Equal("hint_only", roundTripped!.HelpLevel);
-        Assert.Equal(1, roundTripped.MaxStepsRevealed);
+        Assert.DoesNotContain("MaxStepsRevealed", json, StringComparison.OrdinalIgnoreCase);
     }
 }
 
@@ -97,7 +97,6 @@ public class PedagogyPolicyResolutionTests
         var policy = new PedagogyPolicy
         {
             HelpLevel = "guided",
-            MaxStepsRevealed = 3,
             CourseGroups = new List<CourseGroup>
             {
                 new()
@@ -112,7 +111,6 @@ public class PedagogyPolicyResolutionTests
         var resolved = policy.ResolveForCourse("HIST200");
 
         Assert.Equal("guided", resolved.HelpLevel);
-        Assert.Equal(3, resolved.MaxStepsRevealed);
     }
 }
 

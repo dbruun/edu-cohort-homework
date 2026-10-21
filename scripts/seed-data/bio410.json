@@ -1,0 +1,66 @@
+[
+  {
+    "id": "bio410-001",
+    "title": "BIO410: A Complete Growth-and-Survival Reference Calculation",
+    "subject": "microbiology",
+    "courseName": "BIO410 Quantitative Microbiology",
+    "url": "https://example.edu/micro/bio410/growth-survival-reference",
+    "content": "Original BIO410 demo course notes. Learning objective: use a full reference solution as the starting point for model critique. Reference problem: a fictional population begins at 10 cells, doubles every 20 minutes for 40 minutes, and then has a surviving fraction of 0.5. The number of generations is n = 40/20 = 2. The population before the event is N = 10 * 2^2 = 40 cells. The surviving population is 0.5 * 40 = 20 cells. Equivalently, mu = ln(2)/20 = 0.03466 per minute and N = 10 * exp(mu * 40). These results assume a fixed generation time, no lag phase, no resource limitation, and no death during the growth interval. The final operation assumes the survival fraction applies to the post-growth population. For a stochastic interpretation with exactly 40 cells before independent survival, 20 is the expected survivor count, not a guarantee. Students should critique these assumptions and distinguish numerical correctness from biological adequacy."
+  },
+  {
+    "id": "bio410-002",
+    "title": "BIO410: Uncertainty Propagation in Exponential Predictions",
+    "subject": "microbiology",
+    "courseName": "BIO410 Quantitative Microbiology",
+    "url": "https://example.edu/micro/bio410/uncertainty-propagation",
+    "content": "Original BIO410 demo course notes. Learning objective: quantify uncertainty in N = N0 * exp(mu*t). On the log scale, ln(N) = ln(N0) + mu*t. If t is known and ln(N0) and mu are independent, Var[ln(N)] = Var[ln(N0)] + t^2*Var(mu). If they are correlated, add 2*t*Cov[ln(N0),mu]; the independent formula is not appropriate automatically for fitted intercept and slope. Example: N0 = 100, mu = 0.020 per minute, t = 60 minutes, SD[ln(N0)] = 0.10, and SD(mu) = 0.002 per minute imply a plug-in prediction of 332.0 cells and a log-scale SD of sqrt(0.01 + 0.0144) = 0.1562. An approximate 95 percent interval is 332.0 * exp(plus or minus 1.96 * 0.1562), or about 244 to 451. This interval covers parameter uncertainty under the assumptions, not necessarily new-observation noise. With uncertain mu, the plug-in exponential prediction is not generally the mean after integrating over parameter uncertainty."
+  },
+  {
+    "id": "bio410-003",
+    "title": "BIO410: Binomial Survival and Extinction Probability",
+    "subject": "microbiology",
+    "courseName": "BIO410 Quantitative Microbiology",
+    "url": "https://example.edu/micro/bio410/binomial-survival",
+    "content": "Original BIO410 demo course notes. Learning objective: distinguish a deterministic population calculation from a stochastic outcome. Conditional on N known cells immediately before an event, independent identical survival probability s gives X distributed as Binomial(N,s). E[X] = N*s, Var(X) = N*s*(1-s), and P(X = 0) = (1-s)^N. For the reference problem with N = 40 and s = 0.5, the expected number is 20, the variance is 10, the standard deviation is about 3.16, and the probability of no survivors is 0.5^40, about 9.09e-13. If only two cells are present and s = 0.25, the expected number is 0.5 while the probability of no survivors is 0.75^2 = 0.5625. An expectation need not be an attainable integer outcome. Shared environmental effects or clumping can violate independence and produce more variability than the binomial model. Uncertainty in N or s adds another layer beyond this conditional calculation."
+  },
+  {
+    "id": "bio410-004",
+    "title": "BIO410: Poisson Count Models and Detection Limits",
+    "subject": "microbiology",
+    "courseName": "BIO410 Quantitative Microbiology",
+    "url": "https://example.edu/micro/bio410/count-uncertainty",
+    "content": "Original BIO410 demo course notes interpreting fictional count data. Learning objective: connect concentration estimates to count uncertainty. For independent counts k_i with known effective sampling exposures e_i = V_i*d_i, assume k_i follows Poisson(C*e_i). The maximum-likelihood concentration estimate is C_hat = sum(k_i)/sum(e_i). With k = 100 and e = 0.010 mL, C_hat = 10000 CFU per mL. A rough large-count standard error is sqrt(100)/0.010 = 1000 CFU per mL; a normal approximate 95 percent interval is 8040 to 11960. Small counts require an exact or likelihood-based interval rather than a symmetric approximation. For zero observed counts, a one-sided 95 percent upper bound satisfies exp(-C*e) = 0.05, so C_upper = -ln(0.05)/e, about 2.996/e. Zero observed counts therefore do not prove absence. Independence and equal concentration across pooled observations are assumptions. Clumping or heterogeneous concentration can create overdispersion."
+  },
+  {
+    "id": "bio410-005",
+    "title": "BIO410: Logistic Growth, Carrying Capacity, and Identifiability",
+    "subject": "microbiology",
+    "courseName": "BIO410 Quantitative Microbiology",
+    "url": "https://example.edu/micro/bio410/logistic-growth",
+    "content": "Original BIO410 demo course notes. Learning objective: solve a resource-limited model and identify what the data can support. For dN/dt = r*N*(1-N/K), N(t) = K/[1 + (K/N0 - 1)*exp(-r*t)]. In a fictional example with K = 1000 cells, N0 = 100, and r = 0.10 per hour, the time to N = K/2 is ln(K/N0 - 1)/r = ln(9)/0.10 = 21.97 hours. The instantaneous per-capita rate at N = K/2 is r/2 = 0.05 per hour, not r. An exponential model with the same initial rate would reach 500 at ln(5)/0.10 = 16.09 hours and overpredict later growth. If all observed N values are far below K, many large K values fit similarly; K is poorly identifiable even if the early rate is precise. A fitted K is a model parameter conditional on the observation setting, not an immutable property of a species."
+  },
+  {
+    "id": "bio410-006",
+    "title": "BIO410: Monod Kinetics and Dimensional Checks",
+    "subject": "microbiology",
+    "courseName": "BIO410 Quantitative Microbiology",
+    "url": "https://example.edu/micro/bio410/monod-model",
+    "content": "Original BIO410 demo course notes. Learning objective: evaluate a substrate-dependent rate model without treating a fitted curve as a universal law. The Monod expression is mu(S) = mu_max*S/(K_s + S), where S and K_s share concentration units and mu and mu_max have inverse-time units. At S = K_s, mu = mu_max/2. A hypothetical parameter set mu_max = 0.60 per hour and K_s = 0.20 g per L gives mu = 0.60*0.10/(0.20+0.10) = 0.20 per hour at S = 0.10 g per L. If S were constant, the implied doubling time is ln(2)/0.20 = 3.47 hours. If S changes substantially, one must model its trajectory rather than use that initial rate for the entire interval. Low-S data mainly identify the ratio mu_max/K_s; high-S data mainly constrain mu_max. Check parameter identifiability, substrate specificity, and whether inhibitory effects or other limitations invalidate the simple model."
+  },
+  {
+    "id": "bio410-007",
+    "title": "BIO410: Lognormal Measurement Error and Regression Choices",
+    "subject": "microbiology",
+    "courseName": "BIO410 Quantitative Microbiology",
+    "url": "https://example.edu/micro/bio410/regression-and-error",
+    "content": "Original BIO410 demo course notes. Learning objective: match the fitting method to the assumed error process. Ordinary least squares on ln(N) assumes additive roughly constant-variance errors on the log scale, corresponding to multiplicative error on the original scale. Ordinary least squares on untransformed N instead assumes constant absolute error and weights discrepancies differently. If log error has mean zero and variance sigma^2, exp(predicted log N) estimates the conditional median; under a lognormal model the conditional mean is exp(predicted log N + sigma^2/2). For a fitted log value ln(100) and sigma = 0.40, the median is 100 and the mean is 108.33. A 95 percent observation interval with known parameters is 100*exp(plus or minus 1.96*0.40), approximately 45.7 to 219.0. Parameter uncertainty would widen an appropriate prediction interval. Residual diagnostics and held-out predictions are more informative than comparing R-squared values computed on different response scales."
+  },
+  {
+    "id": "bio410-008",
+    "title": "BIO410: Sensitivity Analysis and Critiquing a Reference Answer",
+    "subject": "microbiology",
+    "courseName": "BIO410 Quantitative Microbiology",
+    "url": "https://example.edu/micro/bio410/sensitivity-and-critique",
+    "content": "Original BIO410 demo course notes. Learning objective: explain which assumptions dominate a reference calculation. For Nfinal = s*N0*2^(t/g), ln(Nfinal) = ln(s) + ln(N0) + (t/g)*ln(2). Sensitivities on this scale are d ln(Nfinal)/d t = ln(2)/g and d ln(Nfinal)/d g = -t*ln(2)/g^2. In the 10-cell, 40-minute, 20-minute-generation, half-survival reference, Nfinal = 20. If the true generation time were 25 minutes instead, Nfinal = 0.5*10*2^1.6 = 15.16; at 15 minutes it would be 31.75. A five-minute deviation therefore does not produce a symmetric change in the population prediction. A 10-minute lag followed by 30 minutes of growth at g = 20 minutes gives Nfinal = 14.14. These fractional values are deterministic or expected quantities, not literal fractional cells. A sound critique names the model, checks units, separates observation from assumptions, and distinguishes parameter uncertainty, measurement noise, and biological randomness."
+  }
+]

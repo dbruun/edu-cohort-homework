@@ -22,6 +22,9 @@ param tags object
 @description('SKU for Azure AI Search')
 param searchSku string = 'basic'
 
+@description('Location for Azure AI Search, which may differ when the primary region has no capacity.')
+param searchLocation string = location
+
 @description('Overrides the generated App Service name. Set this when the Entra redirect URI must be registered before deployment, since the generated name contains an unpredictable hash.')
 param portalAppName string = ''
 
@@ -77,6 +80,9 @@ resource foundry 'Microsoft.CognitiveServices/accounts@2026-05-15-preview' = {
 
 resource foundryProject 'Microsoft.CognitiveServices/accounts/projects@2026-05-15-preview' = {
   parent: foundry
+  dependsOn: [
+    embeddingDeployment
+  ]
   name: 'homework'
   location: location
   tags: tags
@@ -208,7 +214,7 @@ resource embeddingDeployment 'Microsoft.CognitiveServices/accounts/deployments@2
 // --- Azure AI Search ------------------------------------------------------
 resource search 'Microsoft.Search/searchServices@2024-06-01-preview' = {
   name: 'srch-${resourceToken}'
-  location: location
+  location: searchLocation
   tags: tags
   identity: {
     type: 'SystemAssigned'

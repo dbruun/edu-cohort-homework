@@ -1,24 +1,29 @@
-const { DefaultAzureCredential } = require('@azure/identity');
+const { DefaultAzureCredential, ManagedIdentityCredential } = require('@azure/identity');
 const { BlobServiceClient } = require('@azure/storage-blob');
 
 const defaultPolicy = {
  helpLevel: 'guided',
- maxStepsRevealed: 3,
- allowDirectAnswers: false,
  citationsRequired: true,
  subjectOverrides: {},
  courseGroups: []
 };
-const helpLevels = new Set(['hint_only', 'guided', 'worked_example', 'full_solution']);
+const helpLevels = new Set(['guided', 'worked_example', 'full_solution']);
+let credential;
+let policyService;
+let policyAccount;
+
+function getCredential() {
+ return credential ??= process.env.WEBSITE_SITE_NAME ? new ManagedIdentityCredential() : new DefaultAzureCredential();
+}
 
 function getPolicyClient(professorId) {
  const accountName = process.env.POLICY_STORAGE_ACCOUNT;
  if (!accountName) throw new Error('POLICY_STORAGE_ACCOUNT is not configured.');
- const service = new BlobServiceClient(
-   `https://${accountName}.blob.core.windows.net`,
-   new DefaultAzureCredential()
- );
- return service.getContainerClient('policies').getBlockBlobClient(`${professorId}.json`);
+ if (!policyService || policyAccount !== accountName) {
+   policyService = new BlobServiceClient(`https://${accountName}.blob.core.windows.net`, getCredential());
+   policyAccount = accountName;
+ }
+ return policyService.getContainerClient('policies').getBlockBlobClient(`${professorId}.json`);
 }
 
 function validatePolicy(policy) {
@@ -28,10 +33,7 @@ function validatePolicy(policy) {
  if (!helpLevels.has(policy.helpLevel)) {
    throw new Error('Policy helpLevel is invalid.');
  }
- if (!Number.isInteger(policy.maxStepsRevealed) || policy.maxStepsRevealed < 1 || policy.maxStepsRevealed > 8) {
-   throw new Error('Policy maxStepsRevealed must be an integer from 1 to 8.');
- }
- if (typeof policy.allowDirectAnswers !== 'boolean' || typeof policy.citationsRequired !== 'boolean') {
+ if (typeof policy.citationsRequired !== 'boolean') {
    throw new Error('Policy boolean controls are invalid.');
  }
  if (!policy.subjectOverrides || typeof policy.subjectOverrides !== 'object' || Array.isArray(policy.subjectOverrides) ||
@@ -44,8 +46,6 @@ function validatePolicy(policy) {
  for (const group of policy.courseGroups) {
    if (!group || typeof group !== 'object' || typeof group.name !== 'string' || !Array.isArray(group.courses) ||
      (group.helpLevel !== undefined && !helpLevels.has(group.helpLevel)) ||
-     (group.maxStepsRevealed !== undefined && (!Number.isInteger(group.maxStepsRevealed) || group.maxStepsRevealed < 1 || group.maxStepsRevealed > 8)) ||
-     (group.allowDirectAnswers !== undefined && typeof group.allowDirectAnswers !== 'boolean') ||
      (group.citationsRequired !== undefined && typeof group.citationsRequired !== 'boolean')) {
      throw new Error('Policy course groups are invalid.');
    }
@@ -73,7 +73,15 @@ async function readPolicy(professor) {
 }
 
 function applyProfessorIdentity(policy, professor) {
- return { ...policy, professorId: professor.id, professorName: professor.name };
+ const { allowDirectAnswers, maxStepsRevealed, policyText, ...settings } = policy;
+ const normalized = {
+   ...settings,
+   courseGroups: (settings.courseGroups ?? []).map(({ allowDirectAnswers, maxStepsRevealed, ...group }) => group),
+   professorId: professor.id,
+   professorName: professor.name
+ };
+ if (policyText !== undefined) normalized.policyText = renderPolicyText(normalized, professor);
+ return normalized;
 }
 
 // The policy index grounds the agent on prose, not enum values, and blob JSON
@@ -82,8 +90,6 @@ function renderPolicyText(policy, professor) {
  const lines = [
    `Pedagogy policy for professor ${professor.name}.`,
    `Default help level: ${policy.helpLevel}.`,
-   `Maximum number of solution steps that may be revealed: ${policy.maxStepsRevealed}.`,
-   `Direct answers are ${policy.allowDirectAnswers ? 'allowed' : 'not allowed'}.`,
    `Citations to course material are ${policy.citationsRequired ? 'required' : 'not required'}.`
  ];
  const overrides = Object.entries(policy.subjectOverrides ?? {});
@@ -95,14 +101,10 @@ function renderPolicyText(policy, professor) {
  for (const group of policy.courseGroups ?? []) {
    const courses = (group.courses ?? []).map((course) => course.id).join(', ');
    const helpLevel = group.helpLevel ?? policy.helpLevel;
-   const maxSteps = group.maxStepsRevealed ?? policy.maxStepsRevealed;
-   const directAnswers = group.allowDirectAnswers ?? policy.allowDirectAnswers;
    const citations = group.citationsRequired ?? policy.citationsRequired;
    lines.push(
      `Course group "${group.name}"${courses ? ` covers courses ${courses}` : ''} and replaces the defaults above for those courses:` +
      ` help level ${helpLevel};` +
-     ` maximum number of solution steps that may be revealed: ${maxSteps};` +
-     ` direct answers are ${directAnswers ? 'allowed' : 'not allowed'};` +
      ` citations to course material are ${citations ? 'required' : 'not required'}.`
    );
  }
@@ -111,12 +113,10 @@ function renderPolicyText(policy, professor) {
 
 async function writePolicy(professor, policy) {
  validatePolicy(policy);
- const savedPolicy = {
+ const savedPolicy = applyProfessorIdentity({
    ...defaultPolicy,
-   ...policy,
-   professorId: professor.id,
-   professorName: professor.name
- };
+   ...policy
+ }, professor);
  savedPolicy.policyText = renderPolicyText(savedPolicy, professor);
  await getPolicyClient(professor.id).upload(
    JSON.stringify(savedPolicy),
@@ -138,7 +138,7 @@ async function runPolicyIndexer() {
   }
   const url = `${searchEndpoint.replace(/\/$/, '')}/indexers/${encodeURIComponent(indexerName)}/run?api-version=2024-07-01`;
   try {
-    const token = await new DefaultAzureCredential().getToken('https://search.azure.com/.default');
+    const token = await getCredential().getToken('https://search.azure.com/.default');
     const response = await fetch(url, { method: 'POST', headers: { authorization: 'Bearer ' + token.token } });
     // 409 means a run is already in flight, which still picks up this blob.
     if (response.ok || response.status === 409) {
@@ -161,4 +161,4 @@ async function streamToString(stream) {
  return Buffer.concat(chunks).toString('utf8');
 }
 
-module.exports = { applyProfessorIdentity, readPolicy, writePolicy, validatePolicy, runPolicyIndexer };
+module.exports = { applyProfessorIdentity, readPolicy, writePolicy, validatePolicy, runPolicyIndexer, renderPolicyText };

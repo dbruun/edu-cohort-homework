@@ -54,10 +54,7 @@
     <h2>Pedagogy controls</h2>
     <label>Help style</label>
     <select><option>Hint only</option><option selected>Guided</option><option>Worked example</option><option>Full solution</option></select>
-    <label>Maximum steps revealed: <span id="defSteps">3</span></label>
-    <input type="range" min="0" max="6" value="3" style="width:100%" oninput="document.getElementById('defSteps').textContent=this.value" />
     <div class="checks">
-      <label><input type="checkbox" /> Allow direct answers</label>
       <label><input type="checkbox" checked /> Require citations</label>
       <button class="btn save" style="margin-left:auto">Save policy</button>
     </div>
@@ -81,8 +78,6 @@ const state = [{
     { id: "CS102", description: "Data Structures and Algorithms" }
   ],
   helpLevel: "Hint only",
-  maxStepsRevealed: 1,
-  allowDirectAnswers: false,
   citationsRequired: true
 }];
 
@@ -109,20 +104,14 @@ function render() {
             ${["Hint only","Guided","Worked example","Full solution"].map(o=>`<option ${o===g.helpLevel?"selected":""}>${o}</option>`).join("")}
           </select>
         </div>
-        <div>
-          <label>Maximum steps revealed: <span>${g.maxStepsRevealed}</span></label>
-          <input type="range" min="0" max="6" value="${g.maxStepsRevealed}" style="width:100%"
-            oninput="state[${gi}].maxStepsRevealed=+this.value; this.previousElementSibling.querySelector('span').textContent=this.value" />
-        </div>
       </div>
       <div class="checks">
-        <label><input type="checkbox" ${g.allowDirectAnswers?"checked":""} onchange="state[${gi}].allowDirectAnswers=this.checked" /> Allow direct answers</label>
         <label><input type="checkbox" ${g.citationsRequired?"checked":""} onchange="state[${gi}].citationsRequired=this.checked" /> Require citations</label>
       </div>`;
     host.appendChild(el);
   });
 }
-function addGroup(){ state.push({name:"New group",courses:[],helpLevel:"Guided",maxStepsRevealed:2,allowDirectAnswers:false,citationsRequired:true}); render(); }
+function addGroup(){ state.push({name:"New group",courses:[],helpLevel:"Guided",citationsRequired:true}); render(); }
 function removeGroup(i){ state.splice(i,1); render(); }
 function addCourse(gi){
   const id=document.getElementById("cid"+gi).value.trim();

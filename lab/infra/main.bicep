@@ -14,6 +14,9 @@ targetScope = 'subscription'
 @description('Environment name — used for resource naming (rg-<token>, aif-<token>, srch-<token>).')
 param environmentName string
 
+@description('Overrides the generated resource group name.')
+param resourceGroupName string = ''
+
 @description('Location for all resources. Must have gpt-5.4, gpt-5.4-mini, and text-embedding-3-small quota (northcentralus recommended).')
 param location string = deployment().location
 
@@ -25,6 +28,9 @@ param location string = deployment().location
   'standard3'
 ])
 param searchSku string = 'basic'
+
+@description('Location for Azure AI Search. Empty uses the primary location.')
+param searchLocation string = ''
 
 @description('Overrides the generated App Service name so the Easy Auth redirect URI can be registered before deployment. Required when attendees cannot edit the Entra app registration themselves.')
 param portalAppName string = ''
@@ -64,7 +70,7 @@ var tags = {
 }
 
 resource rg 'Microsoft.Resources/resourceGroups@2024-03-01' = {
-  name: 'rg-${resourceToken}'
+  name: empty(resourceGroupName) ? 'rg-${resourceToken}' : resourceGroupName
   location: location
   tags: tags
 }
@@ -77,6 +83,7 @@ module resources 'resources.bicep' = {
     resourceToken: resourceToken
     tags: tags
     searchSku: searchSku
+    searchLocation: empty(searchLocation) ? location : searchLocation
     portalAppName: portalAppName
     portalLocation: empty(portalLocation) ? location : portalLocation
     portalAuthClientId: portalAuthClientId

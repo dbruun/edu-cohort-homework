@@ -28,9 +28,7 @@ The policy is a small JSON document. Its schema matches [src/HomeworkAgent/Pedag
 
 | Field | Type | Default | Meaning |
 | --- | --- | --- | --- |
-| `helpLevel` | string | `guided` | `hint_only`, `guided`, `worked_example`, or `full_solution` |
-| `maxStepsRevealed` | number | `3` | How much of a solution the tutor may expose at once |
-| `allowDirectAnswers` | boolean | `false` | Whether a direct solution is ever permitted |
+| `helpLevel` | string | `guided` | `guided`, `worked_example`, or `full_solution`; only `full_solution` supplies the original final answer |
 | `citationsRequired` | boolean | `true` | Whether responses must cite sources |
 | `subjectOverrides` | object | `{}` | Per-subject help-level overrides |
 | `refusalMessage` | string | provided | Shown when the tutor declines to solve graded work outright |
@@ -45,12 +43,10 @@ The policy is a small JSON document. Its schema matches [src/HomeworkAgent/Pedag
   "professorId": "prof-adams",
   "professorName": "Dr. Adams",
   "helpLevel": "guided",
-  "maxStepsRevealed": 3,
-  "allowDirectAnswers": false,
   "citationsRequired": true,
   "subjectOverrides": {
     "math": "guided",
-    "science": "hint_only"
+    "science": "guided"
   },
   "courseGroups": [
     {
@@ -59,14 +55,30 @@ The policy is a small JSON document. Its schema matches [src/HomeworkAgent/Pedag
         { "id": "CS101", "description": "Introduction to Programming" },
         { "id": "CS102", "description": "Data Structures and Algorithms" }
       ],
-      "helpLevel": "hint_only",
-      "maxStepsRevealed": 1
+      "helpLevel": "guided"
     }
   ]
 }
 ```
 
 ### Professor ownership and course groups
+
+Help style is the sole answer-disclosure control. `guided` pauses for the student's
+contribution without the original final answer; `worked_example` completes a
+different example; `full_solution` completes the original question and states its
+answer. There is no numeric solution-step cap. Retired direct-answer and step-count
+controls are ignored and removed when legacy portal policies are read or saved.
+
+The professor portal prominently displays an always-visible **Pedagogy guide**
+panel directly below the page introduction, before uploads and course groups.
+It compares all three help styles side by side (stacked on small screens) and
+explains the citation requirement.
+
+The portal also shows a description of the selected help style directly
+below each selector, in both course groups and Default settings. The description
+updates when the selection changes. The citation checkbox explains that enabling
+it requires course-material citations; disabling it makes citations optional.
+Each control is associated with its visible description for screen readers.
 
 Each pedagogy is **owned by a professor** (`professorId` / `professorName`). Because a student can take courses from multiple professors, the tutor resolves the pedagogy from whichever professor owns the course being asked about — so two students in the same session can be held to different rules set by different instructors.
 

@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>CourseWise | Your course, a little clearer</title>
+  <script>
+    (() => {
+      const param = new URLSearchParams(window.location.search).get("clawpilotTheme");
+      const theme =
+        param || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
+  <link rel="stylesheet" href="/dist/katex.min.css">
+  <script src="/dist/response-renderer.js"></script>
+  <style>
+    :root {
+      color-scheme: light;
+      --cp-bg: #f7f4ef;
+      --cp-bg-elevated: #fcfbf8;
+      --cp-surface: #ffffff;
+      --cp-surface-soft: #f5f5f5;
+      --cp-border: #dedede;
+      --cp-border-strong: #919191;
+      --cp-text: #242424;
+      --cp-text-muted: #5c5c5c;
+      --cp-text-soft: #6f6f6f;
+      --cp-accent: #b11f4b;
+      --cp-accent-hover: #9a1a41;
+      --cp-accent-soft: rgba(177, 31, 75, 0.08);
+      --cp-accent-fg: #ffffff;
+      --cp-success: #16a34a;
+      --cp-danger: #dc2626;
+      --cp-warning: #f59e0b;
+      --cp-link: #0078d4;
+      --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
+      --cp-overlay: rgba(255, 255, 255, 0.8);
+      --cp-panel: rgba(255, 255, 255, 0.86);
+      --cp-panel-strong: rgba(255, 255, 255, 0.96);
+      --cp-sheen: rgba(255, 255, 255, 0.55);
+      --cp-highlight: rgba(177, 31, 75, 0.12);
+    }
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --cp-bg: #3d3b3a;
+      --cp-bg-elevated: #343231;
+      --cp-surface: #292929;
+      --cp-surface-soft: #2e2e2e;
+      --cp-border: #474747;
+      --cp-border-strong: #5f5f5f;
+      --cp-text: #dedede;
+      --cp-text-muted: #919191;
+      --cp-text-soft: #b0b0b0;
+      --cp-accent: #fd8ea1;
+      --cp-accent-hover: #fb7b91;
+      --cp-accent-soft: rgba(253, 142, 161, 0.14);
+      --cp-accent-fg: #1a1a1a;
+      --cp-success: #4ade80;
+      --cp-danger: #f87171;
+      --cp-warning: #fbbf24;
+      --cp-link: #4da6ff;
+      --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+      --cp-overlay: rgba(41, 41, 41, 0.88);
+      --cp-panel: rgba(41, 41, 41, 0.72);
+      --cp-panel-strong: rgba(41, 41, 41, 0.96);
+      --cp-sheen: rgba(255, 255, 255, 0.04);
+      --cp-highlight: rgba(253, 142, 161, 0.12);
+    }
+    html[data-theme="light"] {
+      --cp-bg: #f7f8f9;
+      --cp-bg-elevated: #f5f7f8;
+      --cp-surface: #ffffff;
+      --cp-surface-soft: #edf2f6;
+      --cp-border: #d3dce6;
+      --cp-border-strong: #b7c5d5;
+      --cp-text: #17213a;
+      --cp-text-muted: #52617a;
+      --cp-text-soft: #6d7c93;
+      --cp-accent: #083b63;
+      --cp-accent-hover: #062d4c;
+      --cp-accent-soft: #eaf0f5;
+      --cp-link: #064c86;
+    }
+    html[data-theme="dark"] {
+      --cp-bg: #151c27;
+      --cp-bg-elevated: #192230;
+      --cp-surface: #1d2838;
+      --cp-surface-soft: #243449;
+      --cp-border: #354860;
+      --cp-border-strong: #5b7391;
+      --cp-text: #e5edf6;
+      --cp-text-muted: #b0c0d3;
+      --cp-text-soft: #9aadc5;
+      --cp-accent: #a7cfee;
+      --cp-accent-hover: #c2e1f8;
+      --cp-accent-soft: #23364a;
+      --cp-accent-fg: #142131;
+      --cp-link: #a7d4ff;
+    }
+    * { box-sizing: border-box; }
+    body { display: flex; flex-direction: column; min-height: 100vh; margin: 0; background: var(--cp-bg); color: var(--cp-text); font-family: "Segoe UI", Aptos, Calibri, -apple-system, BlinkMacSystemFont, sans-serif; }
+    button, textarea, input, select { font: inherit; }
+    button, a, input, textarea, select { outline-offset: 4px; }
+    button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px solid var(--cp-accent); }
+    button { cursor: pointer; border: 1px solid var(--cp-border); border-radius: 0.625rem; padding: 10px 16px; background: var(--cp-surface); color: var(--cp-accent); }
+    button:hover { border-color: var(--cp-accent); }
+    button:disabled { opacity: 0.55; cursor: not-allowed; }
+    a { color: var(--cp-link); }
+    header { background: var(--cp-bg-elevated); }
+    .header-bar { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 20px 40px; border-bottom: 1px solid var(--cp-border); }
+    .brand { display: flex; gap: 20px; align-items: center; min-width: 0; }
+    .mark { display: grid; place-items: center; flex-shrink: 0; width: 52px; height: 52px; background: var(--cp-accent); color: var(--cp-accent-fg); border-radius: 0.625rem; font: 700 22px Georgia, "Times New Roman", serif; }
+    .brand strong { color: var(--cp-accent); font: 700 32px/1.1 Georgia, "Times New Roman", serif; letter-spacing: -0.5px; }
+    .brand small { display: block; color: var(--cp-text); font: 16px/1.4 Georgia, "Times New Roman", serif; margin-top: 4px; }
+    .actions { display: flex; flex-shrink: 0; align-items: center; gap: 20px; font-size: 14px; }
+    .actions > a { border-left: 1px solid var(--cp-border); padding-left: 20px; }
+    .actions button { display: inline-flex; align-items: center; gap: 10px; }
+    .icon { width: 20px; height: 20px; flex-shrink: 0; vertical-align: middle; }
+    #identity { color: var(--cp-text-muted); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .workspace { display: grid; flex: 1; width: 100%; grid-template-columns: minmax(0, 1040px); justify-content: center; align-items: start; gap: 32px; max-width: 1536px; margin: 0 auto; padding: 20px 48px 24px; }
+    .workspace.source-open { grid-template-columns: minmax(0, 2.2fr) minmax(320px, 1fr); }
+    main { min-width: 0; width: 100%; }
+    .context { display: flex; max-width: 680px; margin: 0 auto; flex-wrap: wrap; gap: 12px 20px; align-items: end; padding: 20px 24px 8px; }
+    .context label { flex: 1; min-width: 160px; font-size: 13px; font-weight: 500; color: var(--cp-accent); }
+    .context label:last-of-type { flex: 1.2; }
+    .context input, .context select { display: block; width: 100%; min-height: 42px; border: 1px solid var(--cp-border-strong); border-radius: 0.625rem; background: var(--cp-surface); color: var(--cp-text); padding: 8px 12px; margin-top: 6px; }
+    .context-note { flex-basis: 100%; font-size: 11px; color: var(--cp-text-soft); margin: 0; line-height: 1.5; }
+    #welcome { padding: 52px 4px 32px; }
+    .eyebrow { color: var(--cp-accent); letter-spacing: 2px; font-size: 11px; font-weight: 700; }
+    h1 { font: 600 clamp(30px, 5vw, 44px)/1.2 Georgia, "Times New Roman", serif; letter-spacing: -1px; margin: 12px 0; color: var(--cp-accent); }
+    .intro { color: var(--cp-text-muted); line-height: 1.7; max-width: 600px; margin-bottom: 24px; }
+    .starters { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .starter { text-align: left; padding: 20px 16px; border-radius: 16px; line-height: 1.5; }
+    .starter strong { display: block; font-size: 13px; margin-bottom: 8px; }
+    .starter span { color: var(--cp-text-muted); font-size: 13px; }
+    #messages { display: grid; gap: 22px; padding: 0 0 8px; }
+    .message { padding: 24px; border: 1px solid var(--cp-border); background: var(--cp-surface); border-radius: 16px; }
+    .message.user { margin-left: 10px; border-color: var(--cp-accent-soft); background: var(--cp-accent-soft); }
+    .message h2 { font: 700 18px/1.4 Georgia, "Times New Roman", serif; margin: 0 0 10px; color: var(--cp-accent); }
+    .message > .text { white-space: pre-wrap; overflow-wrap: anywhere; font: clamp(17px, 1.4vw, 20px)/1.5 Georgia, "Times New Roman", serif; }
+    .message.assistant { min-width: 0; }
+    .message.assistant > .text { white-space: normal; }
+    .message.assistant > .text > :first-child { margin-top: 0; }
+    .message.assistant > .text > :last-child { margin-bottom: 0; }
+    .text p, .text ol, .text ul { margin: 12px 0; }
+    .text li + li { margin-top: 8px; }
+    .text pre { overflow-x: auto; padding: 12px; background: var(--cp-surface-soft); border-radius: 0.625rem; }
+    .text pre, .text code { font-family: Consolas, "Courier New", Courier, monospace; white-space: pre-wrap; }
+    .text blockquote { margin-left: 0; padding-left: 16px; border-left: 3px solid var(--cp-border); color: var(--cp-text-muted); }
+    .text table { display: block; overflow-x: auto; border-collapse: collapse; }
+    .text th, .text td { padding: 8px 12px; border: 1px solid var(--cp-border); }
+    .text .katex { font-size: 1.1em; }
+    .text .katex-display { overflow-x: auto; overflow-y: hidden; padding: 8px 0; margin: 12px 0; }
+    .text .citation { color: var(--cp-text-muted); font-size: 0.8em; white-space: nowrap; margin-left: 0.2em; }
+    .text button.citation { color: var(--cp-link); padding: 0; border: 0; border-radius: 0; background: none; text-decoration: underline; }
+    .text .math-pending { color: var(--cp-text-muted); }
+    .text .math-error, .text .format-warning { color: var(--cp-danger); }
+    .text .format-warning { font-size: 12px; }
+    .sources { border-top: 1px solid var(--cp-border); padding-top: 12px; margin-top: 16px; font-size: 12px; }
+    .sources summary { cursor: pointer; color: var(--cp-text-muted); }
+    .sources ul { padding-left: 20px; line-height: 1.8; }
+    .source-link { padding: 0; border: 0; border-radius: 0; background: none; color: var(--cp-link); text-align: left; text-decoration: underline; }
+    .source-panel { position: sticky; top: 24px; min-width: 0; max-height: calc(100vh - 48px); overflow: auto; padding: 24px; border: 1px solid var(--cp-border); border-radius: 16px; background: var(--cp-surface); }
+    .source-panel-heading { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
+    .source-kicker { display: inline-flex; align-items: center; gap: 12px; color: var(--cp-accent); font-size: 12px; font-weight: 600; letter-spacing: 1px; }
+    .source-panel h2 { margin: 20px 0 8px; font: 700 26px/1.25 Georgia, "Times New Roman", serif; overflow-wrap: anywhere; }
+    #source-title:focus { outline: none; }
+    .source-note { color: var(--cp-text-muted); font: 15px/1.6 Georgia, "Times New Roman", serif; padding-bottom: 20px; border-bottom: 1px solid var(--cp-border); }
+    #source-content { white-space: pre-wrap; overflow-wrap: anywhere; font: 18px/1.5 Georgia, "Times New Roman", serif; margin: 20px 0 4px; }
+    .composer { position: sticky; bottom: 0; background: var(--cp-bg); padding: 16px 0 8px; }
+    form { border: 1px solid var(--cp-border-strong); border-radius: 16px; background: var(--cp-surface); padding: 12px; }
+    textarea { width: 100%; min-height: 72px; max-height: 240px; resize: vertical; border: 0; background: var(--cp-surface); color: var(--cp-text); padding: 8px; font: 19px/1.5 Georgia, "Times New Roman", serif; }
+    textarea::placeholder { color: var(--cp-text-soft); }
+    .composer-footer { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    #status { font-size: 12px; color: var(--cp-text-muted); padding-left: 8px; }
+    .primary { display: inline-flex; align-items: center; justify-content: center; gap: 12px; background: var(--cp-accent); color: var(--cp-accent-fg); border-color: var(--cp-accent); font-weight: 600; min-width: 104px; }
+    .primary:hover { background: var(--cp-accent-hover); }
+    #error { color: var(--cp-danger); font-size: 13px; line-height: 1.5; }
+    .footnote { text-align: center; color: var(--cp-text-soft); font-size: 11px; line-height: 1.6; margin: 12px 0 0; }
+    .site-footer { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px 24px; padding: 0 40px 24px; color: var(--cp-text-soft); font-size: 12px; line-height: 1.6; }
+    .site-footer strong { color: var(--cp-accent); padding-right: 16px; margin-right: 16px; border-right: 1px solid var(--cp-border); }
+    [hidden] { display: none !important; }
+    @media (max-width: 960px) {
+      .workspace.source-open { grid-template-columns: minmax(0, 1fr); }
+      .source-panel { position: static; max-height: 60vh; }
+    }
+    @media (max-width: 600px) {
+      .header-bar { padding: 16px; flex-wrap: wrap; gap: 16px; }
+      .workspace { padding: 20px 16px; }
+      .brand { gap: 12px; }
+      .brand strong { font-size: 26px; }
+      .brand small { font-size: 13px; }
+      #identity { display: none; }
+      .actions { gap: 8px; }
+      .actions > a { padding-left: 8px; }
+      .actions button { padding: 8px; }
+      .context { padding: 16px 16px 8px; }
+      .context label { min-width: 140px; }
+      .starters { grid-template-columns: 1fr; }
+      #welcome { padding-top: 32px; }
+      .message { padding: 20px; }
+      .message.user { margin-left: 0; }
+      .site-footer { padding: 0 16px 24px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-bar">
+      <div class="brand"><span class="mark" aria-hidden="true">CW</span><div><strong>CourseWise</strong><small id="course-heading">BIO201 &middot; Introductory Microbiology</small></div></div>
+      <div class="actions">
+        <span id="identity"></span>
+        <button type="button" id="new-chat"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M7 12h10"/></svg>New chat</button>
+        <a href="/.auth/logout?post_logout_redirect_uri=/">Sign out</a>
+      </div>
+    </div>
+    <section class="context" aria-label="Course context">
+      <label>Professor<input id="professor" value="Adrian Wright" maxlength="100"></label>
+      <label>Course<select id="course">
+        <option value="BIO201 Introductory Microbiology" selected>BIO201 - Introductory Microbiology</option>
+        <option value="BIO310 Advanced Microbiology">BIO310 - Advanced Microbiology</option>
+        <option value="BIO410 Quantitative Microbiology">BIO410 - Quantitative Microbiology</option>
+      </select></label>
+      <p class="context-note">Changing courses clears this chat. Start a new chat to change the professor.</p>
+    </section>
+  </header>
+  <div class="workspace" id="workspace">
+  <main>
+    <section id="welcome">
+      <span class="eyebrow">YOUR COURSE. YOUR PACE.</span>
+      <h1>Let's make it click.</h1>
+      <p class="intro">Work through a tricky idea with your course tutor. CourseWise follows your professor's teaching policy and uses your course material to guide you.</p>
+      <div class="starters">
+        <button type="button" class="starter" data-prompt="Help me understand how bacteria resist antibiotics. Cite our course material."><strong>Understand an idea</strong><span>How do bacteria resist antibiotics?</span></button>
+        <button type="button" class="starter" data-prompt="Help me compare Gram-positive and Gram-negative bacteria using our course material."><strong>Connect the dots</strong><span>Gram-positive vs. Gram-negative.</span></button>
+        <button type="button" class="starter" data-prompt="Quiz me on the bacterial growth curve, one question at a time. Wait for my answer."><strong>Check what you know</strong><span>A quick quiz, one question at a time.</span></button>
+      </div>
+    </section>
+    <section id="messages" aria-label="Conversation" role="log" aria-live="off"></section>
+    <div class="composer">
+      <p id="error" role="alert" hidden></p>
+      <form id="chat-form">
+        <label for="question" hidden>Your question</label>
+        <textarea id="question" placeholder="What are you working on?" maxlength="8000" rows="2" required></textarea>
+        <div class="composer-footer">
+          <span id="status" role="status" aria-live="polite">Ready when you are</span>
+          <div><button type="button" id="stop" hidden>Stop</button> <button type="submit" class="primary" id="send">Send<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="m3 10 18-7-7 18-3-8-8-3Z"/><path d="m11 13 10-10"/></svg></button></div>
+        </div>
+      </form>
+      <p class="footnote">Check citations and your professor's expectations. Chat stays in this tab; prompts are sent to your Azure-hosted tutor.</p>
+    </div>
+  </main>
+  <aside class="source-panel" id="course-source-panel" aria-labelledby="source-title" hidden>
+    <div class="source-panel-heading">
+      <span class="source-kicker"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v15M12 5C8 2 4 3 2 4v15c4-2 7-1 10 1 3-2 6-3 10-1V4c-2-1-6-2-10 1Z"/></svg>COURSE SOURCE</span>
+      <button type="button" id="close-source" aria-label="Close course source">Close</button>
+    </div>
+    <h2 id="source-title" tabindex="-1"></h2>
+    <p class="source-note">Retrieved from course materials. This may be an excerpt, not the entire original file.</p>
+    <pre id="source-content"></pre>
+  </aside>
+  </div>
+  <footer class="site-footer">
+    <span><strong>CourseWise</strong>Guidance, not a substitute for your own thinking.</span>
+    <span>Demo course context &middot; Not verified enrollment</span>
+  </footer>
+  <script>
+    const byId = (id) => document.getElementById(id);
+    function updateCourseHeading() {
+      byId('course-heading').textContent = byId('course').value.trim().replace(/^(\S+)\s+/, '$1 \u00b7 ');
+    }
+    updateCourseHeading();
+    let history = [];
+    let threadId = crypto.randomUUID();
+    let active;
+    let followStream = true;
+    let lastScrollTop = window.scrollY;
+    window.addEventListener('scroll', () => {
+      const top = window.scrollY;
+      if (active) {
+        if (top < lastScrollTop) followStream = false;
+        else if (document.documentElement.scrollHeight - window.innerHeight - top <= 80) followStream = true;
+      }
+      lastScrollTop = top;
+    }, { passive: true });
+    function followResponse() {
+      if (!active || !followStream) return;
+      window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' });
+      lastScrollTop = window.scrollY;
+    }
+    let sourceTrigger;
+    function closeSource(restoreFocus = false) {
+      byId('course-source-panel').hidden = true;
+      byId('workspace').classList.remove('source-open');
+      byId('source-title').textContent = '';
+      byId('source-content').textContent = '';
+      if (restoreFocus) sourceTrigger?.focus({ preventScroll: true });
+      sourceTrigger = undefined;
+    }
+    function openSource(source, trigger) {
+      if (source?.kind !== 'course' || typeof source.text !== 'string' || !source.text.trim()) {
+        return showError('This course source text is unavailable.');
+      }
+      sourceTrigger = trigger;
+      byId('source-title').textContent = source.title;
+      byId('source-content').textContent = source.text;
+      byId('course-source-panel').hidden = false;
+      byId('workspace').classList.add('source-open');
+      byId('source-title').focus({ preventScroll: true });
+      if (window.matchMedia('(max-width: 960px)').matches) {
+        byId('course-source-panel').scrollIntoView({ behavior: 'instant', block: 'start' });
+      }
+    }
+    byId('close-source').addEventListener('click', () => closeSource(true));
+    byId('course-source-panel').addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') closeSource(true);
+    });
+    function message(role, text = '') {
+      const article = document.createElement('article');
+      article.className = `message ${role}`;
+      const title = document.createElement('h2');
+      title.textContent = role === 'user' ? 'You' : 'CourseWise';
+      const body = document.createElement('div');
+      body.className = 'text';
+      body.textContent = text;
+      article.append(title, body);
+      byId('messages').append(article);
+      return { article, body };
+    }
+    function busy(value) {
+      byId('send').disabled = value;
+      byId('question').disabled = value;
+      byId('new-chat').disabled = value;
+      byId('stop').hidden = !value;
+      byId('professor').disabled = value || history.length > 0;
+      byId('course').disabled = value;
+    }
+    function showError(text) {
+      byId('error').textContent = text;
+      byId('error').hidden = !text;
+    }
+    function showSources(article, sources, citations) {
+      if (!sources.size) return;
+      const citedSourceIds = new Set(citations.values());
+      const courseSources = [...sources.values()].filter((source) =>
+        source.kind === 'course' && citedSourceIds.has(source.id));
+      const details = document.createElement('details');
+      details.className = 'sources';
+      const summary = document.createElement('summary');
+      summary.textContent = `Course sources cited (${courseSources.length})`;
+      const list = document.createElement('ul');
+      for (const source of courseSources) {
+        const item = document.createElement('li');
+        const label = `[${source.number}] ${source.title}`;
+        if (typeof source.text === 'string' && source.text.trim()) {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'source-link';
+          button.dataset.sourceId = source.id;
+          button.setAttribute('aria-controls', 'course-source-panel');
+          button.textContent = `${label} (view source)`;
+          item.append(button);
+        } else item.textContent = `${label} (source text unavailable)`;
+        list.append(item);
+      }
+      details.append(summary, list);
+      if ([...sources.values()].some((source) => source.kind === 'policy')) {
+        const note = document.createElement('p');
+        note.textContent = 'Teaching policy consulted (not linked).';
+        details.append(note);
+      }
+      article.append(details);
+    }
+    async function send(event) {
+      event?.preventDefault();
+      if (active) return;
+      const question = byId('question').value.trim();
+      if (!question) return;
+      const professor = byId('professor').value.trim();
+      const course = byId('course').value.trim();
+      if (!professor || !course) return showError('Enter a professor and course before starting.');
+      if (history.length >= 48) return showError('Start a new chat to keep the conversation manageable.');
+      showError('');
+      byId('welcome').hidden = true;
+      message('user', question).article.scrollIntoView({ behavior: 'instant', block: 'start' });
+      followStream = true;
+      lastScrollTop = window.scrollY;
+      const userMessage = {
+        id: crypto.randomUUID(), role: 'user',
+        content: history.length ? question : `I'm a student in ${professor}'s ${course} class. Follow the professor's teaching policy and use our course material.\n\n${question}`
+      };
+      const outgoing = [...history, userMessage];
+      const controller = new AbortController();
+      active = controller;
+      busy(true);
+      byId('question').value = '';
+      byId('status').textContent = 'Connecting to your tutor';
+      let answer;
+      let renderer;
+      let answerText = '';
+      let finished = false;
+      const sources = new Map();
+      const citations = new Map();
+      try {
+        const response = await fetch('/api/chat', {
+          method: 'POST', signal: controller.signal,
+          headers: { 'content-type': 'application/json', accept: 'text/event-stream' },
+          body: JSON.stringify({ threadId, runId: crypto.randomUUID(), messages: outgoing, state: { courseContext: { professorName: professor, course } }, tools: [], context: [], forwardedProps: {} })
+        });
+        if (response.status === 401 || response.redirected) throw new Error('Your session expired. Sign in again by reloading this page.');
+        if (!response.ok) {
+          const body = await response.json();
+          throw new Error(body.error || 'CourseWise could not start this response.');
+        }
+        if (!response.headers.get('content-type')?.includes('text/event-stream') || !response.body) throw new Error('The server did not return an AG-UI stream.');
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let pending = '';
+        while (true) {
+          const chunk = await reader.read();
+          if (chunk.done) break;
+          pending = (pending + decoder.decode(chunk.value, { stream: true })).replace(/\r\n/g, '\n');
+          let boundary;
+          while ((boundary = pending.indexOf('\n\n')) !== -1) {
+            const frame = pending.slice(0, boundary);
+            pending = pending.slice(boundary + 2);
+            const data = frame.split('\n').filter((line) => line.startsWith('data:')).map((line) => line.slice(5).trimStart()).join('\n');
+            if (!data) continue;
+            const item = JSON.parse(data);
+            if (item.type === 'CUSTOM' && item.name === 'coursepilot.status') byId('status').textContent = item.value;
+            if (item.type === 'CUSTOM' && item.name === 'coursepilot.sources') {
+              for (const source of item.value) {
+                if (sources.has(source.id)) continue;
+                if (source.kind === 'course') {
+                  source.number = [...sources.values()].filter((entry) => entry.kind === 'course').length + 1;
+                }
+                sources.set(source.id, source);
+              }
+              renderer?.update(answerText);
+            }
+            if (item.type === 'CUSTOM' && item.name === 'coursepilot.citations') {
+              for (const citation of item.value) citations.set(citation.reference, citation.sourceId);
+              renderer?.update(answerText);
+            }
+            if (item.type === 'TEXT_MESSAGE_START') {
+              answer = message('assistant');
+              answer.article.addEventListener('click', (event) => {
+                const trigger = event.target.closest('button[data-source-id]');
+                if (trigger) openSource(sources.get(trigger.dataset.sourceId), trigger);
+              });
+              if (!window.CoursePilotResponse) throw new Error('Response formatting could not load. Reload this page or contact the administrator.');
+              renderer = CoursePilotResponse.createResponseRenderer(answer.body, {
+                sources, citations,
+                onRender: followResponse,
+                onError: () => showError('Response formatting failed. The original response is shown as plain text.')
+              });
+            }
+            if (item.type === 'TEXT_MESSAGE_CONTENT') {
+              if (!answer) throw new Error('The response stream is invalid.');
+              answerText += item.delta;
+              renderer.update(answerText);
+              byId('status').textContent = 'Writing a response';
+            }
+            if (item.type === 'RUN_ERROR') throw new Error(item.message);
+            if (item.type === 'RUN_FINISHED') finished = true;
+          }
+        }
+        if (!finished || !answerText) throw new Error('The response was interrupted. Please try again.');
+        renderer.finish(answerText);
+        history = [...outgoing, { id: crypto.randomUUID(), role: 'assistant', content: answerText }];
+        showSources(answer.article, sources, citations);
+        byId('status').textContent = 'Ready for your next question';
+      } catch (error) {
+        renderer?.finish(answerText);
+        if (error.name !== 'AbortError') showError(error.message);
+        if (answer) {
+          const note = document.createElement('p');
+          note.textContent = 'Response incomplete. This answer was not added to conversation history.';
+          answer.article.append(note);
+        }
+        byId('status').textContent = controller.signal.aborted ? 'Response stopped' : 'Response not completed';
+      } finally {
+        busy(false);
+        followResponse();
+        active = undefined;
+        byId('question').focus({ preventScroll: true });
+      }
+    }
+    byId('chat-form').addEventListener('submit', send);
+    byId('question').addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
+        event.preventDefault();
+        byId('chat-form').requestSubmit();
+      }
+    });
+    byId('stop').addEventListener('click', () => active?.abort());
+    function newChat() {
+      if (active) return;
+      updateCourseHeading();
+      history = [];
+      closeSource();
+      threadId = crypto.randomUUID();
+      byId('messages').replaceChildren();
+      byId('welcome').hidden = false;
+      byId('status').textContent = 'Ready when you are';
+      showError('');
+      busy(false);
+      byId('question').focus();
+    }
+    byId('new-chat').addEventListener('click', newChat);
+    byId('course').addEventListener('change', newChat);
+    document.querySelectorAll('[data-prompt]').forEach((button) => button.addEventListener('click', () => {
+      byId('question').value = button.dataset.prompt;
+      byId('question').focus();
+    }));
+    fetch('/api/me').then(async (response) => {
+      if (!response.ok || response.redirected) throw new Error('Please sign in again by reloading this page.');
+      const user = await response.json();
+      byId('identity').textContent = user.name;
+    }).catch((error) => showError(error.message));
+  </script>
+</body>
+</html>

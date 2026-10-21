@@ -1,0 +1,66 @@
+[
+  {
+    "id": "bio310-001",
+    "title": "BIO310: Exponential Growth and Generation Time",
+    "subject": "microbiology",
+    "courseName": "BIO310 Advanced Microbiology",
+    "url": "https://example.edu/micro/bio310/exponential-growth",
+    "content": "Original BIO310 demo course notes. Learning objective: translate bacterial doubling into a quantitative method. During an ideal exponential interval, N(t) = N0 * 2^(t/g), where N0 is the initial population, t is elapsed time, and g is generation time in the same time unit. The number of generations is n = t/g; alternatively n = log2(N/N0). The continuous specific growth rate is mu = ln(2)/g, and N(t) = N0 * exp(mu*t). Analogous worked example: a fictional population begins with 12 cells and doubles every 30 minutes. After 90 minutes, n = 3 and N = 12 * 8 = 96 cells. If a subsequent event leaves a surviving fraction of 0.25, the remaining population is 24 cells. Growth and survival are separate operations. Do not subtract a percentage from the initial population before applying growth. The model assumes a constant generation time, negligible death during growth, and no resource limitation; it does not describe lag or stationary phases."
+  },
+  {
+    "id": "bio310-002",
+    "title": "BIO310: Estimating Growth Rate from a Time Series",
+    "subject": "microbiology",
+    "courseName": "BIO310 Advanced Microbiology",
+    "url": "https://example.edu/micro/bio310/growth-rate-estimation",
+    "content": "Original BIO310 demo course notes. Learning objective: estimate a growth rate rather than merely apply a stated doubling time. Within an exponential interval, ln(N) is linear in time with slope mu. Two observations give mu = [ln(N2) - ln(N1)]/(t2 - t1), followed by g = ln(2)/mu. Analogous example: hypothetical counts rise from 200 to 800 cells over 60 minutes. The slope is ln(4)/60 = 0.02310 per minute, so g = 30 minutes. With several observations, fit ln(N) against time and inspect residuals instead of choosing only the endpoints. Include only the interval supported as exponential; including a lag phase can underestimate the exponential growth rate. A straight line on an untransformed population plot implies constant absolute increase, not constant proportional increase. Report the time unit and the selected fitting interval. A zero or negative count cannot be logged and should prompt examination of the measurement or detection limit, not replacement by an arbitrary positive number."
+  },
+  {
+    "id": "bio310-003",
+    "title": "BIO310: Interpreting Optical Density and Calibration",
+    "subject": "microbiology",
+    "courseName": "BIO310 Advanced Microbiology",
+    "url": "https://example.edu/micro/bio310/optical-density",
+    "content": "Original BIO310 demo course notes. Learning objective: distinguish a measurement signal from a biological quantity. Optical density is a light-scattering proxy for biomass, not a direct viable-cell count. A hypothetical course dataset supplies a calibration C = a * (ODsample - ODblank), where C is concentration and a is the supplied calibration factor. If a = 2.0e8 cells per mL per OD unit, ODsample = 0.35, and ODblank = 0.05, then corrected OD = 0.30 and C = 6.0e7 cells per mL. If the recorded sample was diluted fivefold before measurement, the original concentration is 3.0e8 cells per mL. Apply that factor only if calibration refers to the measured diluted sample. Calibration is conditional on instrument, organism, morphology, and measurement range. An apparent OD plateau can reflect instrument nonlinearity rather than true stationary phase. Do not infer that all scattering particles are living cells or apply one calibration universally."
+  },
+  {
+    "id": "bio310-004",
+    "title": "BIO310: Dilution and Viable-Count Data Interpretation",
+    "subject": "microbiology",
+    "courseName": "BIO310 Advanced Microbiology",
+    "url": "https://example.edu/micro/bio310/viable-count-analysis",
+    "content": "Original BIO310 demo course notes using supplied fictional observations, not a laboratory protocol. Learning objective: recover a concentration from dilution metadata. Let k be an observed colony count, V the recorded plated volume in mL, and d the fraction of the original concentration represented by the measured dilution. Then estimated concentration is C = k/(V*d) CFU per mL. If supplied data report 48 colonies, V = 0.20 mL, and d = 1e-4, C = 2.4e6 CFU per mL. The dilution fraction 1e-4 is not the dilution factor 1e4. When pooling observations at the same underlying concentration, use C = sum(k_i)/sum(V_i*d_i), rather than blindly averaging estimates with unequal sampling exposure. CFU measures colony-forming units, which may be clumps rather than individual cells. A zero count does not establish zero concentration; it indicates that no colony-forming units were observed in that sampling exposure."
+  },
+  {
+    "id": "bio310-005",
+    "title": "BIO310: Survival Fractions and Log Reductions",
+    "subject": "microbiology",
+    "courseName": "BIO310 Advanced Microbiology",
+    "url": "https://example.edu/micro/bio310/survival-fractions",
+    "content": "Original BIO310 demo course notes. Learning objective: connect percentage survival and logarithmic reductions using hypothetical data. A surviving fraction s gives Nafter = s * Nbefore. If the stated quantity is a fraction removed r, then s = 1 - r. A log10 reduction L means L = log10(Nbefore/Nafter), so s = 10^(-L). A 90 percent reduction leaves 10 percent and is a one-log reduction; 99 percent is two logs. In an analogous example, 15 fictional cells undergo two doublings and then a 75 percent reduction: Nbefore = 15 * 4 = 60 and Nafter = 0.25 * 60 = 15. These are model quantities; fractional expected populations can occur even though individual realizations have integer counts. Reductions describe measured endpoints under stated conditions, not universal efficacy. A zero observed survivor count is detection-limited and cannot be put directly into a logarithm to claim infinite reduction."
+  },
+  {
+    "id": "bio310-006",
+    "title": "BIO310: Biological Replicates, Technical Replicates, and Controls",
+    "subject": "microbiology",
+    "courseName": "BIO310 Advanced Microbiology",
+    "url": "https://example.edu/micro/bio310/replicates-and-controls",
+    "content": "Original BIO310 demo course notes. Learning objective: identify the independent experimental unit when interpreting a supplied dataset. Biological replicates represent independently sampled biological units; technical replicates repeat measurement of the same unit. Three independent samples each measured twice generally provide three biological units, not six independent biological replicates. Average technical repeats within the appropriate biological unit or use a hierarchical analysis. A blank characterizes background signal, a reference sample helps interpret measurement behavior, and a comparison group provides the baseline for the scientific contrast. A control does not eliminate every confounder. Hypothetical observation: both comparison groups increase in optical density while only one increases in CFU; consider biomass changes and viability rather than treating the measurements as interchangeable. State what the controls rule out and what they do not. Statistical significance cannot repair a comparison whose biological units are not independent."
+  },
+  {
+    "id": "bio310-007",
+    "title": "BIO310: Comparing Growth Models and Diagnosing Residuals",
+    "subject": "microbiology",
+    "courseName": "BIO310 Advanced Microbiology",
+    "url": "https://example.edu/micro/bio310/model-diagnostics",
+    "content": "Original BIO310 demo course notes. Learning objective: select and critique a model for a fictional growth dataset. Exponential growth assumes dN/dt = mu*N with constant mu. Logistic growth assumes dN/dt = r*N*(1 - N/K), where K is a carrying-capacity parameter. At N much smaller than K, the logistic model approximates exponential growth. A systematic bend in ln(N) versus time suggests that a single exponential rate may be inappropriate. Residuals should be examined against time and fitted values: a curved pattern suggests missing structure; increasing spread suggests a changing error scale. A high R-squared alone does not establish a biological mechanism. More flexible models can fit noise, so compare predictive behavior and whether the data identify the added parameters. A short early-growth series may estimate the rate while leaving K nearly unconstrained. Do not extrapolate an early exponential fit indefinitely into a resource-limited interval."
+  },
+  {
+    "id": "bio310-008",
+    "title": "BIO310: Integrated Growth-Then-Survival Practice",
+    "subject": "microbiology",
+    "courseName": "BIO310 Advanced Microbiology",
+    "url": "https://example.edu/micro/bio310/integrated-practice",
+    "content": "Original BIO310 demo course notes. Learning objective: organize a multistage quantitative argument. Practice question: a fictional population starts at 10 cells, has a generation time of 20 minutes, grows for 40 minutes, and then experiences an event that leaves half the cells surviving. Identify the number of generations, the population immediately before the event, and the surviving population. Keep the stages explicit: n = t/g, Ngrown = N0 * 2^n, and Nsurvivors = s * Ngrown. To learn the method, compare with a different completed example: 8 initial cells, a 15-minute generation time, 45 minutes of growth, and a surviving fraction of one quarter give n = 3, Ngrown = 64, and Nsurvivors = 16. Check that a survival fraction between zero and one cannot increase the preceding population. Interpret the answer as conditional on ideal exponential growth and the stated survival fraction, rather than as a guaranteed experimental outcome."
+  }
+]

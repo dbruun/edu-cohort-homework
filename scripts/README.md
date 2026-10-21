@@ -28,6 +28,70 @@ python scripts/setup-knowledge-base.py --environment-name <environment> `
 
 ---
 
+# Biology demo courses
+
+`seed-data/bio310.json` and `seed-data/bio410.json` contain original synthetic
+teaching material for Advanced and Quantitative Microbiology. Their `example.edu`
+URLs are demo identifiers, not hosted source pages; CoursePilot previews the
+retrieved text.
+
+`populate-biology-demo.cjs` preserves the existing eight BIO201 documents and
+adds a course label to their metadata. It embeds and uploads BIO310/BIO410, then
+replaces **only the selected professor's** course groups with BIO201 Guided,
+BIO310 Worked Example, and BIO410 Full Solution. Other professors, policy
+defaults, and existing citation requirements are preserved. The existing index
+and knowledge-base bindings are not recreated.
+
+Run from the repository root with the portal's existing dependencies available:
+
+```powershell
+node scripts\populate-biology-demo.cjs `
+  --storage-account <account> --professor-id <professor-id> `
+  --search-endpoint https://<search>.search.windows.net `
+  --openai-endpoint https://<foundry>.openai.azure.com
+```
+
+This is a dry-run unless `--apply --backup-dir <new-directory-outside-repository>`
+is supplied. Apply saves exact policy bytes/ETag and a retrievable index snapshot
+before writes, uses an ETag condition to protect professor edits, checks individual
+indexing results, and verifies the final documents. Non-retrievable vectors are
+not in the backup; source text is retained for re-embedding. Repeating the command
+does not re-embed unchanged material. Restart CoursePilot after a policy change
+to refresh its startup cache immediately, or wait for its normal 15-minute expiry.
+
+`courseName` is filterable and included in the new embedding inputs. The current
+agent is instructed to include the selected course in each search and use/cite
+only documents with matching `courseName` metadata. The shared knowledge source
+exposes that metadata, but retrieval can still return other courses' material.
+This is instruction-based scoping, not enforced course or professor isolation.
+
+Focused checks: `node --test scripts\populate-biology-demo.test.cjs`.
+
+## Demo upload history
+
+`seed-demo-uploads.cjs` adds explicitly marked, fabricated BIO201/BIO310/BIO410
+upload-history records for one professor. The portal uses Azure Table Storage
+(`ImsccImports`), not Cosmos DB. This is metadata only: no archives are uploaded,
+no jobs are queued, and no policies or course documents are changed.
+
+```powershell
+node scripts\seed-demo-uploads.cjs `
+  --storage-account <account> --professor-id <professor-id>
+```
+
+The default is a dry-run; add `--apply` to create the records. The signed-in Azure
+CLI identity needs read access to the saved policy and read/write access to the
+existing import table. All three courses must belong to the saved policy.
+Stable, professor-scoped IDs make reruns idempotent. Preflight rejects collisions;
+the script never overwrites existing imports. Existing demo entries older than
+the portal's 30-day history window require review rather than automatic changes.
+The UI labels these records Demo so they cannot be mistaken for real uploads.
+The biology demo course totals are intentionally distinct (6, 9, and 12
+documents, respectively); rerunning with `--apply` reconciles those counts only
+on the three owned demo rows, without changing timestamps or real import records.
+
+Focused checks: `node --test scripts\seed-demo-uploads.test.cjs`.
+
 # LTI launch test scripts
 
 Two Node scripts drive a **real LTI 1.3 launch** against the deployed LTI tool

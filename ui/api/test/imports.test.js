@@ -102,6 +102,7 @@ test('returns only public import status fields', () => {
     uploadedBytes: 100,
     courseName: undefined,
     courseNameSource: undefined,
+    isDemo: false,
     documentsDiscovered: 0,
     documentsIndexed: 0,
     cancellationRequested: false,
@@ -109,6 +110,14 @@ test('returns only public import status fields', () => {
     createdAt: 'created',
     updatedAt: 'updated'
   });
+});
+
+test('identifies demo history only when explicitly marked without exposing seed metadata', () => {
+  for (const value of [true, false, undefined, 'true']) {
+    const record = publicImport({ rowKey: 'demo-import', status: 'complete', isDemo: value, demoSeedId: 'private-seed' });
+    assert.equal(record.isDemo, value === true);
+    assert.equal(Object.hasOwn(record, 'demoSeedId'), false);
+  }
 });
 
 test('cancels an import outright before a downstream stage owns it', () => {

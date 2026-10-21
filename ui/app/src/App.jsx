@@ -1,5 +1,6 @@
 import { BlockBlobClient } from '@azure/storage-blob';
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import PedagogyControls, { PedagogyGuide } from './PedagogyControls';
 import {
   STAGE_LABELS,
   canCancel,
@@ -27,8 +28,6 @@ const defaultPolicy = {
   professorId: '',
   professorName: '',
   helpLevel: 'guided',
-  maxStepsRevealed: 3,
-  allowDirectAnswers: false,
   citationsRequired: true,
   // The portal has no editor for per-subject overrides, so it never carries them.
   subjectOverrides: {},
@@ -39,9 +38,7 @@ const defaultPolicy = {
         { id: 'CS101', description: 'Introduction to Programming' },
         { id: 'CS102', description: 'Data Structures and Algorithms' }
       ],
-      helpLevel: 'hint_only',
-      maxStepsRevealed: 1,
-      allowDirectAnswers: false,
+      helpLevel: 'guided',
       citationsRequired: true
     }
   ]
@@ -49,13 +46,13 @@ const defaultPolicy = {
 
 // The portal stops polling once an import can no longer change on its own.
 const stageColors = {
-  uploading: { border: '#c7d2fe', background: '#eef2ff', text: '#3730a3' },
-  processing: { border: '#c7d2fe', background: '#eef2ff', text: '#3730a3' },
-  ready: { border: '#bbf7d0', background: '#f0fdf4', text: '#166534' },
-  attention: { border: '#fecaca', background: '#fef2f2', text: '#b42318' }
+  uploading: { border: 'var(--cp-border-strong)', background: 'var(--cp-accent-soft)', text: 'var(--cp-accent)' },
+  processing: { border: 'var(--cp-border-strong)', background: 'var(--cp-accent-soft)', text: 'var(--cp-accent)' },
+  ready: { border: 'var(--cp-success-border)', background: 'var(--cp-success-soft)', text: 'var(--cp-success)' },
+  attention: { border: 'var(--cp-danger-border)', background: 'var(--cp-danger-soft)', text: 'var(--cp-danger)' }
 };
 
-const headerCell = { padding: '8px 10px', fontWeight: 600, borderBottom: '1px solid #dbe2ea' };
+const headerCell = { padding: '8px 10px', fontWeight: 600, borderBottom: '1px solid var(--cp-border)' };
 const bodyCell = { padding: '8px 10px', verticalAlign: 'top' };
 
 // The actions column needs a header for anyone navigating the table by column,
@@ -209,7 +206,7 @@ export default function App() {
   }, []);
 
   const summary = useMemo(() => {
-    return `Help level: ${policy.helpLevel}; steps: ${policy.maxStepsRevealed}; direct answers: ${policy.allowDirectAnswers ? 'allowed' : 'blocked'}`;
+    return `Help level: ${policy.helpLevel}`;
   }, [policy]);
 
   const updateField = (field, value) => {
@@ -225,7 +222,7 @@ export default function App() {
   const addGroup = () => {
     updateGroups([
       ...courseGroups,
-      { name: `Group ${courseGroups.length + 1}`, courses: [], helpLevel: 'guided', maxStepsRevealed: 3, allowDirectAnswers: false, citationsRequired: true }
+      { name: `Group ${courseGroups.length + 1}`, courses: [], helpLevel: 'guided', citationsRequired: true }
     ]);
   };
 
@@ -377,7 +374,7 @@ export default function App() {
   };
 
   // One shared status, rendered beside whichever button the professor just used.
-  const statusLine = <span style={{ color: '#5b6b85', fontSize: 14 }}>{status}</span>;
+  const statusLine = <span style={{ color: 'var(--cp-text-muted)', fontSize: 14 }}>{status}</span>;
   const pollWarning = pollFailureWarning(pollFailures);
   const activeUploadIds = useMemo(() => new Set(Object.keys(uploads)), [uploads]);
   // Running work and finished work answer different questions, so they are shown
@@ -388,175 +385,50 @@ export default function App() {
   );
 
   return (
-    <main style={{ fontFamily: 'Segoe UI, sans-serif', maxWidth: 900, margin: '0 auto', padding: 24 }}>
-      <h1>Professor Portal</h1>
-      <p>Adjust how much support the tutor offers to students without redeploying the agent.</p>
-
-      <section style={{ background: '#f6f8fb', borderRadius: 12, padding: 20, marginBottom: 20 }}>
-        <h2>Professor</h2>
-        <p style={{ color: '#5b6b85', marginTop: 0 }}>This pedagogy belongs to you. Students taking courses from other professors get each professor's own settings.</p>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          <label>
-            Name
-            <input value={policy.professorName || ''} placeholder="Loading signed-in professor..." readOnly style={{ display: 'block', marginTop: 6, width: '100%', padding: 8 }} />
-          </label>
-          <label>
-            Professor ID
-            <input value={policy.professorId || ''} placeholder="Provided by Microsoft Entra ID" readOnly style={{ display: 'block', marginTop: 6, width: '100%', padding: 8 }} />
-          </label>
-        </div>
-      </section>
-
-      <section style={{ background: '#f6f8fb', borderRadius: 12, padding: 20, marginBottom: 20 }}>
-        <h2>Pedagogy controls</h2>
-        <label>
-          Help style
-          <select value={policy.helpLevel} onChange={(event) => updateField('helpLevel', event.target.value)} style={{ display: 'block', marginTop: 8, width: '100%', padding: 8 }}>
-            <option value="hint_only">Hint only</option>
-            <option value="guided">Guided</option>
-            <option value="worked_example">Worked example</option>
-            <option value="full_solution">Full solution</option>
-          </select>
-        </label>
-
-        <label style={{ display: 'block', marginTop: 16 }}>
-          Maximum steps revealed
-          <input type="range" min="1" max="8" value={policy.maxStepsRevealed} onChange={(event) => updateField('maxStepsRevealed', Number(event.target.value))} style={{ display: 'block', width: '100%', marginTop: 8 }} />
-          <span>{policy.maxStepsRevealed}</span>
-        </label>
-
-        <label style={{ display: 'block', marginTop: 16 }}>
-          <input type="checkbox" checked={policy.allowDirectAnswers} onChange={(event) => updateField('allowDirectAnswers', event.target.checked)} />
-          Allow direct answers
-        </label>
-
-        <label style={{ display: 'block', marginTop: 16 }}>
-          <input type="checkbox" checked={policy.citationsRequired} onChange={(event) => updateField('citationsRequired', event.target.checked)} />
-          Require citations
-        </label>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 20, flexWrap: 'wrap' }}>
-          <button onClick={savePolicy} style={{ padding: '10px 16px', borderRadius: 8, border: 'none', background: '#2563eb', color: 'white', cursor: 'pointer' }}>
-            Save policy
-          </button>
-          {statusLine}
-        </div>
-      </section>
-
-      <section style={{ background: '#f6f8fb', borderRadius: 12, padding: 20, marginBottom: 20 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <h2 style={{ margin: 0 }}>Course groups</h2>
-          <button onClick={addGroup} style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid #2563eb', background: 'white', color: '#2563eb', cursor: 'pointer' }}>
-            + Add group
-          </button>
-        </div>
-        <p style={{ color: '#5b6b85', marginTop: 6 }}>Group courses that should share the same tutor limits. A course in a group uses the group's limits; anything left unset falls back to the defaults above.</p>
-
-        {courseGroups.length === 0 && <p style={{ color: '#5b6b85' }}>No groups yet. Add one to apply shared limits across several courses.</p>}
-
-        {courseGroups.map((group, index) => (
-          <div key={index} style={{ background: 'white', border: '1px solid #dbe2ea', borderRadius: 10, padding: 16, marginTop: 14 }}>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <input
-                value={group.name}
-                onChange={(event) => updateGroupField(index, 'name', event.target.value)}
-                style={{ flex: 1, padding: 8, borderRadius: 8, border: '1px solid #cbd5e1', fontWeight: 600 }}
-              />
-              <button onClick={() => removeGroup(index)} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #ef4444', background: 'white', color: '#ef4444', cursor: 'pointer' }}>
-                Remove
-              </button>
-            </div>
-
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
-              {group.courses.map((course) => (
-                <span key={course.id} title={course.description} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#eef2ff', color: '#3730a3', borderRadius: 999, padding: '4px 10px', fontSize: 14 }}>
-                  <strong>{course.id}</strong>
-                  {course.description ? <span style={{ color: '#4f46e5' }}>&mdash; {course.description}</span> : null}
-                  <button onClick={() => removeCourseFromGroup(index, course.id)} style={{ border: 'none', background: 'transparent', color: '#3730a3', cursor: 'pointer', fontSize: 14, lineHeight: 1 }}>
-                    ×
-                  </button>
-                </span>
-              ))}
-            </div>
-            <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-              <input
-                placeholder="Course ID"
-                data-role="course-id"
-                style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 14, width: 120 }}
-              />
-              <input
-                placeholder="Description"
-                data-role="course-desc"
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter') {
-                    addCourseFromRow(index, event.currentTarget.parentElement);
-                  }
-                }}
-                style={{ flex: 1, padding: '6px 10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 14 }}
-              />
-              <button
-                type="button"
-                aria-label={`Add course to ${group.name}`}
-                title="Add course"
-                onClick={(event) => addCourseFromRow(index, event.currentTarget.parentElement)}
-                style={{ width: 40, minWidth: 40, borderRadius: 8, border: '1px solid #2563eb', background: '#2563eb', color: 'white', cursor: 'pointer', fontSize: 22, lineHeight: 1 }}
-              >
-                +
-              </button>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 14 }}>
-              <label style={{ fontSize: 14 }}>
-                Help style
-                <select value={group.helpLevel} onChange={(event) => updateGroupField(index, 'helpLevel', event.target.value)} style={{ display: 'block', marginTop: 6, width: '100%', padding: 8 }}>
-                  <option value="hint_only">Hint only</option>
-                  <option value="guided">Guided</option>
-                  <option value="worked_example">Worked example</option>
-                  <option value="full_solution">Full solution</option>
-                </select>
-              </label>
-              <label style={{ fontSize: 14 }}>
-                Maximum steps revealed
-                <input type="range" min="1" max="8" value={group.maxStepsRevealed} onChange={(event) => updateGroupField(index, 'maxStepsRevealed', Number(event.target.value))} style={{ display: 'block', width: '100%', marginTop: 10 }} />
-                <span>{group.maxStepsRevealed}</span>
-              </label>
-            </div>
-
-            <div style={{ display: 'flex', gap: 20, marginTop: 12 }}>
-              <label style={{ fontSize: 14 }}>
-                <input type="checkbox" checked={group.allowDirectAnswers} onChange={(event) => updateGroupField(index, 'allowDirectAnswers', event.target.checked)} />{' '}
-                Allow direct answers
-              </label>
-              <label style={{ fontSize: 14 }}>
-                <input type="checkbox" checked={group.citationsRequired} onChange={(event) => updateGroupField(index, 'citationsRequired', event.target.checked)} />{' '}
-                Require citations
-              </label>
-            </div>
+    <>
+      <header className="page-header">
+        <div className="brand">
+          <span className="mark" aria-hidden="true">CW</span>
+          <div>
+            <strong>CourseWise Professor</strong>
+            <small>Teaching settings &amp; course materials</small>
           </div>
-        ))}
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 16, flexWrap: 'wrap' }}>
-          <button onClick={savePolicy} style={{ padding: '10px 16px', borderRadius: 8, border: 'none', background: '#2563eb', color: 'white', cursor: 'pointer' }}>
-            Save course groups
-          </button>
-          {statusLine}
         </div>
-      </section>
+        <div className="header-actions">
+          <span className="header-identity">{policy.professorName || 'Professor workspace'}</span>
+          <a href="/.auth/logout">Sign out</a>
+        </div>
+      </header>
+      <main className="portal-main">
+        <div className="page-intro">
+          <span className="eyebrow">YOUR TEACHING WORKSPACE</span>
+          <h1>Shape how students learn.</h1>
+          <p>Adjust how much support the tutor offers to students without redeploying the agent.</p>
+        </div>
 
-      <section style={{ background: '#fff', border: '1px solid #dbe2ea', borderRadius: 12, padding: 20 }}>
-        <h2>Canvas course content</h2>
+      <PedagogyGuide />
+
+      <section className="portal-panel" aria-labelledby="content-heading">
+        <h2 id="content-heading">Course upload</h2>
         <p>Upload a Canvas course export (.imscc). The course name is read from the package metadata after upload.</p>
         <input
           ref={fileInput}
           type="file"
           accept=".imscc,application/zip"
+          aria-label="Canvas course export"
           onChange={(event) => setImsccFile(event.target.files?.[0] || null)}
         />
+        <fieldset className="upload-options" disabled aria-describedby="upload-options-note">
+          <legend>Additional content</legend>
+          <label><input type="checkbox" disabled />Include multimedia files</label>
+          <label><input type="checkbox" disabled />Include public links</label>
+          <p id="upload-options-note">Coming soon. These options are not included in course imports.</p>
+        </fieldset>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 12, flexWrap: 'wrap' }}>
           <button
             onClick={importImscc}
             disabled={!imsccFile || uploading}
-            style={{ padding: '10px 16px', borderRadius: 8, border: 'none', background: '#2563eb', color: 'white', cursor: uploading ? 'wait' : 'pointer' }}
+            className="primary"
           >
             {uploading ? 'Uploading...' : 'Import Canvas export'}
           </button>
@@ -569,7 +441,7 @@ export default function App() {
         </div>
 
         {pollWarning ? (
-          <p role="status" style={{ marginTop: 16, padding: 12, borderRadius: 8, background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e' }}>
+          <p role="status" style={{ marginTop: 16, padding: 12, borderRadius: 8, background: 'var(--cp-warning-soft)', border: '1px solid var(--cp-warning-border)', color: 'var(--cp-warning)' }}>
             {pollWarning}
           </p>
         ) : null}
@@ -595,7 +467,7 @@ export default function App() {
                     <div>
                       <strong style={{ fontSize: 15 }}>{importTitle(record)}</strong>
                       {importSubtitle(record) ? (
-                        <div style={{ color: '#5b6b85', fontSize: 13 }}>{importSubtitle(record)}</div>
+                        <div style={{ color: 'var(--cp-text-muted)', fontSize: 13 }}>{importSubtitle(record)}</div>
                       ) : null}
                     </div>
                     <span style={{ color: colors.text, fontWeight: 600, fontSize: 13 }}>
@@ -603,7 +475,7 @@ export default function App() {
                     </span>
                   </div>
 
-                  <p style={{ margin: '8px 0 0', fontSize: 14, color: '#334155' }}>
+                  <p style={{ margin: '8px 0 0', fontSize: 14, color: 'var(--cp-text)' }}>
                     {interrupted
                       ? 'This upload stopped when the page was closed. Only your browser held the file, so it cannot be resumed.'
                       : stageDetail(record)}
@@ -617,18 +489,18 @@ export default function App() {
                         aria-valuemax={100}
                         aria-valuenow={uploadPercent}
                         aria-label={`Uploading ${importTitle(record)}`}
-                        style={{ background: '#dbe2ea', borderRadius: 999, height: 8, overflow: 'hidden' }}
+                        style={{ background: 'var(--cp-border)', borderRadius: 999, height: 8, overflow: 'hidden' }}
                       >
-                        <div style={{ width: `${uploadPercent}%`, background: '#2563eb', height: '100%' }} />
+                        <div style={{ width: `${uploadPercent}%`, background: 'var(--cp-accent)', height: '100%' }} />
                       </div>
-                      <div style={{ fontSize: 13, color: '#5b6b85', marginTop: 4 }}>
+                      <div style={{ fontSize: 13, color: 'var(--cp-text-muted)', marginTop: 4 }}>
                         {uploadPercent}% - {formatBytes(upload.loaded)} of {formatBytes(upload.total)}
                       </div>
                     </div>
                   ) : null}
 
                   {stage === 'processing' ? (
-                    <div style={{ marginTop: 8, fontSize: 13, color: '#5b6b85' }}>
+                    <div style={{ marginTop: 8, fontSize: 13, color: 'var(--cp-text-muted)' }}>
                       {progress.known
                         ? `${progress.indexed} of ${progress.discovered} documents indexed`
                         : 'Counting documents...'}
@@ -641,7 +513,7 @@ export default function App() {
                     {canCancel(record) ? (
                       <button
                         onClick={() => cancelImport(record.importId)}
-                        style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid #b42318', background: 'white', color: '#b42318', cursor: 'pointer' }}
+                        className="danger"
                       >
                         Cancel
                       </button>
@@ -652,15 +524,14 @@ export default function App() {
                     {interrupted ? (
                       <button
                         onClick={retryImport}
-                        style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid #2563eb', background: 'white', color: '#2563eb', cursor: 'pointer' }}
                       >
                         Import again
                       </button>
                     ) : null}
-                    <span style={{ fontSize: 12, color: '#94a3b8' }}>{lastUpdatedLabel(record)}</span>
+                    <span style={{ fontSize: 12, color: 'var(--cp-text-soft)' }}>{lastUpdatedLabel(record)}</span>
                   </div>
 
-                  <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 6 }}>
+                  <div style={{ fontSize: 11, color: 'var(--cp-text-soft)', marginTop: 6 }}>
                     Reference: {record.importId}
                   </div>
                 </article>
@@ -672,13 +543,16 @@ export default function App() {
         {importHistory.length ? (
           <div style={{ marginTop: 24 }}>
             <h3 style={{ margin: '0 0 8px', fontSize: 15 }}>Import history</h3>
-            <div style={{ overflowX: 'auto' }}>
+            {importHistory.some(record => record.isDemo) ? (
+              <p style={{ fontSize: 13 }}>Entries marked Demo are fabricated upload history. No course archives were uploaded for these entries.</p>
+            ) : null}
+            <div style={{ overflowX: 'auto', position: 'relative' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                <caption style={{ captionSide: 'top', textAlign: 'left', color: '#5b6b85', fontSize: 13, paddingBottom: 6 }}>
+                <caption style={{ captionSide: 'top', textAlign: 'left', color: 'var(--cp-text-muted)', fontSize: 13, paddingBottom: 6 }}>
                   Course exports that have finished importing, most recent first.
                 </caption>
                 <thead>
-                  <tr style={{ textAlign: 'left', color: '#5b6b85' }}>
+                  <tr style={{ textAlign: 'left', color: 'var(--cp-text-muted)' }}>
                     <th scope="col" style={headerCell}>File</th>
                     <th scope="col" style={headerCell}>Course name</th>
                     <th scope="col" style={headerCell}>Status</th>
@@ -698,8 +572,11 @@ export default function App() {
 
                     return (
                       <Fragment key={record.importId}>
-                        <tr style={{ borderTop: '1px solid #e6ebf2' }}>
-                          <td style={bodyCell}>{record.originalFileName || '-'}</td>
+                        <tr style={{ borderTop: '1px solid var(--cp-border)' }}>
+                          <td style={bodyCell}>
+                            {record.originalFileName || '-'}
+                            {record.isDemo ? <span className="demo-badge" title="Fabricated upload history">Demo</span> : null}
+                          </td>
                           <td style={bodyCell}>{record.courseName || '-'}</td>
                           <td style={{ ...bodyCell, color: colors.text, fontWeight: 600 }}>
                             {STAGE_LABELS[stage]}
@@ -715,7 +592,6 @@ export default function App() {
                             {detail ? (
                               <button
                                 onClick={retryImport}
-                                style={{ padding: '4px 10px', borderRadius: 8, border: '1px solid #2563eb', background: 'white', color: '#2563eb', cursor: 'pointer' }}
                               >
                                 Import again
                               </button>
@@ -726,10 +602,10 @@ export default function App() {
                             failed row keeps the guidance and the support reference. */}
                         {detail ? (
                           <tr style={{ background: colors.background }}>
-                            <td colSpan={7} style={{ ...bodyCell, color: '#334155' }}>
+                            <td colSpan={7} style={{ ...bodyCell, color: 'var(--cp-text)' }}>
                               {detail.message} {detail.action}
                               {detail.contentUnchanged ? ' Previously published course content was not changed.' : ''}
-                              <span style={{ display: 'block', color: '#94a3b8', fontSize: 11, marginTop: 4 }}>
+                              <span style={{ display: 'block', color: 'var(--cp-text-soft)', fontSize: 11, marginTop: 4 }}>
                                 Reference: {detail.reference}
                               </span>
                             </td>
@@ -744,8 +620,122 @@ export default function App() {
           </div>
         ) : null}
 
+      </section>
+
+      <section className="portal-panel" aria-labelledby="groups-heading">
+        <div className="section-heading">
+          <h2 id="groups-heading">Course groups</h2>
+          <button onClick={addGroup}>
+            + Add group
+          </button>
+        </div>
+        <p style={{ marginTop: 12 }}>Group courses that should share teaching preferences. A course uses its group's settings; anything left unset falls back to the Default settings below.</p>
+
+        {courseGroups.length === 0 && <p>No groups yet. Add one to apply shared preferences across several courses.</p>}
+
+        {courseGroups.map((group, index) => (
+          <div key={index} className="course-group">
+            <div className="group-heading">
+              <input
+                value={group.name}
+                onChange={(event) => updateGroupField(index, 'name', event.target.value)}
+                aria-label={`Course group ${index + 1} name`}
+              />
+              <button onClick={() => removeGroup(index)} className="danger">
+                Remove
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+              {group.courses.map((course) => (
+                <span key={course.id} title={course.description} className="course-tag">
+                  <strong>{course.id}</strong>
+                  {course.description ? <span>&mdash; {course.description}</span> : null}
+                  <button onClick={() => removeCourseFromGroup(index, course.id)} aria-label={`Remove ${course.id} from ${group.name}`}>
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+            <div className="course-entry">
+              <input
+                placeholder="Course ID"
+                data-role="course-id"
+                aria-label={`Course ID for ${group.name}`}
+              />
+              <input
+                placeholder="Description"
+                data-role="course-desc"
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    addCourseFromRow(index, event.currentTarget.parentElement);
+                  }
+                }}
+                aria-label={`Course description for ${group.name}`}
+              />
+              <button
+                type="button"
+                aria-label={`Add course to ${group.name}`}
+                title="Add course"
+                onClick={(event) => addCourseFromRow(index, event.currentTarget.parentElement)}
+                className="primary"
+              >
+                +
+              </button>
+            </div>
+
+            <PedagogyControls
+              helpLevel={group.helpLevel ?? policy.helpLevel}
+              citationsRequired={group.citationsRequired ?? policy.citationsRequired}
+              onChange={(field, value) => updateGroupField(index, field, value)}
+            />
+          </div>
+        ))}
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 16, flexWrap: 'wrap' }}>
+          <button onClick={savePolicy} className="primary">
+            Save course groups
+          </button>
+          {statusLine}
+        </div>
+      </section>
+
+      <section className="portal-panel" aria-labelledby="pedagogy-heading">
+        <h2 id="pedagogy-heading">Default</h2>
+        <PedagogyControls
+          helpLevel={policy.helpLevel}
+          citationsRequired={policy.citationsRequired}
+          onChange={updateField}
+        />
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 20, flexWrap: 'wrap' }}>
+          <button onClick={savePolicy} className="primary">
+            Save policy
+          </button>
+          {statusLine}
+        </div>
         <p>{summary}</p>
       </section>
-    </main>
+
+      <section className="portal-panel" aria-labelledby="professor-heading">
+        <h2 id="professor-heading">Professor</h2>
+        <p style={{ marginTop: 0 }}>This pedagogy belongs to you. Students taking courses from other professors get each professor's own settings.</p>
+        <div className="identity-fields">
+          <label>
+            Name
+            <input value={policy.professorName || ''} placeholder="Loading signed-in professor..." readOnly />
+          </label>
+          <label>
+            Professor ID
+            <input value={policy.professorId || ''} placeholder="Provided by Microsoft Entra ID" readOnly />
+          </label>
+        </div>
+      </section>
+      </main>
+      <footer className="site-footer">
+        <strong>CourseWise Professor</strong>
+        <span>Your courses. Your teaching approach.</span>
+      </footer>
+    </>
   );
 }

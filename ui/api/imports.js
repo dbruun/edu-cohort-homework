@@ -158,6 +158,7 @@ function publicImport(entity) {
     uploadedBytes: entity.uploadedBytes === undefined ? 0 : Number(entity.uploadedBytes),
     courseName: entity.courseName,
     courseNameSource: entity.courseNameSource,
+    isDemo: entity.isDemo === true,
     documentsDiscovered: entity.documentsDiscovered === undefined ? 0 : Number(entity.documentsDiscovered),
     documentsIndexed: entity.documentsIndexed === undefined ? 0 : Number(entity.documentsIndexed),
     cancellationRequested: entity.cancellationRequested === true,
