@@ -1,0 +1,19 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environmentName": { "value": "${AZURE_ENV_NAME}" },
+    "resourceGroupName": { "value": "${AZURE_RESOURCE_GROUP}" },
+    "location": { "value": "${AZURE_LOCATION}" },
+    "portalPlanName": { "value": "${COURSEPILOT_PLAN_NAME}" },
+    "foundryAccountName": { "value": "${FOUNDRY_ACCOUNT_NAME}" },
+    "foundryProjectName": { "value": "${FOUNDRY_PROJECT_NAME}" },
+    "agentName": { "value": "${FOUNDRY_AGENT_NAME}" },
+    "agentVersion": { "value": "${FOUNDRY_AGENT_VERSION}" },
+    "authClientId": { "value": "${COURSEPILOT_AUTH_CLIENT_ID}" },
+    "authKeyVaultName": { "value": "${COURSEPILOT_AUTH_KEY_VAULT_NAME}" },
+    "authSecretName": { "value": "${COURSEPILOT_AUTH_SECRET_NAME}" },
+    "workspaceName": { "value": "${LOG_ANALYTICS_WORKSPACE_NAME}" },
+    "policyStorageAccountName": { "value": "${POLICY_STORAGE_ACCOUNT}" }
+  }
+}

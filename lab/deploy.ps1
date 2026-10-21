@@ -27,8 +27,14 @@
 .PARAMETER Location
   Azure region. Must have gpt-5.4 and gpt-5.4-mini quota. Default: northcentralus.
 
+.PARAMETER ResourceGroupName
+  Overrides the generated resource group name.
+
 .PARAMETER SearchSku
   Azure AI Search SKU. Default 'basic' (fine for the lab).
+
+.PARAMETER SearchLocation
+  Azure AI Search region. Empty uses Location.
 
 .PARAMETER PortalAuthClientId
   Application ID of an existing tenant-only Entra app registration. Required:
@@ -64,8 +70,10 @@ param(
   [Parameter(Mandatory)]
   [string]$EnvironmentName,
   [string]$Location = 'northcentralus',
+  [string]$ResourceGroupName = '',
   [ValidateSet('basic', 'standard', 'standard2', 'standard3')]
   [string]$SearchSku = 'basic',
+  [string]$SearchLocation = '',
   [string]$PortalAppName = '',
   [Parameter(Mandatory)]
   [string]$PortalAuthClientId,
@@ -186,7 +194,9 @@ try {
   azd env set AZURE_SUBSCRIPTION_ID $subscriptionId | Out-Null
   azd env set AZURE_TENANT_ID $tenantId | Out-Null
   azd env set AZURE_LOCATION $Location | Out-Null
+  azd env set RESOURCE_GROUP_NAME_OVERRIDE $ResourceGroupName | Out-Null
   azd env set SEARCH_SKU $SearchSku | Out-Null
+  azd env set SEARCH_LOCATION $SearchLocation | Out-Null
   azd env set PORTAL_APP_NAME_OVERRIDE $PortalAppName | Out-Null
   azd env set PORTAL_AUTH_CLIENT_ID $PortalAuthClientId | Out-Null
   azd env set PORTAL_AUTH_KEY_VAULT_RESOURCE_GROUP $PortalAuthKeyVaultResourceGroup | Out-Null

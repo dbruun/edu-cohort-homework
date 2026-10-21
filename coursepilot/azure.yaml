@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+name: coursepilot
+infra:
+  provider: bicep
+  path: infra
+services:
+  coursepilot:
+    project: .
+    host: appservice
+    language: js
+    resourceGroup: ${AZURE_RESOURCE_GROUP}
+    resourceName: ${COURSEPILOT_APP_NAME}
+    dist: .azd-deploy

@@ -149,7 +149,7 @@ Verify what actually landed rather than trusting the form:
 $t = az account get-access-token --resource https://search.azure.com --query accessToken -o tsv
 $h = @{ Authorization = "Bearer $t"; 'Content-Type' = 'application/json' }
 $b = @{ search = '*' } | ConvertTo-Json
-(Invoke-RestMethod -Method POST -Uri "https://<search-service>.search.windows.net/indexes/pedagogy-policy-index/docs/search?api-version=2024-07-01" -Headers $h -Body $b).value | Select-Object professorName, helpLevel, maxStepsRevealed, policyText
+(Invoke-RestMethod -Method POST -Uri "https://<search-service>.search.windows.net/indexes/pedagogy-policy-index/docs/search?api-version=2024-07-01" -Headers $h -Body $b).value | Select-Object professorName, helpLevel, citationsRequired, policyText
 ```
 
 ### B5. Create the agent and test policy-then-content ordering

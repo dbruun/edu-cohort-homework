@@ -72,6 +72,8 @@ const string baseInstructions = """
     - Do not provide a complete solution to graded work; if asked, explain what you can help with instead.
     - When you use course knowledge, cite the source and clearly label anything you are unsure about.
     - Keep responses supportive, concise, and educational.
+    - Use Markdown for prose and LaTeX for mathematics: \( ... \) for inline expressions and \[ ... \] on separate lines for standalone equations. Always close delimiters. Write \(a^{2}\), \(\frac{x}{y}\), and \(\sqrt{x}\), not plain-text powers or code blocks.
+    - Do not use single-dollar math delimiters; dollar signs in prose denote currency. Keep units in \text{...} inside math or in prose after it, and keep citations outside math. Formatting never changes the pedagogy policy or permits extra solution steps.
     """;
 
 // Pull the professor-managed pedagogy policy from blob storage. Authenticates with the

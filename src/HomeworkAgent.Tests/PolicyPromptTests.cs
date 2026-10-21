@@ -24,7 +24,6 @@ public class PolicyPromptTests
         var policy = new PedagogyPolicy
         {
             HelpLevel = "hint_only",
-            MaxStepsRevealed = 1,
             CitationsRequired = true,
             SubjectOverrides = new Dictionary<string, string>
             {
@@ -37,7 +36,6 @@ public class PolicyPromptTests
 
         Assert.NotNull(roundTripped);
         Assert.Equal("hint_only", roundTripped!.HelpLevel);
-        Assert.Equal(1, roundTripped.MaxStepsRevealed);
         Assert.True(roundTripped.CitationsRequired);
         Assert.Equal("guided", roundTripped.SubjectOverrides["math"]);
     }
@@ -49,7 +47,6 @@ public class PolicyPromptTests
         var policy = new PedagogyPolicy
         {
             HelpLevel = "worked_example",
-            MaxStepsRevealed = 4,
             CitationsRequired = false
         };
 
@@ -59,7 +56,6 @@ public class PolicyPromptTests
         try
         {
             Assert.Equal("worked_example", reloaded.HelpLevel);
-            Assert.Equal(4, reloaded.MaxStepsRevealed);
             Assert.False(reloaded.CitationsRequired);
         }
         finally
@@ -74,7 +70,6 @@ public class PolicyPromptTests
         var policy = new PedagogyPolicy
         {
             HelpLevel = "guided",
-            MaxStepsRevealed = 3,
             CitationsRequired = true,
             CourseGroups = new List<CourseGroup>
             {
@@ -86,8 +81,7 @@ public class PolicyPromptTests
                         new() { Id = "CS101", Description = "Intro to Programming" },
                         new() { Id = "CS102", Description = "Data Structures" }
                     },
-                    HelpLevel = "hint_only",
-                    MaxStepsRevealed = 1
+                    HelpLevel = "hint_only"
                 }
             }
         };
@@ -95,7 +89,6 @@ public class PolicyPromptTests
         var resolved = policy.ResolveForCourse("CS101");
 
         Assert.Equal("hint_only", resolved.HelpLevel);
-        Assert.Equal(1, resolved.MaxStepsRevealed);
         // Fields the group leaves unset inherit the top-level default.
         Assert.True(resolved.CitationsRequired);
     }
@@ -106,7 +99,6 @@ public class PolicyPromptTests
         var policy = new PedagogyPolicy
         {
             HelpLevel = "full_solution",
-            MaxStepsRevealed = 8,
             CitationsRequired = false,
             CourseGroups = new List<CourseGroup>
             {
@@ -115,7 +107,6 @@ public class PolicyPromptTests
                     Name = "Restricted course",
                     Courses = new List<Course> { new() { Id = "CS101" } },
                     HelpLevel = "hint_only",
-                    MaxStepsRevealed = 1,
                     CitationsRequired = true
                 }
             }
@@ -124,7 +115,7 @@ public class PolicyPromptTests
         var prompt = PromptComposer.Compose("BASE", policy.ResolveForCourse("CS101"));
 
         Assert.Contains("\"HelpLevel\": \"hint_only\"", prompt);
-        Assert.Contains("\"MaxStepsRevealed\": 1", prompt);
+        Assert.DoesNotContain("MaxStepsRevealed", prompt, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("AllowDirectAnswers", prompt);
         Assert.Contains("\"CitationsRequired\": true", prompt);
     }
@@ -149,6 +140,32 @@ public class PolicyPromptTests
         var resolved = policy.ResolveForCourse("HIST200");
 
         Assert.Equal("guided", resolved.HelpLevel);
+    }
+
+    [Fact]
+    public void LegacyStepSettingsAreIgnoredWhenResolvingAndComposingPolicy()
+    {
+        var policy = JsonSerializer.Deserialize<PedagogyPolicy>("""
+            {
+              "HelpLevel": "guided",
+              "MaxStepsRevealed": 1,
+              "CitationsRequired": true,
+              "CourseGroups": [{
+                "Name": "Biology",
+                "Courses": [{ "Id": "BIO201", "Description": "Microbiology" }],
+                "HelpLevel": "full_solution",
+                "maxStepsRevealed": 2,
+                "CitationsRequired": false
+              }]
+            }
+            """);
+
+        var resolved = policy!.ResolveForCourse("BIO201");
+        Assert.Equal("full_solution", resolved.HelpLevel);
+        Assert.False(resolved.CitationsRequired);
+        Assert.Equal("BIO201", Assert.Single(Assert.Single(resolved.CourseGroups).Courses).Id);
+        Assert.DoesNotContain("MaxStepsRevealed", JsonSerializer.Serialize(policy), StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("MaxStepsRevealed", PromptComposer.Compose("BASE", resolved), StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

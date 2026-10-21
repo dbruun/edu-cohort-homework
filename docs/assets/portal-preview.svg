@@ -61,9 +61,6 @@
   <text x="68" y="606" font-size="12" fill="#334155">Help style</text>
   <rect x="68" y="614" width="300" height="28" rx="6" fill="#ffffff" stroke="#cbd5e1"/>
   <text x="80" y="632" font-size="12" fill="#0f172a">Hint only</text>
-  <text x="388" y="606" font-size="12" fill="#334155">Maximum steps revealed: 1</text>
-  <rect x="388" y="620" width="304" height="4" rx="2" fill="#cbd5e1"/>
-  <circle cx="392" cy="622" r="7" fill="#2563eb"/>
   <rect x="240" y="652" width="15" height="15" rx="3" fill="#2563eb"/>
   <text x="264" y="664" font-size="12" fill="#334155">Require citations</text>
 </svg>

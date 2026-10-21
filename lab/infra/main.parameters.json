@@ -5,11 +5,17 @@
     "environmentName": {
       "value": "${AZURE_ENV_NAME}"
     },
+    "resourceGroupName": {
+      "value": "${RESOURCE_GROUP_NAME_OVERRIDE=}"
+    },
     "location": {
       "value": "${AZURE_LOCATION}"
     },
     "searchSku": {
       "value": "${SEARCH_SKU=basic}"
+    },
+    "searchLocation": {
+      "value": "${SEARCH_LOCATION=}"
     },
     "portalAppName": {
       "value": "${PORTAL_APP_NAME_OVERRIDE=}"

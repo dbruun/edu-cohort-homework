@@ -193,6 +193,11 @@ foreach ($pair in @(
     kind                 = 'searchIndex'
     searchIndexParameters = @{ searchIndexName = $pair.Index }
   }
+  if ($pair.Index -eq $CourseIndexName) {
+    $knowledgeSource.searchIndexParameters.sourceDataFields = @(
+      'id', 'title', 'content', 'subject', 'courseName'
+    ) | ForEach-Object { @{ name = $_ } }
+  }
   Invoke-Search -Method 'Put' -Path "/knowledgesources('$($pair.Source)')" -Body $knowledgeSource | Out-Null
   Write-Host '    knowledge source ready.'
 }

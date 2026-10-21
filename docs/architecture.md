@@ -75,7 +75,7 @@ Keeping these separate is what lets professors change tutoring behavior and know
 
 The portal is where the "professor-owned pedagogy" promise lives:
 
-- a **React UI** ([ui/app/src/App.jsx](https://github.com/dbruun/edu-cohort-homework/blob/main/ui/app/src/App.jsx)) with controls for professor identity, help style, maximum steps revealed, citation requirement, and **course groups**, and
+- a **React UI** ([ui/app/src/App.jsx](https://github.com/dbruun/edu-cohort-homework/blob/main/ui/app/src/App.jsx)) with controls for professor identity, help style, citation requirement, and **course groups**, and
 - a **policy API** ([ui/api/index.js](https://github.com/dbruun/edu-cohort-homework/blob/main/ui/api/index.js)) that reads the current policy on load and writes edits back via `GET`/`POST /api/policy`.
 
 The UI and API round-trip the same pedagogy policy document the tutor consumes, so a professor's edits flow into the tutor's behavior. Here is the portal, showing the professor identity and a course group:
@@ -90,7 +90,6 @@ The policy is a small, declarative JSON document:
 
 - **professorId / professorName** — the professor who owns this pedagogy
 - **helpLevel** — `guided`, `worked_example`, or `full_solution`; determines whether the original final answer is supplied
-- **maxStepsRevealed** — how much of a solution the tutor may expose at once
 - **citationsRequired** — whether responses must cite sources
 - **subjectOverrides** — per-subject adjustments layered on the defaults
 - **courseGroups** — named groups of courses (each with an ID and description) that share one set of limits
@@ -152,7 +151,7 @@ sequenceDiagram
 
 1. **Apply policy.** The agent reads the active pedagogy policy to decide how much help to offer.
 2. **Ground.** The toolbox retrieves relevant course content — Azure AI Search by default, or Canvas Smart Search where the institution uses Canvas.
-3. **Compose.** The model produces an answer that honors the policy's help level, step limits, and citation requirements.
+3. **Compose.** The model produces an answer that honors the policy's help style and citation requirements.
 4. **Answer.** The tutor returns hints and guided steps (not a direct solution to graded work) with citations back to the source.
 
 ## Deployment topology

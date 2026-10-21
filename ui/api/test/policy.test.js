@@ -4,14 +4,12 @@ const { applyProfessorIdentity, validatePolicy, renderPolicyText } = require('..
 
 const policy = {
   helpLevel: 'guided',
-  maxStepsRevealed: 3,
   citationsRequired: true,
   subjectOverrides: { science: 'guided' },
   courseGroups: [{
     name: 'Intro CS',
     courses: [{ id: 'CS101', description: 'Introduction to Programming' }],
     helpLevel: 'guided',
-    maxStepsRevealed: 1,
     citationsRequired: true
   }]
 };
@@ -28,9 +26,7 @@ test('drops obsolete direct-answer flags without changing help styles or other l
     courseGroups: [{ ...policy.courseGroups[0], allowDirectAnswers: true }]
   }, { id: 'current-id', name: 'Professor Test' });
   assert.equal(cleaned.helpLevel, 'full_solution');
-  assert.equal(cleaned.maxStepsRevealed, policy.maxStepsRevealed);
   assert.equal(cleaned.courseGroups[0].helpLevel, 'guided');
-  assert.equal(cleaned.courseGroups[0].maxStepsRevealed, 1);
   assert.equal(cleaned.citationsRequired, true);
   assert.equal(Object.hasOwn(cleaned, 'allowDirectAnswers'), false);
   assert.equal(Object.hasOwn(cleaned.courseGroups[0], 'allowDirectAnswers'), false);
@@ -79,6 +75,28 @@ test('rejects duplicate course assignments and invalid group restrictions', () =
   }), /unique, non-empty IDs/);
   assert.throws(() => validatePolicy({
     ...policy,
-    courseGroups: [{ ...policy.courseGroups[0], maxStepsRevealed: 9 }]
+    courseGroups: [{ ...policy.courseGroups[0], citationsRequired: 'yes' }]
   }), /course groups are invalid/);
+});
+
+test('removes legacy step counts and regenerates stale policy prose without changing active controls', () => {
+  const legacy = {
+    ...policy,
+    maxStepsRevealed: 1,
+    policyText: 'Maximum number of solution steps that may be revealed: 1.',
+    courseGroups: [{ ...policy.courseGroups[0], helpLevel: 'full_solution', maxStepsRevealed: 8 }]
+  };
+  assert.doesNotThrow(() => validatePolicy(legacy));
+  const cleaned = applyProfessorIdentity(legacy, { id: 'current-id', name: 'Professor Test' });
+  assert.equal(Object.hasOwn(cleaned, 'maxStepsRevealed'), false);
+  assert.equal(Object.hasOwn(cleaned.courseGroups[0], 'maxStepsRevealed'), false);
+  assert.equal(cleaned.helpLevel, 'guided');
+  assert.equal(cleaned.courseGroups[0].helpLevel, 'full_solution');
+  assert.equal(cleaned.citationsRequired, true);
+  assert.deepEqual(cleaned.subjectOverrides, policy.subjectOverrides);
+  assert.deepEqual(cleaned.courseGroups[0].courses, policy.courseGroups[0].courses);
+  assert.match(cleaned.policyText, /help level full_solution/);
+  assert.doesNotMatch(cleaned.policyText, /maximum|steps|undefined/i);
+  assert.doesNotMatch(renderPolicyText(legacy, { name: 'Professor Test' }), /maximum|steps|undefined/i);
+  assert.deepEqual(applyProfessorIdentity(cleaned, { id: 'current-id', name: 'Professor Test' }), cleaned);
 });

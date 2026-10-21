@@ -2,7 +2,6 @@
   "professorId": "prof-adams",
   "professorName": "Dr. Adams",
   "helpLevel": "guided",
-  "maxStepsRevealed": 3,
   "citationsRequired": true,
   "subjectOverrides": {
     "math": "guided",
@@ -16,7 +15,6 @@
         { "id": "CS102", "description": "Data Structures and Algorithms" }
       ],
       "helpLevel": "guided",
-      "maxStepsRevealed": 1,
       "citationsRequired": true
     }
   ],
